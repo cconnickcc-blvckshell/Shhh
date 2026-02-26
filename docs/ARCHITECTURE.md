@@ -1,6 +1,6 @@
 # Shhh — Architecture Document
 
-> Last updated: Sprint 2 | v0.2.0
+> Last updated: Sprint 3 | v0.3.0
 
 ---
 
@@ -56,6 +56,26 @@ Shhh is an enterprise-grade geosocial networking platform. The backend is a mono
 │   │   └── index.css                 # Global styles
 │   ├── package.json
 │   └── tsconfig.json
+├── mobile/                           # React Native + Expo mobile app
+│   ├── app/
+│   │   ├── _layout.tsx               # Root layout with auth guard
+│   │   ├── (auth)/
+│   │   │   ├── _layout.tsx
+│   │   │   ├── index.tsx             # Login screen
+│   │   │   └── register.tsx          # Registration screen
+│   │   ├── (tabs)/
+│   │   │   ├── _layout.tsx           # Tab navigator
+│   │   │   ├── index.tsx             # Discover (nearby grid)
+│   │   │   ├── messages.tsx          # Conversations list
+│   │   │   ├── events.tsx            # Nearby events
+│   │   │   └── profile.tsx           # Profile + safety
+│   │   └── chat/
+│   │       └── [id].tsx              # Chat screen with self-destruct toggle
+│   ├── src/
+│   │   ├── api/client.ts             # Full API client
+│   │   ├── stores/auth.ts            # Zustand auth store
+│   │   └── constants/theme.ts        # Design tokens
+│   └── package.json
 ├── backend/                          # Node.js + Express + TypeScript API
 │   ├── src/
 │   │   ├── config/
@@ -191,6 +211,19 @@ Shhh is an enterprise-grade geosocial networking platform. The backend is a mono
 | vite | Build tool |
 | typescript | Type checking |
 
+### Mobile (`mobile/package.json`)
+
+| Package | Purpose |
+|---------|---------|
+| expo ~55 | React Native framework |
+| expo-router | File-based navigation |
+| zustand | Client state management |
+| @tanstack/react-query | Server state |
+| socket.io-client | Real-time WebSocket |
+| expo-secure-store | Secure token storage |
+| expo-image-picker | Photo selection |
+| expo-location | Geolocation |
+
 ### Infrastructure (Docker Compose)
 
 | Service | Image | Port |
@@ -259,6 +292,25 @@ Shhh is an enterprise-grade geosocial networking platform. The backend is a mono
 | POST | `/v1/conversations` | Yes | 1 | Create conversation |
 | GET | `/v1/conversations/:id/messages` | Yes | 0 | Get messages |
 | POST | `/v1/conversations/:id/messages` | Yes | 0 | Send message |
+
+### Media & Albums
+| Method | Path | Auth | Tier | Description |
+|--------|------|------|------|-------------|
+| POST | `/v1/media/upload` | Yes | 0 | Upload photo/video |
+| POST | `/v1/media/upload/self-destruct` | Yes | 0 | Upload self-destructing media |
+| GET | `/v1/media/my` | Yes | 0 | List own media |
+| GET | `/v1/media/:id` | Yes | 0 | Get media (access controlled) |
+| DELETE | `/v1/media/:id` | Yes | 0 | Delete own media |
+| POST | `/v1/media/:id/view` | Yes | 0 | Track media view |
+| POST | `/v1/media/albums` | Yes | 0 | Create private album |
+| GET | `/v1/media/albums/my` | Yes | 0 | List own albums |
+| GET | `/v1/media/albums/shared` | Yes | 0 | List albums shared with me |
+| GET | `/v1/media/albums/:id` | Yes | 0 | Get album (access controlled) |
+| DELETE | `/v1/media/albums/:id` | Yes | 0 | Delete album |
+| POST | `/v1/media/albums/:id/media` | Yes | 0 | Add media to album |
+| DELETE | `/v1/media/albums/:id/media/:mediaId` | Yes | 0 | Remove from album |
+| POST | `/v1/media/albums/:id/share` | Yes | 0 | Share album with user |
+| DELETE | `/v1/media/albums/:id/share/:userId` | Yes | 0 | Revoke album share |
 
 ### Events
 | Method | Path | Auth | Tier | Description |
@@ -418,6 +470,40 @@ User                    API                    System
  │                       │   emergency contacts]  │
 ```
 
+### 5.6 Private Album Sharing Flow
+```
+Owner                   API                    Recipient
+ │                       │                        │
+ ├─ POST /media/upload  ─▶ Store + thumbnail      │
+ │  ◀─ {mediaId, url}   ─┤                        │
+ │                       │                        │
+ ├─ POST /albums ───────▶ Create private album    │
+ │  ◀─ {albumId}        ─┤                        │
+ │                       │                        │
+ ├─ POST /albums/:id/   ─▶ Link media to album    │
+ │     media             │                        │
+ │                       │                        │
+ ├─ POST /albums/:id/   ─▶ Grant access           │
+ │     share             ├─ WebSocket emit ──────▶│
+ │                       │  album_shared           │
+ │                       │                        │
+ │                       │◀── GET /albums/:id ────┤
+ │                       ├─ Return media list ───▶│
+ │                       │                        │
+ ├─ DELETE /albums/:id/ ─▶ Revoke access           │
+ │     share/:userId     ├─ WebSocket emit ──────▶│
+ │                       │  album_revoked          │
+```
+
+### 5.7 Self-Destructing Media
+
+Self-destructing media uses two mechanisms:
+
+1. **MongoDB TTL index** on `messages.expiresAt` auto-deletes message docs
+2. **PostgreSQL** `media.expires_at` triggers cleanup via scheduled job
+3. **View tracking** in `media_view_tracking` records who viewed + duration
+4. **WebSocket** emits `media_self_destructed` when TTL expires
+
 ---
 
 ## 6. Database Schema (ERD Summary)
@@ -506,7 +592,7 @@ GitHub Actions (.github/workflows/ci.yml)
 | couples.test.ts | 4 | Create, link, get, dissolve |
 | safety.test.ts | 5 | Contacts CRUD, check-in, panic |
 | admin.test.ts | 6 | Stats, queue, user detail, trust, audit, auth |
-| **Total** | **33** | |
+| **Total** | **47** | 7 suites |
 
 ---
 
