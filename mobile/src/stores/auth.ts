@@ -26,6 +26,10 @@ function getSavedToken(): string | null {
   try { return typeof window !== 'undefined' ? window.localStorage?.getItem('shhh_token') || null : null; } catch { return null; }
 }
 
+function clearSavedToken() {
+  try { if (typeof window !== 'undefined') window.localStorage?.removeItem('shhh_token'); } catch {}
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   userId: null,
   token: getSavedToken(),
@@ -114,6 +118,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     try { await authApi.logout(); } catch {}
     setAuthToken('');
+    clearSavedToken();
     set({ userId: null, token: null, refreshToken: null, profile: null, isAuthenticated: false });
     router.replace('/(auth)');
   },

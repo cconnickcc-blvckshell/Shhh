@@ -23,7 +23,7 @@ export const config = {
   jwt: {
     secret: process.env.JWT_SECRET || 'dev-jwt-secret',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
-    accessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
+    accessExpiry: process.env.JWT_ACCESS_EXPIRY || (process.env.NODE_ENV === 'development' ? '2h' : '15m'),
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
   },
 
