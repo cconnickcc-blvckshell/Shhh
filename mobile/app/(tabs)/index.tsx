@@ -1,63 +1,40 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Animated } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Alert, TextInput, Vibration } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient' ;
-import { discoverApi, usersApi } from '../../src/api/client';
+import { discoverApi, usersApi, api } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
-import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
+import { colors, fontSize } from '../../src/constants/theme';
 
 interface NearbyUser {
-  userId: string;
-  displayName: string;
-  bio: string;
-  distance: number;
-  verificationStatus: string;
-  experienceLevel: string;
-  isHost: boolean;
-  gender: string | null;
-  photosJson: string[];
+  userId: string; displayName: string; bio: string; distance: number;
+  verificationStatus: string; experienceLevel: string; isHost: boolean;
+  gender: string | null; photosJson: string[];
+  presenceState: string | null; activeIntents: string[];
 }
 
 const GAP = 1.5;
 
-function formatDist(m: number): string {
-  return m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`;
-}
+function formatDist(m: number): string { return m < 1000 ? `${Math.abs(m)}m` : `${(Math.abs(m) / 1000).toFixed(1)}km`; }
 
-function PresenceDot({ state }: { state?: string }) {
-  const dotColor = state === 'open_to_chat' ? '#34D399'
-    : state === 'browsing' ? colors.primaryLight
-    : state === 'at_venue' ? colors.warning
-    : '#34D399';
+const PRESENCE_COLORS: Record<string, string> = {
+  open_to_chat: '#34D399', browsing: '#A855F7', nearby: '#60A5FA', at_venue: '#FBBF24', at_event: '#F472B6',
+};
 
-  return (
-    <View style={[pdStyles.outer, { borderColor: colors.background }]}>
-      <View style={[pdStyles.inner, { backgroundColor: dotColor }]} />
-    </View>
-  );
-}
-const pdStyles = StyleSheet.create({
-  outer: { width: 14, height: 14, borderRadius: 7, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center', position: 'absolute', bottom: 6, right: 6 },
-  inner: { width: 7, height: 7, borderRadius: 3.5 },
-});
-
-function ShieldBadge({ status }: { status: string }) {
-  if (status === 'unverified') return null;
-  const color = status === 'reference_verified' ? '#34D399' : status === 'id_verified' ? colors.primaryLight : colors.info;
-  return (
-    <View style={[sbStyles.wrap, { backgroundColor: color + '30', borderColor: color + '50' }]}>
-      <Ionicons name={status === 'reference_verified' ? 'shield-checkmark' : 'shield-half'} size={11} color={color} />
-    </View>
-  );
-}
-const sbStyles = StyleSheet.create({
-  wrap: { borderRadius: 6, paddingHorizontal: 4, paddingVertical: 2, borderWidth: 0.5 },
-});
+const INTENT_ICONS: Record<string, { icon: string; label: string }> = {
+  open_tonight: { icon: 'moon', label: 'Tonight' },
+  traveling: { icon: 'airplane', label: 'Traveling' },
+  hosting: { icon: 'home', label: 'Hosting' },
+  looking_for_friends: { icon: 'people', label: 'Friends' },
+  looking_for_more: { icon: 'heart', label: 'More' },
+  couples_only: { icon: 'people-circle', label: 'Couples' },
+};
 
 export default function DiscoverScreen() {
   const [users, setUsers] = useState<NearbyUser[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [whisperTarget, setWhisperTarget] = useState<string | null>(null);
+  const [whisperText, setWhisperText] = useState('');
   const { width } = useWindowDimensions();
   const cols = width > 500 ? 3 : 2;
   const tileW = (width - GAP * (cols + 1)) / cols;
@@ -74,50 +51,94 @@ export default function DiscoverScreen() {
   useEffect(() => { load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const renderTile = ({ item }: { item: NearbyUser }) => (
-    <TouchableOpacity
-      style={[styles.tile, { width: tileW, height: tileH }]}
-      activeOpacity={0.92}
-      onPress={() => router.push(`/user/${item.userId}`)}
-    >
-      {/* Full-bleed photo */}
-      <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} />
+  const handleLongPress = (item: NearbyUser) => {
+    Vibration.vibrate(10);
+    setWhisperTarget(item.userId);
+  };
 
-      {/* Top-left badges */}
-      <View style={styles.topLeft}>
-        {item.isHost && (
-          <View style={styles.hostBadge}>
-            <Ionicons name="home" size={9} color="#000" />
-            <Text style={styles.hostText}>HOST</Text>
+  const sendWhisper = async () => {
+    if (!whisperTarget || !whisperText.trim()) return;
+    try {
+      await api('/v1/whispers', { method: 'POST', body: JSON.stringify({ toUserId: whisperTarget, message: whisperText.trim() }) });
+      Vibration.vibrate([0, 50, 30, 50]);
+      setWhisperTarget(null);
+      setWhisperText('');
+    } catch (err: any) { Alert.alert('', err.message); }
+  };
+
+  const renderTile = ({ item }: { item: NearbyUser }) => {
+    const presenceColor = item.presenceState ? PRESENCE_COLORS[item.presenceState] : null;
+    const topIntent = item.activeIntents?.[0] ? INTENT_ICONS[item.activeIntents[0]] : null;
+
+    return (
+      <TouchableOpacity
+        style={[s.tile, { width: tileW, height: tileH }]}
+        activeOpacity={0.92}
+        onPress={() => router.push(`/user/${item.userId}`)}
+        onLongPress={() => handleLongPress(item)}
+        delayLongPress={400}
+      >
+        <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} />
+
+        {/* Presence ring (left edge glow) */}
+        {presenceColor && <View style={[s.presenceBar, { backgroundColor: presenceColor }]} />}
+
+        {/* Top badges */}
+        <View style={s.topRow}>
+          {item.isHost && (
+            <View style={s.hostBadge}><Ionicons name="home" size={8} color="#000" /><Text style={s.hostText}>HOST</Text></View>
+          )}
+          {item.verificationStatus !== 'unverified' && (
+            <View style={[s.shieldBadge, { backgroundColor: (item.verificationStatus === 'reference_verified' ? '#34D399' : item.verificationStatus === 'id_verified' ? '#A855F7' : '#60A5FA') + '30' }]}>
+              <Ionicons name={item.verificationStatus === 'reference_verified' ? 'shield-checkmark' : 'shield-half'} size={11} color={item.verificationStatus === 'reference_verified' ? '#34D399' : item.verificationStatus === 'id_verified' ? '#A855F7' : '#60A5FA'} />
+            </View>
+          )}
+        </View>
+
+        {/* Intent badge (top right) */}
+        {topIntent && (
+          <View style={s.intentBadge}>
+            <Ionicons name={topIntent.icon as any} size={9} color="#fff" />
+            <Text style={s.intentText}>{topIntent.label}</Text>
           </View>
         )}
-        <ShieldBadge status={item.verificationStatus} />
-      </View>
 
-      {/* Online indicator */}
-      <PresenceDot />
+        {/* Online dot with presence color */}
+        {presenceColor && (
+          <View style={[s.presenceDot, { backgroundColor: presenceColor }]} />
+        )}
 
-      {/* Bottom gradient overlay with info */}
-      <View style={styles.bottomGradient}>
-        <View style={styles.gradientInner}>
-          <Text style={styles.tileName} numberOfLines={1}>{item.displayName}</Text>
-          <View style={styles.tileMetaRow}>
-            <Ionicons name="navigate" size={9} color={colors.primaryLight} />
-            <Text style={styles.tileDist}>{formatDist(item.distance)}</Text>
-            {item.gender && (
-              <>
-                <View style={styles.metaDot} />
-                <Text style={styles.tileGender}>{item.gender}</Text>
-              </>
-            )}
+        {/* Bottom info */}
+        <View style={s.bottomInfo}>
+          <Text style={s.tileName} numberOfLines={1}>{item.displayName}</Text>
+          <View style={s.metaRow}>
+            <Ionicons name="navigate" size={9} color={presenceColor || 'rgba(255,255,255,0.5)'} />
+            <Text style={s.tileDist}>{formatDist(item.distance)}</Text>
+            {item.gender && <><View style={s.dot} /><Text style={s.tileGender}>{item.gender}</Text></>}
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={s.container}>
+      {/* Quick whisper overlay */}
+      {whisperTarget && (
+        <View style={s.whisperOverlay}>
+          <View style={s.whisperBar}>
+            <Ionicons name="ear" size={16} color={colors.primaryLight} />
+            <TextInput style={s.whisperInput} value={whisperText} onChangeText={setWhisperText} placeholder="Whisper something..." placeholderTextColor="rgba(255,255,255,0.3)" maxLength={100} autoFocus />
+            <TouchableOpacity onPress={sendWhisper} disabled={!whisperText.trim()} style={[s.whisperSend, !whisperText.trim() && { opacity: 0.3 }]}>
+              <Ionicons name="send" size={14} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setWhisperTarget(null); setWhisperText(''); }} style={s.whisperClose}>
+              <Ionicons name="close" size={16} color="rgba(255,255,255,0.4)" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       <FlatList
         data={users}
         keyExtractor={i => i.userId}
@@ -128,10 +149,10 @@ export default function DiscoverScreen() {
         contentContainerStyle={{ paddingHorizontal: GAP / 2, paddingTop: GAP / 2 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primaryLight} />}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <View style={styles.emptyGlow}><Ionicons name="compass-outline" size={36} color={colors.primaryLight} /></View>
-            <Text style={styles.emptyTitle}>No one nearby</Text>
-            <Text style={styles.emptySub}>Pull down to refresh</Text>
+          <View style={s.empty}>
+            <View style={s.emptyGlow}><Ionicons name="compass-outline" size={36} color={colors.primaryLight} /></View>
+            <Text style={s.emptyTitle}>No one nearby</Text>
+            <Text style={s.emptySub}>Pull down to refresh</Text>
           </View>
         }
       />
@@ -139,41 +160,30 @@ export default function DiscoverScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  tile: {
-    marginBottom: GAP, overflow: 'hidden', position: 'relative',
-    backgroundColor: colors.surfaceElevated,
-  },
-  topLeft: {
-    position: 'absolute', top: 8, left: 8,
-    flexDirection: 'row', gap: 4, alignItems: 'center',
-  },
-  hostBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 2,
-    backgroundColor: colors.host,
-    paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4,
-  },
+  tile: { marginBottom: GAP, overflow: 'hidden', position: 'relative', backgroundColor: '#0A0A12' },
+  presenceBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, zIndex: 5 },
+  topRow: { position: 'absolute', top: 6, left: 8, flexDirection: 'row', gap: 4, zIndex: 5 },
+  hostBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#FBBF24', paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
   hostText: { color: '#000', fontSize: 8, fontWeight: '900', letterSpacing: 0.3 },
-  bottomGradient: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingTop: 40,
-    backgroundColor: 'transparent',
-  },
-  gradientInner: {
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    paddingHorizontal: 10, paddingVertical: 8,
-  },
-  tileName: {
-    color: '#fff', fontSize: 14, fontWeight: '700',
-    textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2,
-  },
-  tileMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
-  tileDist: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '600' },
-  metaDot: { width: 2.5, height: 2.5, borderRadius: 1.25, backgroundColor: 'rgba(255,255,255,0.35)' },
-  tileGender: { color: 'rgba(255,255,255,0.5)', fontSize: 11 },
+  shieldBadge: { borderRadius: 6, padding: 3 },
+  intentBadge: { position: 'absolute', top: 6, right: 6, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8, zIndex: 5 },
+  intentText: { color: '#fff', fontSize: 9, fontWeight: '700' },
+  presenceDot: { position: 'absolute', bottom: 44, right: 8, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#000', zIndex: 5 },
+  bottomInfo: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 8, paddingVertical: 7, backgroundColor: 'rgba(0,0,0,0.75)' },
+  tileName: { color: '#fff', fontSize: 13, fontWeight: '700', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 1 },
+  tileDist: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '600' },
+  dot: { width: 2, height: 2, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.3)' },
+  tileGender: { color: 'rgba(255,255,255,0.4)', fontSize: 10 },
+  whisperOverlay: { position: 'absolute', bottom: 60, left: 0, right: 0, zIndex: 100, paddingHorizontal: 12 },
+  whisperBar: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(20,18,34,0.95)', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(147,51,234,0.3)' },
+  whisperInput: { flex: 1, color: '#fff', fontSize: 14 },
+  whisperSend: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  whisperClose: { padding: 4 },
   empty: { alignItems: 'center', paddingTop: 160 },
-  emptyGlow: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
-  emptyTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '600' },
-  emptySub: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.xs },
+  emptyGlow: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(147,51,234,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  emptySub: { color: 'rgba(255,255,255,0.3)', fontSize: 13, marginTop: 4 },
 });

@@ -101,10 +101,13 @@ export class DiscoveryService {
         ELSE
           ST_Distance(l.geom_point::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) + (random() * $5 - $5/2)
         END as distance,
-        l.updated_at as last_active
+        l.updated_at as last_active,
+        pr.state as presence_state,
+        (SELECT array_agg(flag) FROM intent_flags WHERE user_id = up.user_id AND expires_at > NOW()) as active_intents
       FROM user_profiles up
       JOIN users u ON up.user_id = u.id
       JOIN locations l ON up.user_id = l.user_id
+      LEFT JOIN presence pr ON up.user_id = pr.user_id AND pr.expires_at > NOW()
       WHERE u.is_active = true
         AND u.deleted_at IS NULL
         AND up.user_id != $3
@@ -138,6 +141,8 @@ export class DiscoveryService {
       isHost: row.is_host,
       distance: Math.round(row.distance),
       lastActive: row.last_active,
+      presenceState: row.presence_state || null,
+      activeIntents: row.active_intents || [],
     }));
 
     await redis.set(cacheKey, JSON.stringify(users), 'EX', 30);
