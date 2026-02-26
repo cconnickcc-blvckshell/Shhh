@@ -61,6 +61,30 @@ export class DiscoveryService {
 
     const fuzz = config.geo.defaultFuzzMeters;
 
+    const params: unknown[] = [lat, lng, userId, radiusMeters, fuzz];
+    let nextParam = 6;
+
+    let genderClause = '';
+    if (filters.gender) {
+      genderClause = `AND up.gender = $${nextParam}`;
+      params.push(filters.gender);
+      nextParam++;
+    }
+
+    let expClause = '';
+    if (filters.experienceLevel) {
+      expClause = `AND up.experience_level = $${nextParam}`;
+      params.push(filters.experienceLevel);
+      nextParam++;
+    }
+
+    let tierClause = '';
+    if (filters.minTier) {
+      tierClause = `AND u.verification_tier >= $${nextParam}`;
+      params.push(filters.minTier);
+      nextParam++;
+    }
+
     const result = await query(
       `SELECT
         up.user_id,
@@ -75,7 +99,7 @@ export class DiscoveryService {
         CASE WHEN l.is_precise_mode THEN
           ST_Distance(l.geom_point::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
         ELSE
-          ST_Distance(l.geom_point::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) + (random() * $6 - $6/2)
+          ST_Distance(l.geom_point::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) + (random() * $5 - $5/2)
         END as distance,
         l.updated_at as last_active
       FROM user_profiles up
@@ -94,17 +118,12 @@ export class DiscoveryService {
           WHERE (b.blocker_id = $3 AND b.blocked_id = up.user_id)
              OR (b.blocker_id = up.user_id AND b.blocked_id = $3)
         )
-        ${filters.gender ? `AND up.gender = $7` : ''}
-        ${filters.experienceLevel ? `AND up.experience_level = $${filters.gender ? 8 : 7}` : ''}
-        ${filters.minTier ? `AND u.verification_tier >= $${(filters.gender ? 1 : 0) + (filters.experienceLevel ? 1 : 0) + 7}` : ''}
+        ${genderClause}
+        ${expClause}
+        ${tierClause}
       ORDER BY distance ASC, l.updated_at DESC
       LIMIT 50`,
-      [
-        lat, lng, userId, radiusMeters, radiusKm, fuzz,
-        ...(filters.gender ? [filters.gender] : []),
-        ...(filters.experienceLevel ? [filters.experienceLevel] : []),
-        ...(filters.minTier ? [filters.minTier] : []),
-      ]
+      params
     );
 
     const users: NearbyUser[] = result.rows.map((row) => ({
