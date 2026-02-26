@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Dimensions, useWindowDimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { discoverApi, usersApi } from '../../src/api/client';
@@ -16,27 +16,18 @@ interface NearbyUser {
   gender: string | null;
 }
 
-const TILE_GAP = 3;
+const GAP = 2;
 
-function formatDistance(meters: number): string {
-  if (meters < 1000) return `${meters}m`;
-  return `${(meters / 1000).toFixed(1)}km`;
-}
-
-function verificationIcon(status: string): { icon: string; color: string } | null {
-  if (status === 'reference_verified') return { icon: 'shield-checkmark', color: colors.trusted };
-  if (status === 'id_verified') return { icon: 'checkmark-circle', color: colors.verified };
-  if (status === 'photo_verified') return { icon: 'camera', color: colors.info };
-  return null;
+function formatDist(m: number): string {
+  return m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`;
 }
 
 export default function DiscoverScreen() {
   const [users, setUsers] = useState<NearbyUser[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const { width } = useWindowDimensions();
-
-  const numCols = width > 600 ? 3 : 2;
-  const tileSize = (width - TILE_GAP * (numCols + 1)) / numCols;
+  const cols = width > 600 ? 3 : 2;
+  const tileW = (width - GAP * (cols + 1)) / cols;
 
   const load = useCallback(async () => {
     try {
@@ -47,58 +38,64 @@ export default function DiscoverScreen() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   const handleLike = async (userId: string) => {
     const res = await usersApi.like(userId);
     if (res.data.matched) {
-      setUsers(prev => prev.map(u => u.userId === userId ? { ...u, displayName: `${u.displayName} 💕` } : u));
+      setUsers(p => p.map(u => u.userId === userId ? { ...u, displayName: `${u.displayName} 💜` } : u));
     } else {
-      setUsers(prev => prev.filter(u => u.userId !== userId));
+      setUsers(p => p.filter(u => u.userId !== userId));
     }
   };
 
   const renderTile = ({ item }: { item: NearbyUser }) => {
-    const badge = verificationIcon(item.verificationStatus);
+    const isVerified = item.verificationStatus !== 'unverified';
     return (
       <TouchableOpacity
-        style={[styles.tile, { width: tileSize, height: tileSize * 1.35 }]}
-        activeOpacity={0.85}
+        style={[styles.tile, { width: tileW, height: tileW * 1.4 }]}
+        activeOpacity={0.9}
         onPress={() => router.push(`/user/${item.userId}`)}
         onLongPress={() => handleLike(item.userId)}
       >
-        <View style={styles.tilePhoto}>
-          <Ionicons name="person" size={tileSize * 0.3} color={colors.textMuted} />
+        {/* Photo area */}
+        <View style={styles.photoArea}>
+          <Ionicons name="person" size={tileW * 0.25} color={colors.textMuted} />
         </View>
 
-        <View style={styles.tileOverlay}>
-          <View style={styles.tileTopRow}>
-            {item.isHost && (
-              <View style={styles.hostPill}>
-                <Text style={styles.hostText}>HOST</Text>
-              </View>
-            )}
-            {badge && (
-              <Ionicons name={badge.icon as any} size={14} color={badge.color} />
-            )}
-          </View>
-
-          <View style={styles.tileBottom}>
-            <Text style={styles.tileName} numberOfLines={1}>{item.displayName}</Text>
-            <View style={styles.tileMetaRow}>
-              <View style={styles.distancePill}>
-                <Ionicons name="location" size={10} color={colors.primary} />
-                <Text style={styles.distanceText}>{formatDistance(item.distance)}</Text>
-              </View>
-              {item.gender && (
-                <Text style={styles.tileGender}>{item.gender}</Text>
-              )}
+        {/* Top badges */}
+        <View style={styles.topBadges}>
+          {item.isHost && (
+            <View style={styles.hostBadge}>
+              <Ionicons name="home" size={8} color="#000" />
+              <Text style={styles.hostText}>HOST</Text>
             </View>
-          </View>
+          )}
+          <View style={{ flex: 1 }} />
+          {isVerified && (
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="checkmark-circle" size={14} color={colors.verified} />
+            </View>
+          )}
         </View>
 
+        {/* Online dot */}
         <View style={styles.onlineDot} />
+
+        {/* Bottom info overlay */}
+        <View style={styles.bottomInfo}>
+          <Text style={styles.tileName} numberOfLines={1}>{item.displayName}</Text>
+          <View style={styles.distRow}>
+            <Ionicons name="navigate" size={9} color={colors.primaryLight} />
+            <Text style={styles.distText}>{formatDist(item.distance)}</Text>
+            {item.gender && (
+              <>
+                <View style={styles.dot} />
+                <Text style={styles.genderText}>{item.gender}</Text>
+              </>
+            )}
+          </View>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -107,20 +104,20 @@ export default function DiscoverScreen() {
     <View style={styles.container}>
       <FlatList
         data={users}
-        keyExtractor={(item) => item.userId}
+        keyExtractor={i => i.userId}
         renderItem={renderTile}
-        numColumns={numCols}
-        key={`grid-${numCols}`}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.grid}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        numColumns={cols}
+        key={`g${cols}`}
+        columnWrapperStyle={{ gap: GAP }}
+        contentContainerStyle={{ padding: GAP / 2 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primaryLight} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="compass-outline" size={48} color={colors.textMuted} />
+            <View style={styles.emptyGlow}>
+              <Ionicons name="compass-outline" size={40} color={colors.primaryLight} />
             </View>
             <Text style={styles.emptyTitle}>No one nearby</Text>
-            <Text style={styles.emptySub}>Pull down to refresh or expand your radius</Text>
+            <Text style={styles.emptySub}>Pull down to refresh</Text>
           </View>
         }
       />
@@ -130,89 +127,21 @@ export default function DiscoverScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  grid: { padding: TILE_GAP / 2 },
-  row: { gap: TILE_GAP },
-  tile: {
-    marginBottom: TILE_GAP,
-    borderRadius: borderRadius.sm,
-    overflow: 'hidden',
-    backgroundColor: colors.card,
-    position: 'relative',
-  },
-  tilePhoto: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceElevated,
-  },
-  tileOverlay: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    justifyContent: 'space-between',
-    padding: spacing.sm,
-  },
-  tileTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  hostPill: {
-    backgroundColor: 'rgba(255,165,2,0.85)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-  },
-  hostText: { color: '#000', fontSize: fontSize.xxs, fontWeight: '800', letterSpacing: 0.5 },
-  tileBottom: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    marginHorizontal: -spacing.sm,
-    marginBottom: -spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  tileName: {
-    color: colors.text,
-    fontSize: fontSize.sm,
-    fontWeight: '700',
-  },
-  tileMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 3,
-  },
-  distancePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  distanceText: {
-    color: colors.textSecondary,
-    fontSize: fontSize.xxs,
-    fontWeight: '600',
-  },
-  tileGender: {
-    color: colors.textMuted,
-    fontSize: fontSize.xxs,
-  },
-  onlineDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.online,
-    borderWidth: 1.5,
-    borderColor: colors.card,
-  },
-  empty: { alignItems: 'center', paddingTop: 120 },
-  emptyIcon: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: colors.surfaceElevated,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
+  tile: { marginBottom: GAP, overflow: 'hidden', position: 'relative', backgroundColor: colors.card },
+  photoArea: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated },
+  topBadges: { position: 'absolute', top: 6, left: 6, right: 6, flexDirection: 'row', alignItems: 'flex-start' },
+  hostBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: colors.host, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
+  hostText: { color: '#000', fontSize: 8, fontWeight: '900', letterSpacing: 0.5 },
+  verifiedBadge: { backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, padding: 2 },
+  onlineDot: { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.online, borderWidth: 1.5, borderColor: colors.card },
+  bottomInfo: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 8, paddingVertical: 8, backgroundColor: 'rgba(5,5,8,0.8)' },
+  tileName: { color: colors.text, fontSize: fontSize.sm, fontWeight: '700' },
+  distRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
+  distText: { color: colors.textSecondary, fontSize: fontSize.xxs, fontWeight: '600' },
+  dot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.textMuted },
+  genderText: { color: colors.textMuted, fontSize: fontSize.xxs },
+  empty: { alignItems: 'center', paddingTop: 140 },
+  emptyGlow: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
   emptyTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '600' },
   emptySub: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.xs },
 });

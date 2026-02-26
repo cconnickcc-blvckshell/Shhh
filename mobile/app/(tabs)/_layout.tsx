@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { View, StyleSheet } from 'react-native';
 import { colors, fontSize } from '../../src/constants/theme';
 
 export default function TabLayout() {
@@ -10,14 +11,15 @@ export default function TabLayout() {
         headerTitleStyle: { color: colors.text, fontWeight: '700', fontSize: fontSize.lg },
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopWidth: 0.5,
-          borderTopColor: colors.border,
-          height: 56,
-          paddingBottom: 4,
+          borderTopWidth: 0,
+          height: 60,
+          paddingBottom: 6,
+          paddingTop: 6,
         },
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.primaryLight,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: { fontSize: fontSize.xxs, fontWeight: '600' },
+        tabBarBackground: () => <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, borderTopWidth: 0.5, borderTopColor: colors.border }]} />,
       }}
     >
       <Tabs.Screen
@@ -25,30 +27,54 @@ export default function TabLayout() {
         options={{
           title: 'Explore',
           headerTitle: '',
-          tabBarIcon: ({ color, size }) => <Ionicons name="grid" size={size - 2} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.activeIcon : undefined}>
+              <Ionicons name="grid" size={22} color={color} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: 'Chat',
-          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble-ellipses" size={size - 2} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.activeIcon : undefined}>
+              <Ionicons name="chatbubble-ellipses" size={22} color={color} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="events"
         options={{
           title: 'Events',
-          tabBarIcon: ({ color, size }) => <Ionicons name="flame" size={size - 2} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.activeIcon : undefined}>
+              <Ionicons name="flame" size={22} color={color} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Me',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? styles.activeIcon : undefined}>
+              <Ionicons name="person-circle" size={24} color={color} />
+            </View>
+          ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  activeIcon: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 12,
+    padding: 4,
+  },
+});
