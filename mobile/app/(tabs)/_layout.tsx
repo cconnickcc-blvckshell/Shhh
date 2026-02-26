@@ -7,7 +7,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: '#000', elevation: 0, shadowOpacity: 0, borderBottomWidth: 0 },
+        headerStyle: { backgroundColor: '#050508', elevation: 0, shadowOpacity: 0, borderBottomWidth: 0.5, borderBottomColor: 'rgba(147,51,234,0.1)' },
         headerTitleStyle: { color: colors.text, fontWeight: '700', fontSize: fontSize.lg },
         tabBarStyle: {
           backgroundColor: '#050508',
@@ -26,7 +26,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Explore',
-          headerTitle: '',
+          headerTitle: 'Shhh',
+          headerTitleStyle: { color: colors.primaryLight, fontWeight: '900', fontSize: 20, letterSpacing: -1 },
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? s.activeWrap : s.inactiveWrap}>
               <Ionicons name={focused ? 'grid' : 'grid-outline'} size={21} color={color} />
