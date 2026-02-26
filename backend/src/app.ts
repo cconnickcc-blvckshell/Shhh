@@ -25,6 +25,7 @@ import blurRoutes from './modules/users/blur.routes';
 import intentRoutes from './modules/users/intent.routes';
 import e2eeRoutes from './modules/messaging/e2ee.routes';
 import billingRoutes from './modules/billing/billing.routes';
+import whisperRoutes from './modules/discovery/whisper.routes';
 import path from 'path';
 import { TrustScoreService } from './modules/users/trust.service';
 import { authenticate as authMiddleware } from './middleware/auth';
@@ -84,6 +85,9 @@ export function createApp() {
   app.use('/v1/presence', presenceRoutes);
   app.use('/v1/personas', personaRoutes);
   app.use('/v1/intents', intentRoutes);
+
+  // Whispers
+  app.use('/v1/whispers', whisperRoutes);
 
   // Venue Identity
   app.use('/v1/venues', venueIdentityRoutes);

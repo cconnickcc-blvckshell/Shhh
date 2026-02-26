@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { discoverApi, usersApi } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
+import { ShhhShield } from '../../src/components/ShhhShield';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 interface NearbyUser {
@@ -74,11 +75,7 @@ export default function DiscoverScreen() {
             </View>
           )}
           <View style={{ flex: 1 }} />
-          {isVerified && (
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={14} color={colors.verified} />
-            </View>
-          )}
+          <ShhhShield verificationStatus={item.verificationStatus} size={14} />
         </View>
 
         {/* Online dot */}

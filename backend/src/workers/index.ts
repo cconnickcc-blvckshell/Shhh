@@ -6,6 +6,8 @@ import { PresenceService } from '../modules/discovery/presence.service';
 import { IntentService } from '../modules/users/intent.service';
 import { ChatSessionService } from '../modules/messaging/session.service';
 import { MediaService } from '../modules/media/media.service';
+import { WhisperService } from '../modules/discovery/whisper.service';
+import { EventLifecycleService } from '../modules/events/lifecycle.service';
 
 const connection = new IORedis(config.redis.url, { maxRetriesPerRequest: null });
 
@@ -13,6 +15,8 @@ const presenceSvc = new PresenceService();
 const intentSvc = new IntentService();
 const sessionSvc = new ChatSessionService();
 const mediaSvc = new MediaService();
+const whisperSvc = new WhisperService();
+const lifecycleSvc = new EventLifecycleService();
 
 // Cleanup queue — runs scheduled jobs
 const cleanupQueue = new Queue('cleanup', { connection });
@@ -42,6 +46,16 @@ export async function startWorkers() {
         logger.info({ count, duration: Date.now() - start }, 'Media cleanup complete');
         break;
       }
+      case 'clean-whispers': {
+        const count = await whisperSvc.cleanExpired();
+        logger.info({ count, duration: Date.now() - start }, 'Whisper cleanup complete');
+        break;
+      }
+      case 'event-lifecycle': {
+        const count = await lifecycleSvc.transitionEvents();
+        logger.info({ count, duration: Date.now() - start }, 'Event lifecycle complete');
+        break;
+      }
     }
   }, { connection, concurrency: 2 });
 
@@ -54,6 +68,8 @@ export async function startWorkers() {
   await cleanupQueue.upsertJobScheduler('intent-cleanup', { every: 300000 }, { name: 'clean-intents' });
   await cleanupQueue.upsertJobScheduler('session-expiry', { every: 300000 }, { name: 'expire-sessions' });
   await cleanupQueue.upsertJobScheduler('media-cleanup', { every: 600000 }, { name: 'cleanup-media' });
+  await cleanupQueue.upsertJobScheduler('whisper-cleanup', { every: 300000 }, { name: 'clean-whispers' });
+  await cleanupQueue.upsertJobScheduler('event-lifecycle', { every: 60000 }, { name: 'event-lifecycle' });
 
-  logger.info('Background workers started — presence decay (1m), intents (5m), sessions (5m), media (10m)');
+  logger.info('Background workers started — presence (1m), intents (5m), sessions (5m), media (10m), whispers (5m), events (1m)');
 }

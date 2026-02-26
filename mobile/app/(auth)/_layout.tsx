@@ -6,6 +6,7 @@ export default function AuthLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="register" />
       <Stack.Screen name="verify-code" />
+      <Stack.Screen name="onboarding" />
     </Stack>
   );
 }
