@@ -22,12 +22,16 @@ interface AuthState {
   clearError: () => void;
 }
 
+function getSavedToken(): string | null {
+  try { return typeof window !== 'undefined' ? window.localStorage?.getItem('shhh_token') || null : null; } catch { return null; }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   userId: null,
-  token: null,
+  token: getSavedToken(),
   refreshToken: null,
   profile: null,
-  isAuthenticated: false,
+  isAuthenticated: !!getSavedToken(),
   isLoading: false,
   error: null,
 

@@ -8,9 +8,13 @@ let authToken = '';
 
 export function setAuthToken(token: string) {
   authToken = token;
+  try { if (typeof window !== 'undefined') window.localStorage?.setItem('shhh_token', token); } catch {}
 }
 
 export function getAuthToken(): string {
+  if (!authToken) {
+    try { authToken = (typeof window !== 'undefined' ? window.localStorage?.getItem('shhh_token') : null) || ''; } catch {}
+  }
   return authToken;
 }
 
