@@ -41,7 +41,7 @@ Shhh is a **privacy-native, proximity-driven social platform for adults**. It co
 |-----------|--------------------------|
 | **Time as a first-class constraint** | Messages expire. Presence decays. Whispers have a 4-hour TTL. Intent flags auto-expire. Nothing lingers unless someone actively re-affirms it. |
 | **Proximity beats prediction** | Discovery is powered by PostGIS `ST_DWithin`, not recommendation algorithms. You see who is *actually nearby*, not who an ML model thinks you'd like. |
-| **Privacy is the default** | Photos are blurred by default. Phone numbers are SHA-256 hashed before storage. Identity is gated behind a 4-tier verification system. Location is fuzzed by 300 m unless the user opts into precise mode. |
+| **Privacy is the default** | Photos are blurred by default. Phone numbers are HMAC-SHA256 hashed with a server-side pepper before storage. Identity is gated behind a 4-tier verification system. Location is fuzzed by 300 m unless the user opts into precise mode. |
 
 ### Performance Targets
 
@@ -118,22 +118,19 @@ npx expo start
 
 ### Seeding Demo Data
 
-There is no dedicated seed script. To create test data:
+Run `npm run seed` from the backend directory. Located at `/backend/src/database/seed.ts`. Idempotent (safe to run multiple times).
+
+Creates:
+- 6 users across verification tiers (0–3) with photos, bios, locations
+- 1 venue (The Purple Room) with features and specials
+- 1 event
+- 1 ad placement
+- 1 conversation between first two users
+- Sets first user as admin (`role = 'admin'`)
 
 ```bash
-# Register a user via curl
-curl -X POST http://localhost:3000/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"phone": "+15551234567", "displayName": "Test User"}'
-
-# Use the returned accessToken for subsequent requests
-export TOKEN="<accessToken from response>"
-
-# Update location (required for discovery)
-curl -X POST http://localhost:3000/v1/discover/location \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"lat": 40.7128, "lng": -74.0060}'
+cd backend
+npm run seed
 ```
 
 To bypass verification tiers for testing, update the user directly in PostgreSQL:
@@ -833,24 +830,27 @@ See [Section 11: Safety & Trust](#11-safety--trust) for full details.
 - `modules/admin/admin.controller.ts` — HTTP handlers
 - `modules/admin/admin.routes.ts` — Route definitions
 
+**RBAC:** The `users` table has a `role` column: `'user' | 'moderator' | 'admin' | 'superadmin'`. Admin routes use `requireRole('moderator')` middleware; destructive actions (e.g. banning) use `requireRole('admin')`. Every admin action is logged via `logAdminAction()` to the `admin_actions` table with justification.
+
 **Endpoints:**
 
-| Method | Path | Auth | Tier | Description |
+| Method | Path | Auth | Role | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/admin/stats` | Yes | 2 | Dashboard statistics |
-| GET | `/v1/admin/moderation` | Yes | 2 | Moderation queue |
-| GET | `/v1/admin/reports` | Yes | 2 | Report list |
-| POST | `/v1/admin/reports/:id/resolve` | Yes | 2 | Resolve report |
-| GET | `/v1/admin/users/:userId` | Yes | 2 | User detail view |
-| POST | `/v1/admin/users/:userId/ban` | Yes | 2 | Ban user |
-| POST | `/v1/admin/users/:userId/trust-score` | Yes | 2 | Recalculate trust score |
-| GET | `/v1/admin/audit-logs` | Yes | 2 | Audit trail |
+| GET | `/v1/admin/stats` | Yes | moderator | Dashboard statistics |
+| GET | `/v1/admin/moderation` | Yes | moderator | Moderation queue |
+| GET | `/v1/admin/reports` | Yes | moderator | Report list |
+| POST | `/v1/admin/reports/:id/resolve` | Yes | moderator | Resolve report |
+| GET | `/v1/admin/users/:userId` | Yes | moderator | User detail view |
+| POST | `/v1/admin/users/:userId/ban` | Yes | admin | Ban user |
+| POST | `/v1/admin/users/:userId/trust-score` | Yes | moderator | Recalculate trust score |
+| GET | `/v1/admin/audit-logs` | Yes | moderator | Audit trail |
 
-**Database tables owned:** `moderation_queue`, `content_flags`
+**Database tables owned:** `moderation_queue`, `content_flags`, `admin_actions`
 
 **Key business rules:**
-- All admin endpoints require tier 2 (ID-verified)
-- Banning sets `is_active = false` on the user and logs to `audit_logs`
+- Admin endpoints require `requireRole('moderator')`; banning requires `requireRole('admin')`
+- Banning sets `is_active = false` on the user; `logAdminAction()` is called on report resolution and user bans
+- `admin_actions` table logs every admin action with `admin_user_id`, `action`, `target_type`, `target_id`, `justification`
 - Moderation queue items have priority levels and can be assigned to specific admins
 - Content flags can be automated or from user reports
 
@@ -890,6 +890,7 @@ See [Section 14: Billing & Premium](#14-billing--premium) for full details.
 | `006_e2ee_keys.sql` | `user_keys`, `prekey_bundles`, `conversation_keys` |
 | `007_whispers_onboarding_shield.sql` | `whispers`. Onboarding columns on `users`. Event lifecycle columns. |
 | `008_ads_venue_overhaul.sql` | `ad_placements`, `ad_impressions`, `ad_cadence_rules`, `ad_controls`, `venue_analytics`, `venue_staff`, `venue_reviews`, `venue_specials`. Venue profile columns. |
+| `009_admin_rbac_phone_pepper.sql` | `role` column on `users` (`user` \| `moderator` \| `admin` \| `superadmin`), `admin_actions` table. |
 
 ### 5.2 All Tables by Domain
 
@@ -899,11 +900,12 @@ See [Section 14: Billing & Premium](#14-billing--premium) for full details.
 -- Core user accounts
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    phone_hash VARCHAR(128) UNIQUE NOT NULL,   -- SHA-256 of phone
-    email_hash VARCHAR(128) UNIQUE,             -- SHA-256 of email
+    phone_hash VARCHAR(128) UNIQUE NOT NULL,   -- HMAC-SHA256 of phone (with pepper)
+    email_hash VARCHAR(128) UNIQUE,             -- HMAC-SHA256 of email (with pepper)
     password_hash VARCHAR(256),                  -- Argon2id hash
     is_active BOOLEAN DEFAULT true,
     verification_tier INTEGER DEFAULT 0,         -- 0=phone, 1=photo, 2=ID, 3=refs
+    role VARCHAR(20) DEFAULT 'user',             -- user | moderator | admin | superadmin (RBAC)
     onboarding_completed BOOLEAN DEFAULT false,
     onboarding_step INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -1968,7 +1970,7 @@ The webhook handler processes two event types:
 | `checkout.session.completed` | Activate subscription: cancel existing, create new with tier features |
 | `customer.subscription.deleted` | Set subscription status to `cancelled` |
 
-**Important:** The webhook currently does NOT verify Stripe signatures (`stripe.webhooks.constructEvent`). The `STRIPE_SECRET_KEY` env var is optional — if not set, `getStripe()` returns `null` and checkout returns 503.
+**Signature verification:** The webhook uses `stripe.webhooks.constructEvent(rawBody, sigHeader, webhookSecret)` with the `STRIPE_WEBHOOK_SECRET` env var. Forged webhooks return 400. The webhook route uses `express.raw({ type: 'application/json' })` for raw body parsing (required for signature verification).
 
 ---
 
@@ -2034,18 +2036,24 @@ Helmet applies these headers by default:
 
 ### 15.5 PII Hashing
 
-All personally identifiable information is hashed with SHA-256 before storage:
+Phone and email use HMAC-SHA256 with a server-side pepper (not plain SHA-256). Utility functions in `/backend/src/utils/hash.ts`:
+- `hashPhone(phone)` — `crypto.createHmac('sha256', PEPPER).update(phone).digest('hex')`
+- `hashEmail(email)` — Same, with `email.toLowerCase()` before hashing
+
+The `PHONE_HASH_PEPPER` env var is required; generate with `openssl rand -hex 32`.
+
+**Threat model:** Plain SHA-256 of phone numbers is trivially reversible (10B possible numbers, rainbow tables). HMAC with server-side pepper requires compromising the pepper to attack; the pepper is never stored with the data.
 
 | Field | Hashed as | Stored in |
 |-------|----------|-----------|
-| Phone number | `crypto.createHash('sha256').update(phone).digest('hex')` | `users.phone_hash` |
-| Email | Same | `users.email_hash`, `venue_accounts.email_hash` |
-| ID document | Same | `verifications.id_document_hash` |
-| Emergency contact phone | Same | `emergency_contacts.phone_hash` |
-| Venue contact phone | Same | `venue_accounts.contact_phone_hash` |
-| IP address | Same | `audit_logs.ip_hash` |
-| User agent | Same | `audit_logs.user_agent_hash` |
-| Venue address | Same | `venues.address_hash` |
+| Phone number | `hashPhone()` (HMAC-SHA256 + pepper) | `users.phone_hash` |
+| Email | `hashEmail()` (HMAC-SHA256 + pepper) | `users.email_hash`, `venue_accounts.email_hash` |
+| ID document | `hashGeneric()` (SHA-256) | `verifications.id_document_hash` |
+| Emergency contact phone | `hashPhone()` | `emergency_contacts.phone_hash` |
+| Venue contact phone | `hashPhone()` | `venue_accounts.contact_phone_hash` |
+| IP address | `hashGeneric()` | `audit_logs.ip_hash` |
+| User agent | `hashGeneric()` | `audit_logs.user_agent_hash` |
+| Venue address | `hashGeneric()` | `venues.address_hash` |
 
 ### 15.6 Audit Logging Scope
 
@@ -2160,13 +2168,11 @@ No k6 scripts exist yet. The performance targets (100k concurrent, <200ms p95) i
 
 ### 17.2 Admin Power Constraints
 
-**Current:** Any tier 2 user can ban other users, resolve reports, and access all admin endpoints. There are no checks, quorum requirements, or appeal mechanisms.
+**Current:** RBAC is implemented: `role` column (`user` | `moderator` | `admin` | `superadmin`), `requireRole('moderator')` for admin routes, `requireRole('admin')` for destructive actions (banning). `admin_actions` table logs every admin action with justification; `logAdminAction()` is called on report resolution and user bans.
 
 **Needed:**
 - Quorum for destructive admin actions (require 2+ admins to agree)
 - Appeal flow for banned users
-- Admin action audit with mandatory justification
-- Separate admin role vs. regular tier 2 user
 
 ### 17.3 MongoDB Consolidation Decision
 
@@ -2204,7 +2210,6 @@ The mobile app's API client uses `window.localStorage` for token persistence on 
 |---------|--------|-------|
 | SMS notifications to emergency contacts | Schema ready, integration pending | Twilio SDK imported but not called on panic |
 | Missed check-in alerts | Schema ready, worker not built | `expected_next_at` and `alert_sent` columns exist |
-| Stripe webhook signature verification | Not implemented | Webhook accepts raw body without validation |
 | Push notification delivery | Infrastructure ready | Uses Expo push API; needs EAS project setup |
 | Photo moderation | Schema ready, auto-approve | `moderation_status` defaults to `auto_approved`; no AI moderation |
 | Content flagging automation | Schema ready, manual only | `content_flags` table exists but no automated detection |
@@ -2234,7 +2239,9 @@ The mobile app's API client uses `window.localStorage` for token persistence on 
 | `TWILIO_ACCOUNT_SID` | — | Prod only | Twilio account SID for SMS OTP |
 | `TWILIO_AUTH_TOKEN` | — | Prod only | Twilio auth token |
 | `TWILIO_PHONE_NUMBER` | — | Prod only | Twilio sender phone number |
-| `STRIPE_SECRET_KEY` | — | Prod only | Stripe secret key for billing |
+| `PHONE_HASH_PEPPER` | — | Yes | HMAC secret for phone/email hashing. Generate with `openssl rand -hex 32` |
+| `STRIPE_SECRET_KEY` | — | Prod only | Stripe API secret key |
+| `STRIPE_WEBHOOK_SECRET` | — | Prod only | Stripe webhook signing secret (from Stripe dashboard) |
 | `APP_URL` | `shhh://` | No | App deep link scheme for Stripe redirect |
 
 ---
@@ -2255,10 +2262,9 @@ The mobile app's API client uses `window.localStorage` for token persistence on 
 - [ ] **Set up Stripe:**
   - Create Stripe account
   - Get secret key
-  - Set `STRIPE_SECRET_KEY`
+  - Set `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`
   - Configure webhook endpoint: `https://api.shhh.app/v1/billing/webhook`
   - Enable `checkout.session.completed` and `customer.subscription.deleted` events
-  - **Add webhook signature verification** (currently missing!)
 - [ ] **Domain & SSL:**
   - Register `shhh.app` domain
   - Configure ACM certificate in AWS
