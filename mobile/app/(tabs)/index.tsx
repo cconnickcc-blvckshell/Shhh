@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Dimensions, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { discoverApi, usersApi } from '../../src/api/client';
-import { colors, spacing, fontSize } from '../../src/constants/theme';
+import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 interface NearbyUser {
   userId: string;
@@ -12,88 +12,113 @@ interface NearbyUser {
   verificationStatus: string;
   experienceLevel: string;
   isHost: boolean;
+  gender: string | null;
+}
+
+const TILE_GAP = 3;
+
+function formatDistance(meters: number): string {
+  if (meters < 1000) return `${meters}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+}
+
+function verificationIcon(status: string): { icon: string; color: string } | null {
+  if (status === 'reference_verified') return { icon: 'shield-checkmark', color: colors.trusted };
+  if (status === 'id_verified') return { icon: 'checkmark-circle', color: colors.verified };
+  if (status === 'photo_verified') return { icon: 'camera', color: colors.info };
+  return null;
 }
 
 export default function DiscoverScreen() {
   const [users, setUsers] = useState<NearbyUser[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const { width } = useWindowDimensions();
+
+  const numCols = width > 600 ? 3 : 2;
+  const tileSize = (width - TILE_GAP * (numCols + 1)) / numCols;
 
   const load = useCallback(async () => {
     try {
       await discoverApi.updateLocation(40.7128, -74.006);
       const res = await discoverApi.nearby(40.7128, -74.006, 50);
-      setUsers(res.data);
+      setUsers(res.data.sort((a: NearbyUser, b: NearbyUser) => a.distance - b.distance));
     } catch {}
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  };
+  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   const handleLike = async (userId: string) => {
     const res = await usersApi.like(userId);
     if (res.data.matched) {
-      setUsers(prev => prev.map(u => u.userId === userId ? { ...u, displayName: `💕 ${u.displayName}` } : u));
+      setUsers(prev => prev.map(u => u.userId === userId ? { ...u, displayName: `${u.displayName} 💕` } : u));
     } else {
       setUsers(prev => prev.filter(u => u.userId !== userId));
     }
   };
 
-  const badgeColor = (status: string) => {
-    if (status === 'reference_verified') return colors.trusted;
-    if (status === 'id_verified') return colors.verified;
-    if (status === 'photo_verified') return colors.info;
-    return colors.textMuted;
-  };
+  const renderTile = ({ item }: { item: NearbyUser }) => {
+    const badge = verificationIcon(item.verificationStatus);
+    return (
+      <TouchableOpacity
+        style={[styles.tile, { width: tileSize, height: tileSize * 1.35 }]}
+        activeOpacity={0.85}
+        onLongPress={() => handleLike(item.userId)}
+      >
+        <View style={styles.tilePhoto}>
+          <Ionicons name="person" size={tileSize * 0.3} color={colors.textMuted} />
+        </View>
 
-  const renderUser = ({ item }: { item: NearbyUser }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.avatar}>
-          <Ionicons name="person" size={32} color={colors.textMuted} />
-        </View>
-        <View style={styles.info}>
-          <View style={styles.nameRow}>
-            <Text style={styles.name}>{item.displayName}</Text>
-            {item.isHost && <Text style={styles.hostBadge}>🏠 Host</Text>}
+        <View style={styles.tileOverlay}>
+          <View style={styles.tileTopRow}>
+            {item.isHost && (
+              <View style={styles.hostPill}>
+                <Text style={styles.hostText}>HOST</Text>
+              </View>
+            )}
+            {badge && (
+              <Ionicons name={badge.icon as any} size={14} color={badge.color} />
+            )}
           </View>
-          <View style={styles.metaRow}>
-            <Text style={[styles.badge, { color: badgeColor(item.verificationStatus) }]}>
-              ● {item.verificationStatus.replace('_', ' ')}
-            </Text>
-            <Text style={styles.distance}>{(item.distance / 1000).toFixed(1)} km</Text>
+
+          <View style={styles.tileBottom}>
+            <Text style={styles.tileName} numberOfLines={1}>{item.displayName}</Text>
+            <View style={styles.tileMetaRow}>
+              <View style={styles.distancePill}>
+                <Ionicons name="location" size={10} color={colors.primary} />
+                <Text style={styles.distanceText}>{formatDistance(item.distance)}</Text>
+              </View>
+              {item.gender && (
+                <Text style={styles.tileGender}>{item.gender}</Text>
+              )}
+            </View>
           </View>
         </View>
-      </View>
-      {item.bio ? <Text style={styles.bio} numberOfLines={2}>{item.bio}</Text> : null}
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.passBtn} onPress={() => setUsers(prev => prev.filter(u => u.userId !== item.userId))}>
-          <Ionicons name="close" size={24} color={colors.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.likeBtn} onPress={() => handleLike(item.userId)}>
-          <Ionicons name="heart" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+
+        <View style={styles.onlineDot} />
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <FlatList
         data={users}
         keyExtractor={(item) => item.userId}
-        renderItem={renderUser}
-        contentContainerStyle={styles.list}
+        renderItem={renderTile}
+        numColumns={numCols}
+        key={`grid-${numCols}`}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.grid}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="compass-outline" size={64} color={colors.textMuted} />
-            <Text style={styles.emptyText}>No one nearby yet</Text>
-            <Text style={styles.emptySubtext}>Pull down to refresh</Text>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="compass-outline" size={48} color={colors.textMuted} />
+            </View>
+            <Text style={styles.emptyTitle}>No one nearby</Text>
+            <Text style={styles.emptySub}>Pull down to refresh or expand your radius</Text>
           </View>
         }
       />
@@ -103,22 +128,89 @@ export default function DiscoverScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: spacing.md },
-  card: { backgroundColor: colors.surface, borderRadius: 16, padding: spacing.lg, marginBottom: spacing.md },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
-  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
-  info: { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { fontSize: fontSize.lg, fontWeight: '600', color: colors.text },
-  hostBadge: { fontSize: fontSize.xs, color: colors.warning, backgroundColor: 'rgba(253,203,110,0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 },
-  badge: { fontSize: fontSize.xs },
-  distance: { fontSize: fontSize.xs, color: colors.textMuted },
-  bio: { fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.md },
-  actions: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
-  passBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' },
-  likeBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 100 },
-  emptyText: { fontSize: fontSize.lg, color: colors.textSecondary, marginTop: spacing.md },
-  emptySubtext: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: spacing.xs },
+  grid: { padding: TILE_GAP / 2 },
+  row: { gap: TILE_GAP },
+  tile: {
+    marginBottom: TILE_GAP,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+    backgroundColor: colors.card,
+    position: 'relative',
+  },
+  tilePhoto: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceElevated,
+  },
+  tileOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'space-between',
+    padding: spacing.sm,
+  },
+  tileTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  hostPill: {
+    backgroundColor: 'rgba(255,165,2,0.85)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  hostText: { color: '#000', fontSize: fontSize.xxs, fontWeight: '800', letterSpacing: 0.5 },
+  tileBottom: {
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    marginHorizontal: -spacing.sm,
+    marginBottom: -spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  tileName: {
+    color: colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+  },
+  tileMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 3,
+  },
+  distancePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  distanceText: {
+    color: colors.textSecondary,
+    fontSize: fontSize.xxs,
+    fontWeight: '600',
+  },
+  tileGender: {
+    color: colors.textMuted,
+    fontSize: fontSize.xxs,
+  },
+  onlineDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.online,
+    borderWidth: 1.5,
+    borderColor: colors.card,
+  },
+  empty: { alignItems: 'center', paddingTop: 120 },
+  emptyIcon: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: colors.surfaceElevated,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  emptyTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '600' },
+  emptySub: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.xs },
 });

@@ -4,7 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { messagingApi } from '../../src/api/client';
 import { useAuthStore } from '../../src/stores/auth';
-import { colors, spacing, fontSize } from '../../src/constants/theme';
+import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 interface Message {
   _id: string;
@@ -38,14 +38,19 @@ export default function ChatScreen() {
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isMine = item.senderId === userId;
+    const time = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     return (
-      <View style={[styles.msgRow, isMine && styles.msgRowMine]}>
-        <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
-          <Text style={styles.msgText}>{item.content}</Text>
-          <View style={styles.msgMeta}>
-            {item.expiresAt && <Ionicons name="timer-outline" size={10} color={colors.warning} />}
-            <Text style={styles.msgTime}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-          </View>
+      <View style={[msgStyles.row, isMine && msgStyles.rowMine]}>
+        <View style={[msgStyles.bubble, isMine ? msgStyles.bubbleMine : msgStyles.bubbleTheirs]}>
+          {item.expiresAt && (
+            <View style={msgStyles.selfDestructLabel}>
+              <Ionicons name="timer" size={10} color={colors.warning} />
+              <Text style={msgStyles.selfDestructText}>Self-destructing</Text>
+            </View>
+          )}
+          <Text style={[msgStyles.text, !isMine && { color: colors.text }]}>{item.content}</Text>
+          <Text style={[msgStyles.time, !isMine && { color: colors.textMuted }]}>{time}</Text>
         </View>
       </View>
     );
@@ -61,40 +66,71 @@ export default function ChatScreen() {
         inverted
         contentContainerStyle={styles.list}
       />
+
       <View style={styles.inputBar}>
-        <TouchableOpacity onPress={() => setSelfDestruct(!selfDestruct)} style={[styles.timerBtn, selfDestruct && styles.timerActive]}>
-          <Ionicons name="timer-outline" size={20} color={selfDestruct ? colors.warning : colors.textMuted} />
+        <TouchableOpacity
+          onPress={() => setSelfDestruct(!selfDestruct)}
+          style={[styles.iconBtn, selfDestruct && styles.iconBtnActive]}
+        >
+          <Ionicons name="timer" size={20} color={selfDestruct ? colors.warning : colors.textMuted} />
         </TouchableOpacity>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder={selfDestruct ? 'Self-destructing message...' : 'Message...'}
-          placeholderTextColor={colors.textMuted}
-          multiline
-        />
-        <TouchableOpacity style={styles.sendBtn} onPress={send}>
-          <Ionicons name="send" size={20} color="#fff" />
+
+        <TouchableOpacity style={styles.iconBtn}>
+          <Ionicons name="camera" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder={selfDestruct ? 'Self-destructing...' : 'Type a message'}
+            placeholderTextColor={colors.textMuted}
+            multiline
+            onSubmitEditing={send}
+          />
+        </View>
+
+        <TouchableOpacity style={[styles.sendBtn, !input.trim() && styles.sendBtnDisabled]} onPress={send} disabled={!input.trim()}>
+          <Ionicons name="arrow-up" size={18} color="#fff" />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
+const msgStyles = StyleSheet.create({
+  row: { marginBottom: spacing.xs, alignItems: 'flex-start', paddingHorizontal: spacing.md },
+  rowMine: { alignItems: 'flex-end' },
+  bubble: { maxWidth: '78%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18 },
+  bubbleMine: { backgroundColor: colors.primary, borderBottomRightRadius: 6 },
+  bubbleTheirs: { backgroundColor: colors.surfaceElevated, borderBottomLeftRadius: 6 },
+  selfDestructLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+  selfDestructText: { color: colors.warning, fontSize: fontSize.xxs, fontWeight: '600' },
+  text: { color: colors.textOnPrimary, fontSize: fontSize.md, lineHeight: 20 },
+  time: { color: 'rgba(255,255,255,0.55)', fontSize: fontSize.xxs, marginTop: 4, alignSelf: 'flex-end' },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: spacing.md },
-  msgRow: { marginBottom: spacing.sm, alignItems: 'flex-start' },
-  msgRowMine: { alignItems: 'flex-end' },
-  bubble: { maxWidth: '80%', padding: 12, borderRadius: 16 },
-  bubbleMine: { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
-  bubbleTheirs: { backgroundColor: colors.surface, borderBottomLeftRadius: 4 },
-  msgText: { color: colors.text, fontSize: fontSize.md },
-  msgMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  msgTime: { fontSize: fontSize.xs, color: 'rgba(255,255,255,0.6)' },
-  inputBar: { flexDirection: 'row', alignItems: 'flex-end', padding: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface },
-  timerBtn: { padding: spacing.sm, marginRight: 4 },
-  timerActive: { backgroundColor: 'rgba(253,203,110,0.2)', borderRadius: 8 },
-  input: { flex: 1, backgroundColor: colors.surfaceLight, color: colors.text, padding: 10, borderRadius: 20, fontSize: fontSize.md, maxHeight: 100 },
-  sendBtn: { backgroundColor: colors.primary, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.sm },
+  list: { paddingVertical: spacing.md },
+  inputBar: {
+    flexDirection: 'row', alignItems: 'flex-end',
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.sm,
+    borderTopWidth: 0.5, borderTopColor: colors.border,
+    backgroundColor: colors.surface, gap: 6,
+  },
+  iconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  iconBtnActive: { backgroundColor: 'rgba(255,165,2,0.15)' },
+  inputWrapper: { flex: 1 },
+  input: {
+    backgroundColor: colors.surfaceElevated, color: colors.text,
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: borderRadius.xl, fontSize: fontSize.md, maxHeight: 100,
+  },
+  sendBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
+  },
+  sendBtnDisabled: { backgroundColor: colors.surfaceLight },
 });

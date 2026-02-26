@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Link } from 'expo-router';
 import { useAuthStore } from '../../src/stores/auth';
-import { colors, spacing, fontSize } from '../../src/constants/theme';
+import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState('');
@@ -10,41 +10,51 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (phone.length < 10) return;
-    try {
-      await login(phone);
-    } catch {}
+    try { await login(phone); } catch {}
   };
 
   return (
     <View style={styles.container}>
+      <View style={styles.topSpace} />
       <View style={styles.card}>
-        <Text style={styles.emoji}>🔐</Text>
-        <Text style={styles.title}>Shhh</Text>
+        <Text style={styles.logo}>Shhh</Text>
         <Text style={styles.subtitle}>Welcome back</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Phone number"
-          placeholderTextColor={colors.textMuted}
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-          autoComplete="tel"
-        />
+        <View style={styles.inputWrapper}>
+          <Text style={styles.inputLabel}>Phone</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="+1 (555) 000-0000"
+            placeholderTextColor={colors.textMuted}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            autoComplete="tel"
+          />
+        </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
+        <TouchableOpacity
+          style={[styles.button, phone.length < 10 && styles.buttonDisabled]}
+          onPress={handleLogin}
+          disabled={isLoading || phone.length < 10}
+          activeOpacity={0.8}
+        >
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Login</Text>
+            <Text style={styles.buttonText}>Continue</Text>
           )}
         </TouchableOpacity>
 
         <Link href="/(auth)/register" asChild>
           <TouchableOpacity style={styles.linkButton}>
-            <Text style={styles.linkText}>New here? Create account</Text>
+            <Text style={styles.linkText}>Don't have an account? <Text style={styles.linkBold}>Sign up</Text></Text>
           </TouchableOpacity>
         </Link>
       </View>
@@ -53,15 +63,27 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, padding: spacing.lg },
-  card: { backgroundColor: colors.surface, padding: spacing.xl, borderRadius: 16, width: '100%', maxWidth: 400, alignItems: 'center' },
-  emoji: { fontSize: 48, marginBottom: spacing.sm },
-  title: { fontSize: fontSize.xxl, fontWeight: 'bold', color: colors.primary, marginBottom: spacing.xs },
-  subtitle: { fontSize: fontSize.md, color: colors.textSecondary, marginBottom: spacing.xl },
-  input: { width: '100%', backgroundColor: colors.surfaceLight, color: colors.text, padding: 14, borderRadius: 10, fontSize: fontSize.md, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border },
-  error: { color: colors.danger, fontSize: fontSize.sm, marginBottom: spacing.sm },
-  button: { width: '100%', backgroundColor: colors.primary, padding: 14, borderRadius: 10, alignItems: 'center', marginBottom: spacing.md },
-  buttonText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '600' },
-  linkButton: { padding: spacing.sm },
-  linkText: { color: colors.textSecondary, fontSize: fontSize.sm },
+  container: { flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.lg },
+  topSpace: { flex: 0.3 },
+  card: { width: '100%', maxWidth: 400, alignSelf: 'center' },
+  logo: { fontSize: 44, fontWeight: '900', color: colors.primary, textAlign: 'center', marginBottom: spacing.xs, letterSpacing: -1 },
+  subtitle: { fontSize: fontSize.md, color: colors.textMuted, textAlign: 'center', marginBottom: spacing.xl },
+  inputWrapper: { marginBottom: spacing.md },
+  inputLabel: { color: colors.textSecondary, fontSize: fontSize.xs, fontWeight: '600', marginBottom: spacing.xs, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: {
+    backgroundColor: colors.surfaceElevated, color: colors.text,
+    padding: 16, borderRadius: borderRadius.md, fontSize: fontSize.lg,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  errorBox: { backgroundColor: 'rgba(255,71,87,0.1)', padding: spacing.sm, borderRadius: borderRadius.sm, marginBottom: spacing.md },
+  errorText: { color: colors.danger, fontSize: fontSize.sm },
+  button: {
+    backgroundColor: colors.primary, padding: 16, borderRadius: borderRadius.md,
+    alignItems: 'center', marginBottom: spacing.lg,
+  },
+  buttonDisabled: { backgroundColor: colors.surfaceLight },
+  buttonText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '700' },
+  linkButton: { alignItems: 'center', paddingVertical: spacing.sm },
+  linkText: { color: colors.textMuted, fontSize: fontSize.sm },
+  linkBold: { color: colors.primary, fontWeight: '600' },
 });
