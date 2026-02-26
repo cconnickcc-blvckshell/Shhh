@@ -17,6 +17,12 @@ import safetyRoutes from './modules/safety/safety.routes';
 import venuesRoutes from './modules/venues/venues.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import mediaRoutes from './modules/media/media.routes';
+import presenceRoutes from './modules/discovery/presence.routes';
+import personaRoutes from './modules/users/persona.routes';
+import venueIdentityRoutes from './modules/venues/venue-identity.routes';
+import sessionRoutes from './modules/messaging/session.routes';
+import blurRoutes from './modules/users/blur.routes';
+import intentRoutes from './modules/users/intent.routes';
 import path from 'path';
 import { TrustScoreService } from './modules/users/trust.service';
 import { authenticate as authMiddleware } from './middleware/auth';
@@ -43,11 +49,14 @@ export function createApp() {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      version: '0.3.0',
+      version: '0.4.0',
       modules: [
         'auth', 'users', 'couples', 'verification', 'references',
-        'discovery', 'messaging', 'events', 'venues', 'safety',
-        'compliance', 'admin', 'media', 'albums',
+        'discovery', 'presence', 'personas', 'intents',
+        'messaging', 'sessions', 'events',
+        'venues', 'venue-identity', 'safety',
+        'media', 'albums', 'blur-reveal',
+        'compliance', 'admin',
       ],
     });
   });
@@ -68,6 +77,18 @@ export function createApp() {
   // Media & Albums
   app.use('/v1/media', mediaRoutes);
   app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
+
+  // Presence, Personas, Intents
+  app.use('/v1/presence', presenceRoutes);
+  app.use('/v1/personas', personaRoutes);
+  app.use('/v1/intents', intentRoutes);
+
+  // Venue Identity
+  app.use('/v1/venues', venueIdentityRoutes);
+
+  // Chat Sessions & Blur/Reveal
+  app.use('/v1/conversations', sessionRoutes);
+  app.use('/v1/photos', blurRoutes);
 
   // Admin API
   app.use('/v1/admin', adminRoutes);
