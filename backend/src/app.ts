@@ -26,6 +26,8 @@ import intentRoutes from './modules/users/intent.routes';
 import e2eeRoutes from './modules/messaging/e2ee.routes';
 import billingRoutes from './modules/billing/billing.routes';
 import whisperRoutes from './modules/discovery/whisper.routes';
+import adRoutes from './modules/ads/ad.routes';
+import venueDashboardRoutes from './modules/venues/venue-dashboard.routes';
 import path from 'path';
 import { TrustScoreService } from './modules/users/trust.service';
 import { authenticate as authMiddleware } from './middleware/auth';
@@ -89,8 +91,12 @@ export function createApp() {
   // Whispers
   app.use('/v1/whispers', whisperRoutes);
 
-  // Venue Identity
+  // Ads
+  app.use('/v1/ads', adRoutes);
+
+  // Venue Identity + Dashboard
   app.use('/v1/venues', venueIdentityRoutes);
+  app.use('/v1/venues', venueDashboardRoutes);
 
   // Chat Sessions, Blur/Reveal, E2EE
   app.use('/v1/conversations', sessionRoutes);
