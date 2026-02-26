@@ -1,26 +1,40 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Shhh",
+    "slug": "shhh",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#050508"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "app.shhh.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Shhh needs camera access for profile photos and verification",
+        "NSPhotoLibraryUsageDescription": "Shhh needs photo library access to upload profile pictures",
+        "NSLocationWhenInUseUsageDescription": "Shhh uses your location to show people nearby",
+        "NSLocationAlwaysUsageDescription": "Shhh uses background location to update your distance to others"
+      }
     },
     "android": {
+      "package": "app.shhh.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#050508",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -30,7 +44,25 @@
     "scheme": "shhh",
     "plugins": [
       "expo-router",
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Shhh uses your location to show people nearby"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Shhh needs access to your photos for profile pictures and albums",
+          "cameraPermission": "Shhh needs camera access for profile photos and verification"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    }
   }
 }
