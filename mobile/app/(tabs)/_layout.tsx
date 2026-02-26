@@ -7,19 +7,19 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: colors.background, elevation: 0, shadowOpacity: 0, borderBottomWidth: 0 },
+        headerStyle: { backgroundColor: '#000', elevation: 0, shadowOpacity: 0, borderBottomWidth: 0 },
         headerTitleStyle: { color: colors.text, fontWeight: '700', fontSize: fontSize.lg },
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopWidth: 0,
-          height: 60,
-          paddingBottom: 6,
-          paddingTop: 6,
+          backgroundColor: '#050508',
+          borderTopWidth: 0.5,
+          borderTopColor: 'rgba(147,51,234,0.15)',
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
         tabBarActiveTintColor: colors.primaryLight,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontSize: fontSize.xxs, fontWeight: '600' },
-        tabBarBackground: () => <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, borderTopWidth: 0.5, borderTopColor: colors.border }]} />,
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.3)',
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700', letterSpacing: 0.3 },
       }}
     >
       <Tabs.Screen
@@ -28,8 +28,9 @@ export default function TabLayout() {
           title: 'Explore',
           headerTitle: '',
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIcon : undefined}>
-              <Ionicons name="grid" size={22} color={color} />
+            <View style={focused ? s.activeWrap : s.inactiveWrap}>
+              <Ionicons name={focused ? 'grid' : 'grid-outline'} size={21} color={color} />
+              {focused && <View style={s.activeDot} />}
             </View>
           ),
         }}
@@ -39,8 +40,9 @@ export default function TabLayout() {
         options={{
           title: 'Chat',
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIcon : undefined}>
-              <Ionicons name="chatbubble-ellipses" size={22} color={color} />
+            <View style={focused ? s.activeWrap : s.inactiveWrap}>
+              <Ionicons name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} size={21} color={color} />
+              {focused && <View style={s.activeDot} />}
             </View>
           ),
         }}
@@ -50,8 +52,9 @@ export default function TabLayout() {
         options={{
           title: 'Events',
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIcon : undefined}>
-              <Ionicons name="flame" size={22} color={color} />
+            <View style={focused ? s.activeWrap : s.inactiveWrap}>
+              <Ionicons name={focused ? 'flame' : 'flame-outline'} size={21} color={color} />
+              {focused && <View style={s.activeDot} />}
             </View>
           ),
         }}
@@ -61,8 +64,9 @@ export default function TabLayout() {
         options={{
           title: 'Me',
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIcon : undefined}>
-              <Ionicons name="person-circle" size={24} color={color} />
+            <View style={focused ? s.activeWrap : s.inactiveWrap}>
+              <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={23} color={color} />
+              {focused && <View style={s.activeDot} />}
             </View>
           ),
         }}
@@ -71,10 +75,12 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  activeIcon: {
-    backgroundColor: colors.primarySoft,
-    borderRadius: 12,
-    padding: 4,
+const s = StyleSheet.create({
+  activeWrap: { alignItems: 'center' },
+  inactiveWrap: { alignItems: 'center', opacity: 0.6 },
+  activeDot: {
+    width: 4, height: 4, borderRadius: 2,
+    backgroundColor: colors.primaryLight,
+    marginTop: 3,
   },
 });

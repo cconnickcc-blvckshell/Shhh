@@ -3,13 +3,13 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usersApi } from '../../src/api/client';
+import { useAuthStore } from '../../src/stores/auth';
 import { usePhotoUpload } from '../../src/hooks/usePhotoUpload';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
-import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 const GENDERS = ['man', 'woman', 'couple', 'trans_man', 'trans_woman', 'non_binary', 'other'];
-const EXPERIENCE_LEVELS = ['new', 'curious', 'experienced', 'veteran'];
+const EXP = ['new', 'curious', 'experienced', 'veteran'];
 
 export default function EditProfileScreen() {
   const { profile, loadProfile } = useAuthStore();
@@ -17,11 +17,11 @@ export default function EditProfileScreen() {
   const [bio, setBio] = useState('');
   const [gender, setGender] = useState('');
   const [sexuality, setSexuality] = useState('');
-  const [experienceLevel, setExperienceLevel] = useState('');
+  const [exp, setExp] = useState('');
   const [isHost, setIsHost] = useState(false);
   const [kinks, setKinks] = useState('');
-  const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
   const { pickAndUpload, uploading } = usePhotoUpload();
 
   useEffect(() => {
@@ -30,144 +30,147 @@ export default function EditProfileScreen() {
       setBio(profile.bio || '');
       setGender(profile.gender || '');
       setSexuality(profile.sexuality || '');
-      setExperienceLevel(profile.experienceLevel || '');
+      setExp(profile.experienceLevel || '');
       setIsHost(profile.isHost || false);
       setKinks((profile.kinks || []).join(', '));
       setPhotos(profile.photosJson || []);
     }
   }, [profile]);
 
-  const handleAddPhoto = async () => {
+  const addPhoto = async () => {
     const result = await pickAndUpload('photos');
-    if (result) {
-      setPhotos(prev => [...prev, result.url]);
-    }
+    if (result) setPhotos(p => [...p, result.url]);
   };
 
   const save = async () => {
     setSaving(true);
     try {
-      await usersApi.updateMe({
-        displayName, bio, gender, sexuality, experienceLevel, isHost,
-        kinks: kinks.split(',').map((k: string) => k.trim()).filter(Boolean),
-        photosJson: photos,
-      });
+      await usersApi.updateMe({ displayName, bio, gender, sexuality, experienceLevel: exp, isHost, kinks: kinks.split(',').map(k => k.trim()).filter(Boolean), photosJson: photos });
       await loadProfile();
-      Alert.alert('Saved', 'Profile updated successfully');
       router.back();
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally { setSaving(false); }
+    } catch (err: any) { Alert.alert('Error', err.message); }
+    finally { setSaving(false); }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+    <ScrollView style={s.container} bounces={false}>
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Ionicons name="close" size={22} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>Edit Profile</Text>
-        <TouchableOpacity onPress={save} disabled={saving} style={styles.saveBtn}>
-          <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>{saving ? 'Saving...' : 'Save'}</Text>
+        <Text style={s.headerTitle}>Edit Profile</Text>
+        <TouchableOpacity onPress={save} disabled={saving} style={s.saveBtn}>
+          <Text style={[s.saveText, saving && { opacity: 0.4 }]}>{saving ? '...' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>PHOTOS</Text>
-        <View style={styles.photoGrid}>
-          {photos.map((p, i) => (
-            <View key={i} style={styles.photoSlot}>
-              <ProfilePhoto storagePath={p} size={80} borderRadius={12} />
-              <TouchableOpacity style={styles.photoRemove} onPress={() => setPhotos(prev => prev.filter((_, j) => j !== i))}>
-                <Ionicons name="close-circle" size={20} color={colors.danger} />
+      {/* Photo grid — HERO */}
+      <View style={s.photoSection}>
+        <View style={s.photoGrid}>
+          {[0, 1, 2, 3, 4, 5].map(i => {
+            const hasPhoto = photos[i];
+            return (
+              <TouchableOpacity
+                key={i}
+                style={[s.photoSlot, i === 0 && s.photoMain]}
+                onPress={hasPhoto ? () => setPhotos(p => p.filter((_, j) => j !== i)) : addPhoto}
+                disabled={!hasPhoto && uploading}
+                activeOpacity={0.8}
+              >
+                {hasPhoto ? (
+                  <View style={{ flex: 1 }}>
+                    <ProfilePhoto storagePath={photos[i]} size={i === 0 ? 200 : 100} borderRadius={i === 0 ? 16 : 12} />
+                    <View style={s.photoRemoveBtn}>
+                      <Ionicons name="close" size={14} color="#fff" />
+                    </View>
+                  </View>
+                ) : (
+                  <View style={s.photoEmpty}>
+                    {uploading ? <ActivityIndicator size="small" color={colors.primaryLight} /> : (
+                      <>
+                        <Ionicons name="add" size={24} color={colors.primaryLight} />
+                        {i === 0 && <Text style={s.photoLabel}>Main</Text>}
+                      </>
+                    )}
+                  </View>
+                )}
               </TouchableOpacity>
-            </View>
-          ))}
-          {photos.length < 6 && (
-            <TouchableOpacity style={styles.addPhotoBtn} onPress={handleAddPhoto} disabled={uploading}>
-              {uploading ? <ActivityIndicator color={colors.primaryLight} /> : <Ionicons name="add" size={28} color={colors.primaryLight} />}
-            </TouchableOpacity>
-          )}
+            );
+          })}
         </View>
       </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>DISPLAY NAME</Text>
-        <TextInput style={styles.input} value={displayName} onChangeText={setDisplayName} placeholder="Your name" placeholderTextColor={colors.textMuted} />
-      </View>
+      {/* Form */}
+      <View style={s.form}>
+        <Text style={s.label}>DISPLAY NAME</Text>
+        <TextInput style={s.input} value={displayName} onChangeText={setDisplayName} placeholder="Your name" placeholderTextColor="rgba(255,255,255,0.2)" />
 
-      <View style={styles.field}>
-        <Text style={styles.label}>BIO</Text>
-        <TextInput style={[styles.input, styles.textArea]} value={bio} onChangeText={setBio} placeholder="Tell others about yourself..." placeholderTextColor={colors.textMuted} multiline numberOfLines={4} />
-      </View>
+        <Text style={s.label}>BIO</Text>
+        <TextInput style={[s.input, s.textArea]} value={bio} onChangeText={setBio} placeholder="About you..." placeholderTextColor="rgba(255,255,255,0.2)" multiline />
 
-      <View style={styles.field}>
-        <Text style={styles.label}>GENDER</Text>
-        <View style={styles.chips}>
+        <Text style={s.label}>GENDER</Text>
+        <View style={s.chips}>
           {GENDERS.map(g => (
-            <TouchableOpacity key={g} style={[styles.chip, gender === g && styles.chipActive]} onPress={() => setGender(g)}>
-              <Text style={[styles.chipText, gender === g && styles.chipTextActive]}>{g.replace('_', ' ')}</Text>
+            <TouchableOpacity key={g} style={[s.chip, gender === g && s.chipActive]} onPress={() => setGender(g)}>
+              <Text style={[s.chipText, gender === g && s.chipTextActive]}>{g.replace('_', ' ')}</Text>
             </TouchableOpacity>
           ))}
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>SEXUALITY</Text>
-        <TextInput style={styles.input} value={sexuality} onChangeText={setSexuality} placeholder="e.g. bisexual, straight, pansexual" placeholderTextColor={colors.textMuted} />
-      </View>
+        <Text style={s.label}>SEXUALITY</Text>
+        <TextInput style={s.input} value={sexuality} onChangeText={setSexuality} placeholder="e.g. bisexual" placeholderTextColor="rgba(255,255,255,0.2)" />
 
-      <View style={styles.field}>
-        <Text style={styles.label}>EXPERIENCE LEVEL</Text>
-        <View style={styles.chips}>
-          {EXPERIENCE_LEVELS.map(e => (
-            <TouchableOpacity key={e} style={[styles.chip, experienceLevel === e && styles.chipActive]} onPress={() => setExperienceLevel(e)}>
-              <Text style={[styles.chipText, experienceLevel === e && styles.chipTextActive]}>{e}</Text>
+        <Text style={s.label}>EXPERIENCE</Text>
+        <View style={s.chips}>
+          {EXP.map(e => (
+            <TouchableOpacity key={e} style={[s.chip, exp === e && s.chipActive]} onPress={() => setExp(e)}>
+              <Text style={[s.chipText, exp === e && s.chipTextActive]}>{e}</Text>
             </TouchableOpacity>
           ))}
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>INTERESTS / KINKS</Text>
-        <TextInput style={styles.input} value={kinks} onChangeText={setKinks} placeholder="social, dancing, parties (comma separated)" placeholderTextColor={colors.textMuted} />
-      </View>
+        <Text style={s.label}>INTERESTS</Text>
+        <TextInput style={s.input} value={kinks} onChangeText={setKinks} placeholder="social, dancing, parties" placeholderTextColor="rgba(255,255,255,0.2)" />
 
-      <View style={styles.switchRow}>
-        <View>
-          <Text style={styles.switchLabel}>Available to Host</Text>
-          <Text style={styles.switchSub}>Show host badge on your profile</Text>
+        <View style={s.switchRow}>
+          <View>
+            <Text style={s.switchLabel}>Available to Host</Text>
+            <Text style={s.switchHint}>Show host badge</Text>
+          </View>
+          <Switch value={isHost} onValueChange={setIsHost} trackColor={{ false: 'rgba(255,255,255,0.1)', true: colors.primaryDark }} thumbColor={isHost ? colors.primaryLight : 'rgba(255,255,255,0.5)'} />
         </View>
-        <Switch value={isHost} onValueChange={setIsHost} trackColor={{ false: colors.surfaceLight, true: colors.primaryDark }} thumbColor={isHost ? colors.primary : colors.textMuted} />
       </View>
 
-      <View style={{ height: 60 }} />
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xl },
-  backBtn: { padding: spacing.xs },
-  title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
-  saveBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  saveText: { color: colors.primary, fontSize: fontSize.md, fontWeight: '700' },
-  field: { marginBottom: spacing.lg },
-  label: { color: colors.textMuted, fontSize: fontSize.xxs, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.sm },
-  input: { backgroundColor: colors.surfaceElevated, color: colors.text, padding: 14, borderRadius: borderRadius.md, fontSize: fontSize.md, borderWidth: 1, borderColor: colors.border },
-  textArea: { minHeight: 100, textAlignVertical: 'top' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: { backgroundColor: colors.surfaceElevated, paddingHorizontal: 16, paddingVertical: 10, borderRadius: borderRadius.full, borderWidth: 1, borderColor: colors.border },
-  chipActive: { backgroundColor: colors.primaryGlow, borderColor: colors.primary },
-  chipText: { color: colors.textSecondary, fontSize: fontSize.sm, textTransform: 'capitalize' },
-  chipTextActive: { color: colors.primary, fontWeight: '600' },
-  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  photoSlot: { position: 'relative' },
-  photoRemove: { position: 'absolute', top: -6, right: -6, backgroundColor: colors.background, borderRadius: 10 },
-  addPhotoBtn: { width: 80, height: 80, borderRadius: 12, backgroundColor: colors.surfaceElevated, borderWidth: 1.5, borderColor: colors.borderGlow, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
-  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.card, padding: spacing.lg, borderRadius: borderRadius.lg, marginBottom: spacing.lg },
-  switchLabel: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
-  switchSub: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  saveBtn: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 9, borderRadius: 20 },
+  saveText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  photoSection: { paddingHorizontal: 16, paddingVertical: 16 },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  photoSlot: { width: '31.5%', aspectRatio: 0.85, borderRadius: 12, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.06)' },
+  photoMain: { width: '48%', aspectRatio: 0.75, borderColor: 'rgba(147,51,234,0.3)', borderWidth: 2 },
+  photoRemoveBtn: { position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center' },
+  photoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  photoLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: '700' },
+  form: { paddingHorizontal: 16 },
+  label: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginTop: 20, marginBottom: 8 },
+  input: { backgroundColor: 'rgba(255,255,255,0.04)', color: '#fff', padding: 16, borderRadius: 14, fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  textArea: { minHeight: 90, textAlignVertical: 'top' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  chipActive: { backgroundColor: 'rgba(147,51,234,0.15)', borderColor: 'rgba(147,51,234,0.5)' },
+  chipText: { color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: '600', textTransform: 'capitalize' },
+  chipTextActive: { color: colors.primaryLight },
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, borderRadius: 14, marginTop: 20 },
+  switchLabel: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  switchHint: { color: 'rgba(255,255,255,0.3)', fontSize: 12, marginTop: 2 },
 });
