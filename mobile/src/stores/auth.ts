@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { router } from 'expo-router';
 import { authApi, usersApi, setAuthToken } from '../api/client';
 
 interface AuthState {
@@ -36,6 +37,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const res = await authApi.login(phone);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
+      router.replace('/(tabs)');
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
       throw err;
