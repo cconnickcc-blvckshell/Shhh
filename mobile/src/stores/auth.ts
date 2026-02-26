@@ -81,7 +81,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const res = await authApi.register(phone, displayName);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
-      router.replace('/(tabs)');
+      router.replace('/(auth)/onboarding');
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
       throw err;

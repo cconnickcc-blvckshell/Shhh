@@ -87,6 +87,10 @@ export default function ProfileScreen() {
         <View style={styles.div} />
         <MenuItem icon="call-outline" label="Emergency Contacts" onPress={() => {}} />
         <View style={styles.div} />
+        <MenuItem icon="ear-outline" label="Whispers" onPress={() => router.push('/whispers')} />
+        <View style={styles.div} />
+        <MenuItem icon="diamond-outline" label="Premium" onPress={() => router.push('/subscription')} badge={undefined} />
+        <View style={styles.div} />
         <MenuItem icon="lock-closed-outline" label="Privacy & Data" onPress={() => {}} />
       </View>
 

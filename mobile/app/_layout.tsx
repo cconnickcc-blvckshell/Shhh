@@ -20,6 +20,9 @@ export default function RootLayout() {
         <Stack.Screen name="verify/index" />
         <Stack.Screen name="user/[id]" />
         <Stack.Screen name="profile/status" />
+        <Stack.Screen name="venue/[id]" />
+        <Stack.Screen name="whispers/index" />
+        <Stack.Screen name="subscription/index" />
       </Stack>
     </QueryClientProvider>
   );
