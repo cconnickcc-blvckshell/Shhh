@@ -23,6 +23,7 @@ import venueIdentityRoutes from './modules/venues/venue-identity.routes';
 import sessionRoutes from './modules/messaging/session.routes';
 import blurRoutes from './modules/users/blur.routes';
 import intentRoutes from './modules/users/intent.routes';
+import preferencesRoutes from './modules/users/preferences.routes';
 import e2eeRoutes from './modules/messaging/e2ee.routes';
 import billingRoutes from './modules/billing/billing.routes';
 import whisperRoutes from './modules/discovery/whisper.routes';
@@ -87,6 +88,7 @@ export function createApp() {
   app.use('/v1/presence', presenceRoutes);
   app.use('/v1/personas', personaRoutes);
   app.use('/v1/intents', intentRoutes);
+  app.use('/v1/preferences', preferencesRoutes);
 
   // Whispers
   app.use('/v1/whispers', whisperRoutes);
