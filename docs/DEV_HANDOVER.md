@@ -2472,3 +2472,97 @@ Quick reference for how routes are mounted in `app.ts`:
 | `/health` | Inline handler | Returns `{status, timestamp, version, modules}` |
 
 > **Note:** Some prefixes are shared (e.g., `/v1/venues` has 3 route groups, `/v1/conversations` has 2). Express merges them — order matters for parameter matching.
+
+---
+
+## 21. Troubleshooting
+
+### Docker services healthy but API fails
+1. Check PostgreSQL: `sudo docker compose exec postgres pg_isready -U shhh_dev -d shhh`
+2. Check Redis: `sudo docker compose exec redis redis-cli ping`
+3. Check MongoDB: `sudo docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"`
+4. Check PostGIS: `sudo docker compose exec postgres psql -U shhh_dev -d shhh -c "SELECT PostGIS_Version();"`
+5. Check migrations: `cd backend && npm run migrate`
+6. Check `.env` file exists at workspace root (not in `/backend`)
+
+### Migration failures
+- If `functions in index predicate must be marked IMMUTABLE`: You used `NOW()` in a partial index WHERE clause. Use a plain index without the predicate.
+- If a migration partially applied: Delete the row from `schema_migrations` and drop any tables created by that migration, then re-run.
+- PostGIS extension missing: `sudo docker compose exec postgres psql -U shhh_dev -d shhh -c "CREATE EXTENSION IF NOT EXISTS postgis;"`
+
+### API returns 401 on all endpoints
+- JWT may have expired (15min in production, 2h in dev)
+- Token may have been generated with a different JWT_SECRET (after backend restart with changed env)
+- Clear Redis: `sudo docker compose exec redis redis-cli FLUSHALL`
+
+### Photos not loading in web preview
+- CORS issue: Helmet must have `crossOriginResourcePolicy: { policy: 'cross-origin' }`
+- Check the photo URL: `curl -I http://localhost:3000/uploads/photos/stock/person_1.jpg`
+- Verify `Cross-Origin-Resource-Policy: cross-origin` header is present
+
+### Rate limit hit during development
+- Auth rate limit is 50/15min in dev, 5/15min in production
+- Clear: `sudo docker compose exec redis redis-cli FLUSHALL`
+
+### Web preview shows login screen despite having token
+- Token in localStorage may be expired
+- Clear: Open DevTools Console → `localStorage.clear()` → refresh → re-login
+
+---
+
+## 22. Runbook
+
+### Rotate JWT secret
+1. Set new `JWT_SECRET` in `.env`
+2. Restart backend: `npm run dev`
+3. All existing tokens are now invalid — users must re-login
+4. To revoke all refresh tokens: `DELETE FROM refresh_tokens WHERE revoked_at IS NULL;`
+
+### Revoke all tokens globally
+```sql
+UPDATE refresh_tokens SET revoked_at = NOW() WHERE revoked_at IS NULL;
+```
+All users will be logged out on next token refresh.
+
+### Disable ads globally
+```sql
+UPDATE ad_controls SET value = '{"enabled": false}'::jsonb WHERE id = 'global';
+```
+No ads will be served until re-enabled. No backend restart needed.
+
+### Disable whispers (abuse spike)
+```sql
+-- Option 1: Expire all pending whispers
+UPDATE whispers SET status = 'expired' WHERE status IN ('pending', 'seen');
+
+-- Option 2: Block new whispers by setting max to 0
+-- In the WhisperService, MAX_PENDING_WHISPERS would need a DB/Redis override
+```
+
+### Emergency: ban a user immediately
+```sql
+UPDATE users SET is_active = false WHERE id = 'USER_UUID';
+INSERT INTO admin_actions (admin_user_id, action, target_type, target_id, justification)
+VALUES ('ADMIN_UUID', 'emergency_ban', 'user', 'USER_UUID', 'Reason for emergency ban');
+```
+
+### Rotate phone hash pepper
+1. This is a BREAKING CHANGE — all existing phone hashes become invalid
+2. Set new `PHONE_HASH_PEPPER` in `.env`
+3. Run a migration script to re-hash all phones (requires access to original phone numbers, which we don't store)
+4. **In practice: don't rotate the pepper. If compromised, rotate and force all users to re-register.**
+
+### Reset dev database completely
+```bash
+sudo docker compose down -v
+sudo docker compose up -d
+sleep 10
+cd backend && npm run migrate && npm run seed
+```
+
+### Load testing
+k6 scripts are at `/workspace/loadtest/`:
+- `k6 run loadtest/smoke.js` — 5 VUs, 30s
+- `k6 run loadtest/stress.js` — ramp to 500 VUs
+- Against production: `k6 run -e API_URL=https://api.shhh.app loadtest/smoke.js`
+
