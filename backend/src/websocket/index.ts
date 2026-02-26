@@ -1,22 +1,26 @@
 import { Server as HttpServer } from 'http';
-import { Server as SocketServer } from 'socket.io';
+import { Server as SocketServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { logger } from '../config/logger';
 import { AuthPayload } from '../middleware/auth';
 
+let io: SocketServer | null = null;
+
+export function getIO(): SocketServer | null {
+  return io;
+}
+
 export function setupWebSocket(httpServer: HttpServer): SocketServer {
-  const io = new SocketServer(httpServer, {
+  io = new SocketServer(httpServer, {
     cors: { origin: '*', methods: ['GET', 'POST'] },
     pingTimeout: 60000,
     pingInterval: 25000,
   });
 
-  io.use((socket, next) => {
+  io.use((socket: Socket, next) => {
     const token = socket.handshake.auth.token;
-    if (!token) {
-      return next(new Error('Authentication required'));
-    }
+    if (!token) return next(new Error('Authentication required'));
 
     try {
       const payload = jwt.verify(token, config.jwt.secret) as AuthPayload;
@@ -27,7 +31,7 @@ export function setupWebSocket(httpServer: HttpServer): SocketServer {
     }
   });
 
-  io.on('connection', (socket) => {
+  io.on('connection', (socket: Socket) => {
     const userId = socket.data.user.userId;
     logger.info({ userId }, 'WebSocket connected');
 
@@ -56,10 +60,43 @@ export function setupWebSocket(httpServer: HttpServer): SocketServer {
       });
     });
 
+    socket.on('message_read', (data: { conversationId: string; messageId: string }) => {
+      socket.to(`conversation:${data.conversationId}`).emit('message_read', {
+        userId,
+        conversationId: data.conversationId,
+        messageId: data.messageId,
+      });
+    });
+
     socket.on('disconnect', () => {
       logger.info({ userId }, 'WebSocket disconnected');
     });
   });
 
   return io;
+}
+
+export function emitNewMessage(conversationId: string, message: Record<string, unknown>) {
+  if (!io) return;
+  io.to(`conversation:${conversationId}`).emit('new_message', message);
+}
+
+export function emitToUser(userId: string, event: string, data: unknown) {
+  if (!io) return;
+  io.to(`user:${userId}`).emit(event, data);
+}
+
+export function emitMediaSelfDestructed(conversationId: string, mediaId: string) {
+  if (!io) return;
+  io.to(`conversation:${conversationId}`).emit('media_self_destructed', { mediaId });
+}
+
+export function emitAlbumShared(userId: string, albumData: Record<string, unknown>) {
+  if (!io) return;
+  io.to(`user:${userId}`).emit('album_shared', albumData);
+}
+
+export function emitAlbumRevoked(userId: string, albumId: string) {
+  if (!io) return;
+  io.to(`user:${userId}`).emit('album_revoked', { albumId });
 }

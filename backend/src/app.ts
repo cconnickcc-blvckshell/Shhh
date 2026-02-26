@@ -16,6 +16,8 @@ import referencesRoutes from './modules/references/references.routes';
 import safetyRoutes from './modules/safety/safety.routes';
 import venuesRoutes from './modules/venues/venues.routes';
 import adminRoutes from './modules/admin/admin.routes';
+import mediaRoutes from './modules/media/media.routes';
+import path from 'path';
 import { TrustScoreService } from './modules/users/trust.service';
 import { authenticate as authMiddleware } from './middleware/auth';
 import swaggerUi from 'swagger-ui-express';
@@ -41,11 +43,11 @@ export function createApp() {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      version: '0.2.0',
+      version: '0.3.0',
       modules: [
         'auth', 'users', 'couples', 'verification', 'references',
         'discovery', 'messaging', 'events', 'venues', 'safety',
-        'compliance', 'admin',
+        'compliance', 'admin', 'media', 'albums',
       ],
     });
   });
@@ -62,6 +64,10 @@ export function createApp() {
   app.use('/v1/venues', venuesRoutes);
   app.use('/v1/safety', safetyRoutes);
   app.use('/v1/compliance', complianceRoutes);
+
+  // Media & Albums
+  app.use('/v1/media', mediaRoutes);
+  app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
   // Admin API
   app.use('/v1/admin', adminRoutes);

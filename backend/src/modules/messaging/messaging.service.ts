@@ -1,6 +1,7 @@
 import { query } from '../../config/database';
 import { Message } from './message.model';
 import { v4 as uuidv4 } from 'uuid';
+import { emitNewMessage, emitToUser } from '../../websocket';
 
 export class MessagingService {
   async createConversation(participantIds: string[], type: 'direct' | 'group' | 'event' = 'direct') {
@@ -84,6 +85,29 @@ export class MessagingService {
        WHERE conversation_id = $1 AND user_id != $2`,
       [conversationId, senderId]
     );
+
+    emitNewMessage(conversationId, {
+      id: message._id,
+      conversationId,
+      senderId,
+      content,
+      contentType,
+      createdAt: message.createdAt,
+      expiresAt: message.expiresAt || null,
+    });
+
+    const participants = await query(
+      `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2 AND left_at IS NULL`,
+      [conversationId, senderId]
+    );
+    for (const p of participants.rows) {
+      emitToUser(p.user_id, 'notification', {
+        type: 'new_message',
+        conversationId,
+        senderId,
+        preview: content.substring(0, 50),
+      });
+    }
 
     return message;
   }
