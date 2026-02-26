@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Dimensions, useWindowDimensions } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { discoverApi, usersApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
@@ -64,6 +65,7 @@ export default function DiscoverScreen() {
       <TouchableOpacity
         style={[styles.tile, { width: tileSize, height: tileSize * 1.35 }]}
         activeOpacity={0.85}
+        onPress={() => router.push(`/user/${item.userId}`)}
         onLongPress={() => handleLike(item.userId)}
       >
         <View style={styles.tilePhoto}>

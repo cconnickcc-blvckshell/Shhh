@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/auth';
 import { safetyApi } from '../../src/api/client';
@@ -85,13 +86,13 @@ export default function ProfileScreen() {
 
       <View style={styles.menuSection}>
         <View style={styles.menuCard}>
-          <MenuItem icon="create-outline" label="Edit Profile" onPress={() => {}} />
+          <MenuItem icon="create-outline" label="Edit Profile" onPress={() => router.push('/profile/edit')} />
           <View style={styles.menuDivider} />
-          <MenuItem icon="images-outline" label="My Albums" onPress={() => {}} />
+          <MenuItem icon="images-outline" label="My Albums" onPress={() => router.push('/album')} />
           <View style={styles.menuDivider} />
-          <MenuItem icon="people-outline" label="Couple Settings" onPress={() => {}} />
+          <MenuItem icon="people-outline" label="Couple Settings" onPress={() => router.push('/couple')} />
           <View style={styles.menuDivider} />
-          <MenuItem icon="shield-outline" label="Verification" onPress={() => {}} />
+          <MenuItem icon="shield-outline" label="Verification" onPress={() => router.push('/verify')} />
           <View style={styles.menuDivider} />
           <MenuItem icon="call-outline" label="Emergency Contacts" onPress={() => {}} />
           <View style={styles.menuDivider} />
