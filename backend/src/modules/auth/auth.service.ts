@@ -1,18 +1,18 @@
 import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
-import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../../config';
 import { query } from '../../config/database';
 import { AuthPayload } from '../../middleware/auth';
+import { hashPhone, hashGeneric } from '../../utils/hash';
 
 function hashValue(value: string): string {
-  return crypto.createHash('sha256').update(value).digest('hex');
+  return hashGeneric(value);
 }
 
 export class AuthService {
   async registerWithPhone(phone: string, displayName: string) {
-    const phoneHash = hashValue(phone);
+    const phoneHash = hashPhone(phone);
 
     const existing = await query('SELECT id FROM users WHERE phone_hash = $1', [phoneHash]);
     if (existing.rows.length > 0) {
@@ -40,7 +40,7 @@ export class AuthService {
   }
 
   async loginWithPhone(phone: string) {
-    const phoneHash = hashValue(phone);
+    const phoneHash = hashPhone(phone);
 
     const result = await query(
       'SELECT id, verification_tier FROM users WHERE phone_hash = $1 AND is_active = true AND deleted_at IS NULL',

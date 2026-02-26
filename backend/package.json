@@ -12,6 +12,7 @@
     "test": "jest --forceExit --detectOpenHandles",
     "test:watch": "jest --watch --forceExit --detectOpenHandles",
     "migrate": "tsx src/database/migrate.ts",
+    "seed": "tsx src/database/seed.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

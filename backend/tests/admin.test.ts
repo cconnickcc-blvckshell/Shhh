@@ -20,7 +20,7 @@ describe('Admin API', () => {
   let userId: string;
 
   beforeAll(async () => {
-    const admin = await createTestUser('AdminUser', 2);
+    const admin = await createTestUser('AdminUser', 2, 'admin');
     adminToken = admin.accessToken;
     const user = await createTestUser('RegularUser');
     userId = user.userId;
