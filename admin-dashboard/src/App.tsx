@@ -3,8 +3,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Users from './pages/Users';
+import Revenue from './pages/Revenue';
+import Venues from './pages/Venues';
+import Ads from './pages/Ads';
+import Events from './pages/Events';
 import Reports from './pages/Reports';
+import Safety from './pages/Safety';
 import AuditLog from './pages/AuditLog';
+import Settings from './pages/Settings';
 
 const queryClient = new QueryClient();
 
@@ -16,8 +23,15 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/revenue" element={<Revenue />} />
+            <Route path="/venues" element={<Venues />} />
+            <Route path="/ads" element={<Ads />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/safety" element={<Safety />} />
             <Route path="/audit" element={<AuditLog />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>
       </BrowserRouter>

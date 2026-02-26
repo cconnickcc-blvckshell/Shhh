@@ -111,6 +111,10 @@ export function createApp() {
   // Admin API
   app.use('/v1/admin', adminRoutes);
 
+  // Extended Admin API
+  const adminExtendedRoutes = require('./modules/admin/admin-extended.routes').default;
+  app.use('/v1/admin', adminExtendedRoutes);
+
   // Trust score endpoint on user routes
   const trustSvc = new TrustScoreService();
   app.get('/v1/users/:userId/trust-score', authMiddleware, async (req: express.Request, res: express.Response, next: express.NextFunction) => {
