@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, use
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { discoverApi, usersApi } from '../../src/api/client';
+import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 interface NearbyUser {
@@ -14,6 +15,7 @@ interface NearbyUser {
   experienceLevel: string;
   isHost: boolean;
   gender: string | null;
+  photosJson: string[];
 }
 
 const GAP = 2;
@@ -60,7 +62,7 @@ export default function DiscoverScreen() {
       >
         {/* Photo area */}
         <View style={styles.photoArea}>
-          <Ionicons name="person" size={tileW * 0.25} color={colors.textMuted} />
+          <ProfilePhoto photosJson={item.photosJson as any} size={tileW} borderRadius={0} blurred={false} />
         </View>
 
         {/* Top badges */}

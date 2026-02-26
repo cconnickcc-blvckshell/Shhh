@@ -19,6 +19,7 @@ export default function RootLayout() {
         <Stack.Screen name="couple/index" />
         <Stack.Screen name="verify/index" />
         <Stack.Screen name="user/[id]" />
+        <Stack.Screen name="profile/status" />
       </Stack>
     </QueryClientProvider>
   );

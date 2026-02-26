@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../src/api/client';
 import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 
@@ -15,7 +14,7 @@ export default function VerifyCodeScreen() {
   const [error, setError] = useState('');
   const [resendTimer, setResendTimer] = useState(60);
   const inputRefs = useRef<(TextInput | null)[]>([]);
-  const { login, register: registerUser } = useAuthStore();
+  const { verifyAndLogin, verifyAndRegister, sendOTP } = useAuthStore();
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
@@ -54,12 +53,10 @@ export default function VerifyCodeScreen() {
     setLoading(true);
     setError('');
     try {
-      await api('/v1/auth/phone/verify', { method: 'POST', body: JSON.stringify({ phone, code }) });
-
       if (mode === 'register' && displayName) {
-        await registerUser(phone!, displayName);
+        await verifyAndRegister(phone!, code, displayName);
       } else {
-        await login(phone!);
+        await verifyAndLogin(phone!, code);
       }
     } catch (err: any) {
       setError(err.message || 'Invalid code');
@@ -73,7 +70,7 @@ export default function VerifyCodeScreen() {
   const resend = async () => {
     if (resendTimer > 0) return;
     try {
-      await api('/v1/auth/phone/send-code', { method: 'POST', body: JSON.stringify({ phone }) });
+      await sendOTP(phone!);
       setResendTimer(60);
     } catch {}
   };

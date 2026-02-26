@@ -23,6 +23,8 @@ import venueIdentityRoutes from './modules/venues/venue-identity.routes';
 import sessionRoutes from './modules/messaging/session.routes';
 import blurRoutes from './modules/users/blur.routes';
 import intentRoutes from './modules/users/intent.routes';
+import e2eeRoutes from './modules/messaging/e2ee.routes';
+import billingRoutes from './modules/billing/billing.routes';
 import path from 'path';
 import { TrustScoreService } from './modules/users/trust.service';
 import { authenticate as authMiddleware } from './middleware/auth';
@@ -49,7 +51,7 @@ export function createApp() {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      version: '0.4.0',
+      version: '0.5.0',
       modules: [
         'auth', 'users', 'couples', 'verification', 'references',
         'discovery', 'presence', 'personas', 'intents',
@@ -86,9 +88,13 @@ export function createApp() {
   // Venue Identity
   app.use('/v1/venues', venueIdentityRoutes);
 
-  // Chat Sessions & Blur/Reveal
+  // Chat Sessions, Blur/Reveal, E2EE
   app.use('/v1/conversations', sessionRoutes);
   app.use('/v1/photos', blurRoutes);
+  app.use('/v1/e2ee', e2eeRoutes);
+
+  // Billing
+  app.use('/v1/billing', billingRoutes);
 
   // Admin API
   app.use('/v1/admin', adminRoutes);

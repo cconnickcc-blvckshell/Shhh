@@ -6,6 +6,7 @@ import { getPool } from './config/database';
 import { getRedis } from './config/redis';
 import { connectMongoDB } from './config/mongodb';
 import { setupWebSocket } from './websocket';
+import { startWorkers } from './workers';
 
 async function main() {
   logger.info({ env: config.nodeEnv }, 'Starting Shhh API server...');
@@ -39,8 +40,14 @@ async function main() {
   const io = setupWebSocket(server);
   app.set('io', io);
 
-  server.listen(config.port, () => {
+  server.listen(config.port, async () => {
     logger.info({ port: config.port }, `Shhh API running on port ${config.port}`);
+
+    try {
+      await startWorkers();
+    } catch (err) {
+      logger.warn({ err }, 'Background workers failed to start (non-fatal)');
+    }
   });
 
   const shutdown = async () => {

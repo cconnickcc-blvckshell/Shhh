@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
-import { Link } from 'expo-router';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
@@ -8,12 +8,24 @@ import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/cons
 export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const { register, isLoading, error } = useAuthStore();
+  const { sendOTP, register: registerDirect, isLoading, error, clearError } = useAuthStore();
   const canSubmit = phone.length >= 10 && displayName.length >= 2;
 
-  const handleRegister = async () => {
+  const handleContinue = async () => {
     if (!canSubmit) return;
-    try { await register(phone, displayName); } catch {}
+    clearError();
+    try {
+      const result = await sendOTP(phone);
+      if (result.devCode) {
+        Alert.alert('Dev Mode', `Your OTP code is: ${result.devCode}`, [
+          { text: 'OK', onPress: () => router.push({ pathname: '/(auth)/verify-code', params: { phone, mode: 'register', displayName } }) }
+        ]);
+      } else {
+        router.push({ pathname: '/(auth)/verify-code', params: { phone, mode: 'register', displayName } });
+      }
+    } catch {
+      try { await registerDirect(phone, displayName); } catch {}
+    }
   };
 
   return (
@@ -21,9 +33,7 @@ export default function RegisterScreen() {
       <View style={styles.glow} />
       <View style={styles.content}>
         <View style={styles.logoWrap}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="sparkles" size={28} color={colors.primaryLight} />
-          </View>
+          <View style={styles.iconCircle}><Ionicons name="sparkles" size={28} color={colors.primaryLight} /></View>
           <Text style={styles.title}>Join Shhh</Text>
           <Text style={styles.subtitle}>Create your secret identity</Text>
         </View>
@@ -41,25 +51,15 @@ export default function RegisterScreen() {
             <TextInput style={styles.input} placeholder="+1 (555) 000-0000" placeholderTextColor={colors.textMuted} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
           </View>
 
-          {error && (
-            <View style={styles.errorBox}>
-              <Ionicons name="alert-circle" size={14} color={colors.danger} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
+          {error && <View style={styles.errorBox}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
 
-          <TouchableOpacity style={[styles.button, !canSubmit && styles.buttonDisabled]} onPress={handleRegister} disabled={isLoading || !canSubmit} activeOpacity={0.8}>
-            {isLoading ? <ActivityIndicator color="#fff" size="small" /> : (
-              <><Text style={styles.buttonText}>Get Started</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></>
-            )}
+          <TouchableOpacity style={[styles.button, !canSubmit && styles.buttonDisabled]} onPress={handleContinue} disabled={isLoading || !canSubmit} activeOpacity={0.8}>
+            {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <><Text style={styles.buttonText}>Get Started</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></>}
           </TouchableOpacity>
         </View>
 
         <Link href="/(auth)" asChild>
-          <TouchableOpacity style={styles.linkWrap}>
-            <Text style={styles.linkText}>Already a member? </Text>
-            <Text style={styles.linkBold}>Log in</Text>
-          </TouchableOpacity>
+          <TouchableOpacity style={styles.linkWrap}><Text style={styles.linkText}>Already a member? </Text><Text style={styles.linkBold}>Log in</Text></TouchableOpacity>
         </Link>
       </View>
     </KeyboardAvoidingView>

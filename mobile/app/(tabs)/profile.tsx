@@ -77,7 +77,9 @@ export default function ProfileScreen() {
 
       {/* Menu */}
       <View style={styles.menuCard}>
-        <MenuItem icon="create-outline" label="Edit Profile" onPress={() => router.push('/profile/edit')} />
+          <MenuItem icon="radio-outline" label="Your Status" onPress={() => router.push('/profile/status')} badge="Live" />
+          <View style={styles.menuDiv} />
+          <MenuItem icon="create-outline" label="Edit Profile" onPress={() => router.push('/profile/edit')} />
         <View style={styles.menuDiv} />
         <MenuItem icon="images-outline" label="My Albums" onPress={() => router.push('/album')} />
         <View style={styles.menuDiv} />

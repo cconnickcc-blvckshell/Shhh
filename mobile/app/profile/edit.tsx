@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Switch, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usersApi } from '../../src/api/client';
+import { usePhotoUpload } from '../../src/hooks/usePhotoUpload';
+import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
@@ -19,6 +21,8 @@ export default function EditProfileScreen() {
   const [isHost, setIsHost] = useState(false);
   const [kinks, setKinks] = useState('');
   const [saving, setSaving] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const { pickAndUpload, uploading } = usePhotoUpload();
 
   useEffect(() => {
     if (profile) {
@@ -29,8 +33,16 @@ export default function EditProfileScreen() {
       setExperienceLevel(profile.experienceLevel || '');
       setIsHost(profile.isHost || false);
       setKinks((profile.kinks || []).join(', '));
+      setPhotos(profile.photosJson || []);
     }
   }, [profile]);
+
+  const handleAddPhoto = async () => {
+    const result = await pickAndUpload('photos');
+    if (result) {
+      setPhotos(prev => [...prev, result.url]);
+    }
+  };
 
   const save = async () => {
     setSaving(true);
@@ -38,6 +50,7 @@ export default function EditProfileScreen() {
       await usersApi.updateMe({
         displayName, bio, gender, sexuality, experienceLevel, isHost,
         kinks: kinks.split(',').map((k: string) => k.trim()).filter(Boolean),
+        photosJson: photos,
       });
       await loadProfile();
       Alert.alert('Saved', 'Profile updated successfully');
@@ -57,6 +70,25 @@ export default function EditProfileScreen() {
         <TouchableOpacity onPress={save} disabled={saving} style={styles.saveBtn}>
           <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>{saving ? 'Saving...' : 'Save'}</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.field}>
+        <Text style={styles.label}>PHOTOS</Text>
+        <View style={styles.photoGrid}>
+          {photos.map((p, i) => (
+            <View key={i} style={styles.photoSlot}>
+              <ProfilePhoto storagePath={p} size={80} borderRadius={12} />
+              <TouchableOpacity style={styles.photoRemove} onPress={() => setPhotos(prev => prev.filter((_, j) => j !== i))}>
+                <Ionicons name="close-circle" size={20} color={colors.danger} />
+              </TouchableOpacity>
+            </View>
+          ))}
+          {photos.length < 6 && (
+            <TouchableOpacity style={styles.addPhotoBtn} onPress={handleAddPhoto} disabled={uploading}>
+              {uploading ? <ActivityIndicator color={colors.primaryLight} /> : <Ionicons name="add" size={28} color={colors.primaryLight} />}
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <View style={styles.field}>
@@ -131,6 +163,10 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.primaryGlow, borderColor: colors.primary },
   chipText: { color: colors.textSecondary, fontSize: fontSize.sm, textTransform: 'capitalize' },
   chipTextActive: { color: colors.primary, fontWeight: '600' },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  photoSlot: { position: 'relative' },
+  photoRemove: { position: 'absolute', top: -6, right: -6, backgroundColor: colors.background, borderRadius: 10 },
+  addPhotoBtn: { width: 80, height: 80, borderRadius: 12, backgroundColor: colors.surfaceElevated, borderWidth: 1.5, borderColor: colors.borderGlow, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.card, padding: spacing.lg, borderRadius: borderRadius.lg, marginBottom: spacing.lg },
   switchLabel: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
   switchSub: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },

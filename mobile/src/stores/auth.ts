@@ -1,6 +1,6 @@
 import { create } from 'zustand';
+import { authApi, usersApi, setAuthToken, api } from '../api/client';
 import { router } from 'expo-router';
-import { authApi, usersApi, setAuthToken } from '../api/client';
 
 interface AuthState {
   userId: string | null;
@@ -10,11 +10,16 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+
+  sendOTP: (phone: string) => Promise<{ devCode?: string }>;
+  verifyAndLogin: (phone: string, code: string) => Promise<void>;
+  verifyAndRegister: (phone: string, code: string, displayName: string) => Promise<void>;
   login: (phone: string) => Promise<void>;
   register: (phone: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
   loadProfile: () => Promise<void>;
   setTokens: (token: string, refreshToken: string, userId: string) => void;
+  clearError: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -26,11 +31,56 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   error: null,
 
+  clearError: () => set({ error: null }),
+
   setTokens: (token, refreshToken, userId) => {
     setAuthToken(token);
     set({ token, refreshToken, userId, isAuthenticated: true, error: null });
   },
 
+  sendOTP: async (phone) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api<{ data: { sent: boolean; devCode?: string } }>('/v1/auth/phone/send-code', {
+        method: 'POST', body: JSON.stringify({ phone }),
+      });
+      set({ isLoading: false });
+      return { devCode: res.data.devCode };
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+      throw err;
+    }
+  },
+
+  verifyAndLogin: async (phone, code) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api('/v1/auth/phone/verify', { method: 'POST', body: JSON.stringify({ phone, code }) });
+      const res = await authApi.login(phone);
+      get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
+      await get().loadProfile();
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+      throw err;
+    }
+  },
+
+  verifyAndRegister: async (phone, code, displayName) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api('/v1/auth/phone/verify', { method: 'POST', body: JSON.stringify({ phone, code }) });
+      const res = await authApi.register(phone, displayName);
+      get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
+      await get().loadProfile();
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+      throw err;
+    }
+  },
+
+  // Direct login/register (fallback for dev when OTP is bypassed)
   login: async (phone) => {
     set({ isLoading: true, error: null });
     try {
@@ -50,6 +100,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const res = await authApi.register(phone, displayName);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
+      router.replace('/(tabs)');
     } catch (err: any) {
       set({ error: err.message, isLoading: false });
       throw err;
@@ -60,6 +111,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try { await authApi.logout(); } catch {}
     setAuthToken('');
     set({ userId: null, token: null, refreshToken: null, profile: null, isAuthenticated: false });
+    router.replace('/(auth)');
   },
 
   loadProfile: async () => {
