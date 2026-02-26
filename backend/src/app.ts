@@ -18,6 +18,8 @@ import venuesRoutes from './modules/venues/venues.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import { TrustScoreService } from './modules/users/trust.service';
 import { authenticate as authMiddleware } from './middleware/auth';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 
 export function createApp() {
   const app = express();
@@ -27,6 +29,13 @@ export function createApp() {
   app.use(compression());
   app.use(express.json({ limit: '10mb' }));
   app.use(globalRateLimiter);
+
+  // API Documentation
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Shhh API Docs',
+  }));
+  app.get('/docs.json', (_req, res) => res.json(swaggerSpec));
 
   app.get('/health', (_req, res) => {
     res.json({

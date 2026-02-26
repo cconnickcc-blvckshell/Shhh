@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-lint-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+
+  backend-test:
+    runs-on: ubuntu-latest
+    needs: backend-lint-typecheck
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: shhh_dev
+          POSTGRES_PASSWORD: shhh_dev_password
+          POSTGRES_DB: shhh
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U shhh_dev -d shhh"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      mongodb:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: shhh_dev
+          MONGO_INITDB_ROOT_PASSWORD: shhh_dev_password
+          MONGO_INITDB_DATABASE: shhh_messages
+        ports: ['27017:27017']
+
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql://shhh_dev:shhh_dev_password@localhost:5432/shhh
+      REDIS_URL: redis://localhost:6379
+      MONGODB_URL: mongodb://shhh_dev:shhh_dev_password@localhost:27017/shhh_messages?authSource=admin
+      JWT_SECRET: ci-test-jwt-secret
+      JWT_REFRESH_SECRET: ci-test-refresh-secret
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run migrate
+      - run: npm test
+
+  backend-build:
+    runs-on: ubuntu-latest
+    needs: backend-lint-typecheck
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  admin-dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: admin-dashboard/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx vite build
