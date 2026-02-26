@@ -81,7 +81,7 @@ export default function DiscoverScreen() {
       onPress={() => router.push(`/user/${item.userId}`)}
     >
       {/* Full-bleed photo */}
-      <ProfilePhoto photosJson={item.photosJson} size={tileH} borderRadius={0} />
+      <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} />
 
       {/* Top-left badges */}
       <View style={styles.topLeft}>
