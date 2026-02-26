@@ -14,17 +14,19 @@ export default function LoginScreen() {
     if (!canSubmit) return;
     clearError();
     try {
-      const result = await sendOTP(phone);
-      if (result.devCode) {
-        Alert.alert('Dev Mode', `Your OTP code is: ${result.devCode}`, [
-          { text: 'OK', onPress: () => router.push({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login' } }) }
-        ]);
-      } else {
-        router.push({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login' } });
-      }
+      await login(phone);
     } catch {
-      // If OTP fails (rate limit, etc), fall back to direct login for dev
-      try { await login(phone); } catch {}
+      // Login failed — try OTP flow
+      try {
+        const result = await sendOTP(phone);
+        if (result.devCode) {
+          Alert.alert('Dev Mode', `Your OTP code is: ${result.devCode}`, [
+            { text: 'OK', onPress: () => router.push({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login' } }) }
+          ]);
+        } else {
+          router.push({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login' } });
+        }
+      } catch {}
     }
   };
 
