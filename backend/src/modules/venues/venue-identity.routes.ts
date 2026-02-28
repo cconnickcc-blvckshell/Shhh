@@ -1,11 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { VenueIdentityService } from './venue-identity.service';
+import { StoriesService } from '../stories/stories.service';
 import { validate } from '../../middleware/validation';
 import { authenticate, requireTier } from '../../middleware/auth';
 
 const router = Router();
 const svc = new VenueIdentityService();
+const storiesService = new StoriesService();
 
 router.post('/:id/claim', authenticate, requireTier(2), validate(z.object({
   email: z.string().email(), contactName: z.string().min(2), phone: z.string().min(10),
@@ -38,9 +40,13 @@ router.get('/announcements/nearby', authenticate, async (req: Request, res: Resp
 
 router.post('/:id/checkin', authenticate, validate(z.object({
   anonymousMode: z.boolean().optional(),
+  liveDurationMinutes: z.number().int().min(1).max(480).optional(),
 })), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await svc.checkIn(req.params.id as string, req.user!.userId, { anonymousMode: req.body?.anonymousMode });
+    const result = await svc.checkIn(req.params.id as string, req.user!.userId, {
+      anonymousMode: req.body?.anonymousMode,
+      liveDurationMinutes: req.body?.liveDurationMinutes,
+    });
     res.json({ data: result });
   } catch (err) { next(err); }
 });
@@ -86,6 +92,13 @@ router.get('/:id/chat-rooms', authenticate, async (req: Request, res: Response, 
   try {
     const rooms = await svc.getActiveChatRooms(req.params.id as string);
     res.json({ data: rooms, count: rooms.length });
+  } catch (err) { next(err); }
+});
+
+router.get('/:id/stories', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const stories = await storiesService.getByVenue(req.params.id as string);
+    res.json({ data: stories, count: stories.length });
   } catch (err) { next(err); }
 });
 

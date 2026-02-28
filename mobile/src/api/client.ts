@@ -6,6 +6,13 @@ const API_BASE = Platform.OS === 'web'
 
 let authToken = '';
 
+export type UnauthorizedHandler = () => void;
+let onUnauthorized: UnauthorizedHandler | null = null;
+
+export function setOnUnauthorized(handler: UnauthorizedHandler) {
+  onUnauthorized = handler;
+}
+
 export function setAuthToken(token: string) {
   authToken = token;
   try { if (typeof window !== 'undefined') window.localStorage?.setItem('shhh_token', token); } catch {}
@@ -29,6 +36,9 @@ export async function api<T = any>(path: string, options: RequestInit = {}): Pro
   });
 
   if (!res.ok) {
+    if (res.status === 401 && onUnauthorized) {
+      onUnauthorized();
+    }
     const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
     throw new Error(err.error?.message || `Request failed: ${res.status}`);
   }
@@ -63,8 +73,12 @@ export const usersApi = {
 };
 
 export const discoverApi = {
-  nearby: (lat: number, lng: number, radius?: number) =>
-    api<{ data: any[]; count: number }>(`/v1/discover?lat=${lat}&lng=${lng}${radius ? `&radius=${radius}` : ''}`),
+  nearby: (lat: number, lng: number, radius?: number, primaryIntent?: string) => {
+    let url = `/v1/discover?lat=${lat}&lng=${lng}`;
+    if (radius != null) url += `&radius=${radius}`;
+    if (primaryIntent) url += `&primaryIntent=${encodeURIComponent(primaryIntent)}`;
+    return api<{ data: any[]; count: number }>(url);
+  },
   updateLocation: (lat: number, lng: number, isPrecise?: boolean) =>
     api('/v1/discover/location', { method: 'POST', body: JSON.stringify({ lat, lng, isPrecise }) }),
 };
@@ -93,10 +107,17 @@ export const safetyApi = {
   getContacts: () => api<{ data: any[] }>('/v1/safety/contacts'),
   addContact: (name: string, phone: string, relationship?: string) =>
     api('/v1/safety/contacts', { method: 'POST', body: JSON.stringify({ name, phone, relationship }) }),
+  removeContact: (id: string) =>
+    api(`/v1/safety/contacts/${id}`, { method: 'DELETE' }),
   checkIn: (type: string, lat?: number, lng?: number) =>
     api('/v1/safety/checkin', { method: 'POST', body: JSON.stringify({ type, lat, lng }) }),
   panic: (lat?: number, lng?: number) =>
     api('/v1/safety/panic', { method: 'POST', body: JSON.stringify({ lat, lng }) }),
+};
+
+export const complianceApi = {
+  dataExport: () => api<{ data: { message?: string; exportId?: string } }>('/v1/compliance/data-export', { method: 'POST' }),
+  requestDeletion: () => api<{ data: { message?: string } }>('/v1/compliance/account-deletion', { method: 'DELETE' }),
 };
 
 export const albumsApi = {

@@ -1,13 +1,14 @@
 import { query } from '../../config/database';
 import { hashGeneric } from '../../utils/hash';
 
-export type VibeTag = 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly';
+export type VibeTag = 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly' | 'talk_first';
 
 export class EventsService {
   async createEvent(hostUserId: string, data: {
     title: string;
     description?: string;
     venueId?: string;
+    seriesId?: string;
     startsAt: string;
     endsAt: string;
     type?: string;
@@ -19,10 +20,11 @@ export class EventsService {
     visibilityTierMin?: number;
     visibilityRadiusKm?: number;
   }) {
-    const [hasVibe, hasLocationRevealed, hasVisibility] = await Promise.all([
+    const [hasVibe, hasLocationRevealed, hasVisibility, hasSeriesId] = await Promise.all([
       query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'vibe_tag'`),
       query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'location_revealed_after_rsvp'`),
       query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'visibility_rule'`),
+      query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'series_id'`),
     ]);
     const cols: string[] = ['host_user_id', 'venue_id', 'title', 'description', 'starts_at', 'ends_at', 'type', 'capacity', 'is_private'];
     const vals: unknown[] = [hostUserId, data.venueId || null, data.title, data.description || null, data.startsAt, data.endsAt, data.type || 'party', data.capacity || null, data.isPrivate || false];
@@ -32,6 +34,7 @@ export class EventsService {
       cols.push('visibility_rule', 'visibility_tier_min', 'visibility_radius_km');
       vals.push(data.visibilityRule ?? 'open', data.visibilityTierMin ?? null, data.visibilityRadiusKm ?? null);
     }
+    if (hasSeriesId.rows.length > 0 && data.seriesId) { cols.push('series_id'); vals.push(data.seriesId); }
     const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
     const result = await query(
       `INSERT INTO events (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`,
@@ -49,10 +52,14 @@ export class EventsService {
   async getNearbyEvents(lat: number, lng: number, radiusKm: number = 50, options?: {
     vibeTag?: VibeTag | null;
     date?: string;
+    dateFrom?: string;
+    dateTo?: string;
     viewerUserId?: string;
   }) {
     const vibe = options?.vibeTag ?? null;
     const dateOnly = options?.date ?? null;
+    const dateFrom = options?.dateFrom ?? null;
+    const dateTo = options?.dateTo ?? null;
     const viewerUserId = options?.viewerUserId ?? null;
     const hasVibe = await query(
       `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'vibe_tag'`
@@ -62,8 +69,16 @@ export class EventsService {
     let idx = 4;
     const vibeFilter = useVibeFilter ? ` AND e.vibe_tag = $${idx++}` : '';
     if (useVibeFilter) params.push(vibe!);
-    const dateFilter = dateOnly ? ` AND (e.starts_at AT TIME ZONE 'UTC')::date = $${idx}::date` : '';
-    if (dateOnly) params.push(dateOnly);
+    let dateFilter = '';
+    if (dateOnly) {
+      dateFilter = ` AND (e.starts_at AT TIME ZONE 'UTC')::date = $${idx}::date`;
+      params.push(dateOnly);
+      idx++;
+    } else if (dateFrom && dateTo) {
+      dateFilter = ` AND e.starts_at >= $${idx}::timestamptz AND e.starts_at <= $${idx + 1}::timestamptz`;
+      params.push(dateFrom, dateTo);
+      idx += 2;
+    }
     const result = await query(
       `SELECT e.*, v.name as venue_name, v.lat as venue_lat, v.lng as venue_lng,
               COUNT(er.user_id) FILTER (WHERE er.status = 'going') as attendee_count

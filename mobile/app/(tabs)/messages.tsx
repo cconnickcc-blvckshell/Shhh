@@ -5,12 +5,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { messagingApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
-interface Conversation { id: string; type: string; last_message_at: string; unread_count: number; }
+interface Conversation {
+  id: string;
+  type: string;
+  lastMessageAt?: string | null;
+  last_message_at?: string | null;
+  unreadCount?: number;
+  unread_count?: number;
+}
 
-function timeAgo(d: string): string {
+function timeAgo(d: string | null | undefined): string {
+  if (!d) return '';
   const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
-  if (m < 1) return 'now'; if (m < 60) return `${m}m`; const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`; return `${Math.floor(h / 24)}d`;
+  if (m < 1) return 'now';
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const days = Math.floor(h / 24);
+  return days < 7 ? `${days}d` : new Date(d).toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
 export default function MessagesScreen() {
@@ -26,24 +38,31 @@ export default function MessagesScreen() {
       <FlatList
         data={convos}
         keyExtractor={i => i.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.row} onPress={() => router.push(`/chat/${item.id}`)} activeOpacity={0.7}>
-            <View style={styles.avatar}>
-              <Ionicons name={item.type === 'group' ? 'people' : 'person'} size={20} color={colors.textMuted} />
-              <View style={styles.onlineDot} />
-            </View>
-            <View style={styles.mid}>
-              <View style={styles.topLine}>
-                <Text style={styles.name}>Conversation</Text>
-                {item.last_message_at && <Text style={styles.time}>{timeAgo(item.last_message_at)}</Text>}
+        renderItem={({ item }) => {
+          const lastAt = item.lastMessageAt ?? item.last_message_at;
+          const unread = item.unreadCount ?? item.unread_count ?? 0;
+          const label = item.type === 'group' ? 'Group chat' : 'Direct chat';
+          return (
+            <TouchableOpacity style={styles.row} onPress={() => router.push(`/chat/${item.id}`)} activeOpacity={0.7}>
+              <View style={styles.avatar}>
+                <Ionicons name={item.type === 'group' ? 'people' : 'person'} size={22} color={colors.primaryLight} />
+                {unread > 0 && <View style={styles.onlineDot} />}
               </View>
-              <Text style={styles.preview} numberOfLines={1}>Tap to view messages</Text>
-            </View>
-            {item.unread_count > 0 && (
-              <View style={styles.badge}><Text style={styles.badgeText}>{item.unread_count > 99 ? '99+' : item.unread_count}</Text></View>
-            )}
-          </TouchableOpacity>
-        )}
+              <View style={styles.mid}>
+                <View style={styles.topLine}>
+                  <Text style={styles.name}>{label}</Text>
+                  {lastAt ? <Text style={styles.time}>{timeAgo(lastAt)}</Text> : null}
+                </View>
+                <Text style={styles.preview} numberOfLines={1}>
+                  {lastAt ? 'Tap to open' : 'No messages yet'}
+                </Text>
+              </View>
+              {unread > 0 && (
+                <View style={styles.badge}><Text style={styles.badgeText}>{unread > 99 ? '99+' : unread}</Text></View>
+              )}
+            </TouchableOpacity>
+          );
+        }}
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primaryLight} />}
         ListEmptyComponent={

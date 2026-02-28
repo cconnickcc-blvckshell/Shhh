@@ -30,6 +30,10 @@ import whisperRoutes from './modules/discovery/whisper.routes';
 import adRoutes from './modules/ads/ad.routes';
 import venueDashboardRoutes from './modules/venues/venue-dashboard.routes';
 import tonightRoutes from './modules/tonight/tonight.routes';
+import seriesRoutes from './modules/series/series.routes';
+import contentRoutes from './modules/content/content.routes';
+import storiesRoutes from './modules/stories/stories.routes';
+import groupsRoutes from './modules/groups/groups.routes';
 import path from 'path';
 import { TrustScoreService } from './modules/users/trust.service';
 import { authenticate as authMiddleware } from './middleware/auth';
@@ -44,6 +48,9 @@ export function createApp() {
   app.use(compression());
   app.use(express.json({ limit: '10mb' }));
   app.use(globalRateLimiter);
+
+  // Root: redirect to API docs
+  app.get('/', (_req, res) => res.redirect(302, '/docs'));
 
   // API Documentation
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -77,6 +84,10 @@ export function createApp() {
   app.use('/v1/discover', discoveryRoutes);
   app.use('/v1/conversations', messagingRoutes);
   app.use('/v1/events', eventsRoutes);
+  app.use('/v1/series', seriesRoutes);
+  app.use('/v1/content', contentRoutes);
+  app.use('/v1/stories', storiesRoutes);
+  app.use('/v1/groups', groupsRoutes);
   app.use('/v1/tonight', tonightRoutes);
   app.use('/v1/venues', venuesRoutes);
   app.use('/v1/safety', safetyRoutes);

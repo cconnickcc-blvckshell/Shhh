@@ -1,5 +1,9 @@
 import { query } from '../../config/database';
 
+export type PrimaryIntent = 'social' | 'curious' | 'lifestyle' | 'couple';
+export type DiscoveryVisibleTo = 'all' | 'social_and_curious' | 'same_intent';
+export type ProfileVisibilityTier = 'all' | 'after_reveal' | 'after_match';
+
 export interface UserProfile {
   userId: string;
   displayName: string;
@@ -13,6 +17,10 @@ export interface UserProfile {
   experienceLevel: string;
   isHost: boolean;
   travelModeUntil: string | null;
+  primaryIntent?: PrimaryIntent | null;
+  discoveryVisibleTo?: DiscoveryVisibleTo | null;
+  profileVisibilityTier?: ProfileVisibilityTier | null;
+  crossingPathsVisible?: boolean | null;
 }
 
 export class UsersService {
@@ -41,7 +49,33 @@ export class UsersService {
       experienceLevel: row.experience_level,
       isHost: row.is_host,
       travelModeUntil: row.travel_mode_until,
+      primaryIntent: row.primary_intent ?? null,
+      discoveryVisibleTo: row.discovery_visible_to ?? null,
+      profileVisibilityTier: row.profile_visibility_tier ?? null,
+      crossingPathsVisible: row.crossing_paths_visible ?? null,
     };
+  }
+
+  /** True if viewer has "unlocked" full profile: mutual reveal for after_reveal, or shared conversation for after_match. */
+  async canViewFullProfile(ownerId: string, viewerId: string, tier: string): Promise<boolean> {
+    if (tier !== 'after_reveal' && tier !== 'after_match') return true;
+    if (ownerId === viewerId) return true;
+    if (tier === 'after_reveal') {
+      const rev = await query(
+        `SELECT 1 FROM photo_reveals
+         WHERE ((from_user_id = $1 AND to_user_id = $2) OR (from_user_id = $2 AND to_user_id = $1))
+           AND (expires_at IS NULL OR expires_at > NOW())`,
+        [ownerId, viewerId]
+      );
+      return rev.rows.length > 0;
+    }
+    const conv = await query(
+      `SELECT 1 FROM conversation_participants cp1
+       JOIN conversation_participants cp2 ON cp1.conversation_id = cp2.conversation_id AND cp2.user_id = $2
+       WHERE cp1.user_id = $1 AND cp2.user_id = $2`,
+      [ownerId, viewerId]
+    );
+    return conv.rows.length > 0;
   }
 
   async updateProfile(userId: string, data: Partial<UserProfile>) {
@@ -59,6 +93,10 @@ export class UsersService {
       kinks: 'kinks',
       experienceLevel: 'experience_level',
       isHost: 'is_host',
+      primaryIntent: 'primary_intent',
+      discoveryVisibleTo: 'discovery_visible_to',
+      profileVisibilityTier: 'profile_visibility_tier',
+      crossingPathsVisible: 'crossing_paths_visible',
     };
 
     for (const [key, column] of Object.entries(mapping)) {

@@ -7,6 +7,8 @@ const messageSchema = new mongoose.Schema({
   contentType: { type: String, enum: ['text', 'image', 'location'], default: 'text' },
   isEncrypted: { type: Boolean, default: true },
   expiresAt: { type: Date, index: { expireAfterSeconds: 0 } },
+  viewOnce: { type: Boolean, default: false },
+  ttlSeconds: { type: Number, default: null },
   readBy: [{ userId: String, readAt: Date }],
   createdAt: { type: Date, default: Date.now, index: true },
 });

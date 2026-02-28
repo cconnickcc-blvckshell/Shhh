@@ -7,4 +7,4 @@ ALTER TABLE photo_reveals ADD COLUMN IF NOT EXISTS scope_id UUID;
 
 UPDATE photo_reveals SET level = 2, scope_type = 'global', scope_id = NULL WHERE scope_type IS NULL;
 
-CREATE INDEX IF NOT EXISTS idx_photo_reveals_to_expires ON photo_reveals(to_user_id) WHERE (expires_at IS NULL OR expires_at > NOW());
+CREATE INDEX IF NOT EXISTS idx_photo_reveals_to_expires ON photo_reveals(to_user_id, expires_at);

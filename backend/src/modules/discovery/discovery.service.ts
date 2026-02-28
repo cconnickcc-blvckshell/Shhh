@@ -2,6 +2,9 @@ import { query } from '../../config/database';
 import { getRedis } from '../../config/redis';
 import { config } from '../../config';
 
+/** Canonical intent lane for discovery (GC-3.1). */
+export type PrimaryIntent = 'social' | 'curious' | 'lifestyle' | 'couple';
+
 export interface DiscoveryFilters {
   radius?: number;
   gender?: string;
@@ -10,6 +13,10 @@ export interface DiscoveryFilters {
   experienceLevel?: string;
   isHost?: boolean;
   minTier?: number;
+  /** Filter by their primary_intent (GC-3.1). If not set, use viewer's primary_intent as default when available. */
+  primaryIntent?: PrimaryIntent | null;
+  /** GC-6.1: When true, only show users who share at least one group with me. */
+  inMyGroups?: boolean;
 }
 
 /** When set, discovery result is capped (e.g. 30 for free, 50 for premium). Venue/event context can bypass cap. */
@@ -30,6 +37,7 @@ export interface NearbyUser {
   isHost: boolean;
   distance: number;
   lastActive: string;
+  primaryIntent?: PrimaryIntent | null;
 }
 
 export class DiscoveryService {
@@ -59,9 +67,18 @@ export class DiscoveryService {
     const radiusKm = Math.min(filters.radius || 50, config.geo.maxDiscoveryRadiusKm);
     const radiusMeters = radiusKm * 1000;
     const limit = options.limit ?? config.geo.discoveryCapPremium;
+    const primaryIntent = filters.primaryIntent ?? null;
+    const experienceLevel = filters.experienceLevel ?? null;
+    let inMyGroups = filters.inMyGroups === true;
+    if (inMyGroups) {
+      const hasTable = await query(
+        `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'group_members'`
+      );
+      if (hasTable.rows.length === 0) inMyGroups = false;
+    }
 
     const redis = getRedis();
-    const cacheKey = `discover:${userId}:${lat.toFixed(2)}:${lng.toFixed(2)}:${radiusKm}:${limit}`;
+    const cacheKey = `discover:${userId}:${lat.toFixed(2)}:${lng.toFixed(2)}:${radiusKm}:${limit}:${primaryIntent ?? ''}:${experienceLevel ?? ''}:${inMyGroups}`;
     const cached = await redis.get(cacheKey);
     if (cached) {
       return JSON.parse(cached);
@@ -83,6 +100,7 @@ export class DiscoveryService {
         them.show_as_role,
         them.show_as_relationship,
         them.age,
+        them.primary_intent,
         CASE WHEN l.is_precise_mode THEN
           ST_Distance(l.geom_point::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
         ELSE
@@ -95,28 +113,21 @@ export class DiscoveryService {
       JOIN users u ON them.user_id = u.id
       JOIN locations l ON them.user_id = l.user_id
       LEFT JOIN presence pr ON them.user_id = pr.user_id AND pr.expires_at > NOW()
-      -- Cross-reference with MY profile for bidirectional matching
       CROSS JOIN user_profiles me
       WHERE me.user_id = $3
         AND u.is_active = true
         AND u.deleted_at IS NULL
         AND them.user_id != $3
-        -- Proximity filter
         AND ST_DWithin(
           l.geom_point::geography,
           ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
           $4
         )
-        -- Block filter
         AND NOT EXISTS (
           SELECT 1 FROM blocks b
           WHERE (b.blocker_id = $3 AND b.blocked_id = them.user_id)
              OR (b.blocker_id = them.user_id AND b.blocked_id = $3)
         )
-        -- ========================================
-        -- BIDIRECTIONAL PREFERENCE MATCHING
-        -- ========================================
-        -- MY preferences match THEIR profile
         AND (me.seeking_genders IS NULL OR them.gender = ANY(me.seeking_genders))
         AND (me.seeking_roles IS NULL OR them.show_as_role = ANY(me.seeking_roles))
         AND (me.seeking_relationships IS NULL OR them.show_as_relationship = ANY(me.seeking_relationships))
@@ -124,16 +135,25 @@ export class DiscoveryService {
         AND (me.seeking_age_min IS NULL OR them.age IS NULL OR them.age >= me.seeking_age_min)
         AND (me.seeking_age_max IS NULL OR them.age IS NULL OR them.age <= me.seeking_age_max)
         AND (me.seeking_verified_only = false OR u.verification_tier >= 1)
-        -- THEIR preferences match MY profile (bidirectional!)
         AND (them.seeking_genders IS NULL OR me.gender = ANY(them.seeking_genders))
         AND (them.seeking_roles IS NULL OR me.show_as_role = ANY(them.seeking_roles))
         AND (them.seeking_relationships IS NULL OR me.show_as_relationship = ANY(them.seeking_relationships))
         AND (them.seeking_experience IS NULL OR me.experience_level = ANY(them.seeking_experience))
         AND (them.seeking_age_min IS NULL OR me.age IS NULL OR me.age >= them.seeking_age_min)
         AND (them.seeking_age_max IS NULL OR me.age IS NULL OR me.age <= them.seeking_age_max)
+        AND ($7::text IS NULL OR them.primary_intent = $7)
+        AND ($8::text IS NULL OR them.experience_level = $8)
+        AND (them.discovery_visible_to = 'all'
+             OR (them.discovery_visible_to = 'social_and_curious' AND me.primary_intent IN ('social', 'curious'))
+             OR (them.discovery_visible_to = 'same_intent' AND them.primary_intent IS NOT DISTINCT FROM me.primary_intent))
+        AND (NOT $9 OR EXISTS (
+          SELECT 1 FROM group_members gm1
+          JOIN group_members gm2 ON gm1.group_id = gm2.group_id AND gm2.user_id = them.user_id
+          WHERE gm1.user_id = $3
+        ))
       ORDER BY distance ASC, l.updated_at DESC
       LIMIT $6`,
-      [lat, lng, userId, radiusMeters, fuzz, limit]
+      [lat, lng, userId, radiusMeters, fuzz, limit, primaryIntent, experienceLevel, inMyGroups]
     );
 
     const users: NearbyUser[] = result.rows.map((row) => ({
@@ -153,10 +173,38 @@ export class DiscoveryService {
       lastActive: row.last_active,
       presenceState: row.presence_state || null,
       activeIntents: row.active_intents || [],
+      primaryIntent: row.primary_intent || null,
     }));
 
     await redis.set(cacheKey, JSON.stringify(users), 'EX', 30);
 
     return users;
+  }
+
+  /** GC-5.4: Pairs (me, them, venue) where both opted in and overlapping check-ins at same venue >= minCount. */
+  async getCrossingPaths(userId: string, minCount: number = 2) {
+    const hasCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'user_profiles' AND column_name = 'crossing_paths_visible'`
+    );
+    if (hasCol.rows.length === 0) return [];
+
+    const result = await query(
+      `SELECT vc1.venue_id, vc2.user_id AS other_user_id, COUNT(*)::int AS cnt, v.name AS venue_name
+       FROM venue_checkins vc1
+       JOIN venue_checkins vc2 ON vc1.venue_id = vc2.venue_id AND vc1.user_id = $1 AND vc2.user_id <> $1
+       JOIN user_profiles me ON me.user_id = $1 AND me.crossing_paths_visible = true
+       JOIN user_profiles them ON them.user_id = vc2.user_id AND them.crossing_paths_visible = true
+       LEFT JOIN venues v ON v.id = vc1.venue_id
+       GROUP BY vc1.venue_id, vc2.user_id, v.name
+       HAVING COUNT(*) >= $2
+       ORDER BY COUNT(*) DESC`,
+      [userId, minCount]
+    );
+    return result.rows.map((r: { venue_id: string; other_user_id: string; cnt: number; venue_name: string | null }) => ({
+      venueId: r.venue_id,
+      otherUserId: r.other_user_id,
+      count: r.cnt,
+      venueName: r.venue_name,
+    }));
   }
 }

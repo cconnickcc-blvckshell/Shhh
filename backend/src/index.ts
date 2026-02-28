@@ -40,15 +40,39 @@ async function main() {
   const io = setupWebSocket(server);
   app.set('io', io);
 
-  server.listen(config.port, async () => {
-    logger.info({ port: config.port }, `Shhh API running on port ${config.port}`);
+  const maxPortAttempts = 10;
+  let portAttempt = 0;
+  let listening = false;
 
-    try {
-      await startWorkers();
-    } catch (err) {
-      logger.warn({ err }, 'Background workers failed to start (non-fatal)');
+  function tryListen(port: number) {
+    server.listen(port, async () => {
+      if (listening) return;
+      listening = true;
+      const bound = server.address();
+      const actualPort = typeof bound === 'object' && bound !== null && 'port' in bound ? bound.port : port;
+      logger.info({ port: actualPort }, `Shhh API running on port ${actualPort}`);
+
+      try {
+        await startWorkers();
+      } catch (err) {
+        logger.warn({ err }, 'Background workers failed to start (non-fatal)');
+      }
+    });
+  }
+
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE' && portAttempt < maxPortAttempts) {
+      portAttempt += 1;
+      const nextPort = config.port + portAttempt;
+      logger.warn({ previous: config.port + portAttempt - 1, next: nextPort }, 'Port in use, trying next');
+      tryListen(nextPort);
+    } else {
+      logger.error({ err }, 'Server failed to start');
+      process.exit(1);
     }
   });
+
+  tryListen(config.port);
 
   const shutdown = async () => {
     logger.info('Shutting down gracefully...');

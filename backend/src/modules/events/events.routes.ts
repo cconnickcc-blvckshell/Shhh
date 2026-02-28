@@ -16,7 +16,7 @@ const doorCodeValidateLimiter = rateLimit({
   message: { error: 'Too many validation attempts, try again later' },
 });
 
-const vibeTagEnum = z.enum(['social_mix', 'lifestyle', 'kink', 'couples_only', 'newbie_friendly']);
+const vibeTagEnum = z.enum(['social_mix', 'lifestyle', 'kink', 'couples_only', 'newbie_friendly', 'talk_first']);
 
 const visibilityRuleEnum = z.enum(['open', 'tier_min', 'invite_only', 'attended_2_plus']);
 
@@ -24,6 +24,7 @@ const createEventSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().max(2000).optional(),
   venueId: z.string().uuid().optional(),
+  seriesId: z.string().uuid().optional(),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
   type: z.enum(['party', 'club_night', 'hotel_takeover', 'travel_meetup']).optional(),
@@ -58,6 +59,7 @@ const setDoorCodeSchema = z.object({
 });
 
 router.get('/nearby', authenticate, validate(nearbyQuerySchema, 'query'), controller.getNearby);
+router.get('/this-week', authenticate, validate(nearbyQuerySchema, 'query'), controller.getThisWeek);
 router.post('/', authenticate, requireTier(2), validate(createEventSchema), controller.create);
 router.post('/validate-door-code', authenticate, doorCodeValidateLimiter, validate(validateDoorCodeSchema), controller.validateDoorCode);
 router.get('/:id', authenticate, controller.getOne);

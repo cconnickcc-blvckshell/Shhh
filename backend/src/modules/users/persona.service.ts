@@ -4,7 +4,7 @@ export type PersonaType = 'solo' | 'couple' | 'anonymous' | 'traveler';
 
 export class PersonaService {
   async createPersona(userId: string, type: PersonaType, displayName: string, options?: {
-    bio?: string; kinks?: string[]; blurPhotos?: boolean; linkedPartnerId?: string;
+    bio?: string; kinks?: string[]; blurPhotos?: boolean; linkedPartnerId?: string; expiresAt?: string; isBurn?: boolean;
   }) {
     const subCheck = await query(
       `SELECT persona_slots FROM subscriptions WHERE user_id = $1 AND status = 'active'`,
@@ -17,12 +17,16 @@ export class PersonaService {
       throw Object.assign(new Error(`Maximum ${maxSlots} persona(s) allowed. Upgrade for more.`), { statusCode: 403 });
     }
 
+    const hasExpires = await query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'personas' AND column_name = 'expires_at'`);
+    const hasBurn = await query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'personas' AND column_name = 'is_burn'`);
+    const cols = ['user_id', 'type', 'display_name', 'bio', 'kinks', 'blur_photos', 'linked_partner_id'];
+    const vals: unknown[] = [userId, type, displayName, options?.bio || '', options?.kinks || [], options?.blurPhotos || false, options?.linkedPartnerId || null];
+    if (hasExpires.rows.length > 0) { cols.push('expires_at'); vals.push(options?.expiresAt || null); }
+    if (hasBurn.rows.length > 0) { cols.push('is_burn'); vals.push(options?.isBurn ?? false); }
     const result = await query(
-      `INSERT INTO personas (user_id, type, display_name, bio, kinks, blur_photos, linked_partner_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [userId, type, displayName, options?.bio || '', options?.kinks || [], options?.blurPhotos || false, options?.linkedPartnerId || null]
+      `INSERT INTO personas (${cols.join(', ')}) VALUES (${vals.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`,
+      vals
     );
-
     return result.rows[0];
   }
 
@@ -37,25 +41,28 @@ export class PersonaService {
   }
 
   async switchPersona(userId: string, personaId: string) {
+    const hasExpires = await query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'personas' AND column_name = 'expires_at'`);
+    const expiresFilter = hasExpires.rows.length > 0 ? ' AND (expires_at IS NULL OR expires_at > NOW())' : '';
+    const existing = await query(`SELECT id FROM personas WHERE id = $1 AND user_id = $2${expiresFilter}`, [personaId, userId]);
+    if (existing.rows.length === 0) {
+      throw Object.assign(new Error('Persona not found or expired'), { statusCode: 404 });
+    }
     await query(`UPDATE personas SET is_active = false WHERE user_id = $1`, [userId]);
     const result = await query(
       `UPDATE personas SET is_active = true, updated_at = NOW()
        WHERE id = $1 AND user_id = $2 RETURNING *`,
       [personaId, userId]
     );
-
-    if (result.rows.length === 0) {
-      throw Object.assign(new Error('Persona not found'), { statusCode: 404 });
-    }
-
     return result.rows[0];
   }
 
   async getActivePersona(userId: string) {
+    const hasExpires = await query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'personas' AND column_name = 'expires_at'`);
+    const expiresFilter = hasExpires.rows.length > 0 ? ' AND (p.expires_at IS NULL OR p.expires_at > NOW())' : '';
     const result = await query(
       `SELECT p.*, m.storage_path as avatar_url
        FROM personas p LEFT JOIN media m ON p.avatar_media_id = m.id
-       WHERE p.user_id = $1 AND p.is_active = true`,
+       WHERE p.user_id = $1 AND p.is_active = true${expiresFilter}`,
       [userId]
     );
     return result.rows[0] || null;
@@ -69,6 +76,7 @@ export class PersonaService {
     const allowed: Record<string, string> = {
       displayName: 'display_name', bio: 'bio', kinks: 'kinks',
       blurPhotos: 'blur_photos', photosJson: 'photos_json', preferencesJson: 'preferences_json',
+      expiresAt: 'expires_at', isBurn: 'is_burn',
     };
 
     for (const [key, col] of Object.entries(allowed)) {

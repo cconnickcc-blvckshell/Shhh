@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState, useRef, useMemo, useLayoutEffect } from 'react';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { messagingApi } from '../../src/api/client';
+import { messagingApi, usersApi } from '../../src/api/client';
 import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 
@@ -10,13 +10,73 @@ interface Message { _id: string; senderId: string; content: string; contentType:
 
 export default function ChatScreen() {
   const { id: convId } = useLocalSearchParams<{ id: string }>();
+  const navigation = useNavigation();
   const userId = useAuthStore(s => s.userId);
   const [msgs, setMsgs] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
   const [selfDestruct, setSelfDestruct] = useState(false);
   const listRef = useRef<FlatList>(null);
 
-  useEffect(() => { if (convId) messagingApi.getMessages(convId).then(r => setMsgs(r.data)).catch(() => {}); }, [convId]);
+  const otherUserId = useMemo(() => msgs.find(m => m.senderId !== userId)?.senderId ?? null, [msgs, userId]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={openSafetyMenu} style={{ padding: 12 }} hitSlop={12}>
+          <Ionicons name="ellipsis-horizontal" size={22} color="#fff" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, otherUserId]);
+
+  function openSafetyMenu() {
+    const options = otherUserId
+      ? [
+          { text: 'Block', style: 'destructive' as const, onPress: () => handleBlock() },
+          { text: 'Report', onPress: () => handleReport() },
+          { text: 'Safety info', onPress: () => showSafetyInfo() },
+          { text: 'Cancel', style: 'cancel' as const },
+        ]
+      : [
+          { text: 'Safety info', onPress: () => showSafetyInfo() },
+          { text: 'Cancel', style: 'cancel' as const },
+        ];
+    Alert.alert('Conversation', undefined, options);
+  }
+
+  function handleBlock() {
+    if (!otherUserId) return;
+    Alert.alert('Block', 'Block this user? You will no longer see each other or receive messages.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Block', style: 'destructive', onPress: () => { usersApi.block(otherUserId); router.back(); } },
+    ]);
+  }
+
+  function handleReport() {
+    if (!otherUserId) return;
+    usersApi.report(otherUserId, 'inappropriate').then(() => {
+      Alert.alert('Reported', 'Thank you. We take reports seriously and will review.');
+      router.back();
+    }).catch((e: Error) => Alert.alert('', e.message || 'Could not submit report.'));
+  }
+
+  function showSafetyInfo() {
+    Alert.alert(
+      'Safety',
+      'Block and Report are in this menu. For emergency help, go to Me → Panic Alert to notify your emergency contacts. You can also leave this conversation by going back.'
+    );
+  }
+
+  useEffect(() => {
+    if (!convId) return;
+    setLoading(true);
+    messagingApi
+      .getMessages(convId)
+      .then((r) => setMsgs(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setMsgs([]))
+      .finally(() => setLoading(false));
+  }, [convId]);
 
   const send = async () => {
     if (!input.trim() || !convId) return;
@@ -27,6 +87,7 @@ export default function ChatScreen() {
 
   const renderMsg = ({ item }: { item: Message }) => {
     const mine = item.senderId === userId;
+    const createdAt = (item as any).createdAt ?? (item as any).created_at;
     return (
       <View style={[s.row, mine && s.rowMine]}>
         <View style={[s.bubble, mine ? s.mine : s.theirs]}>
@@ -35,16 +96,43 @@ export default function ChatScreen() {
           )}
           <Text style={s.msgText}>{item.content}</Text>
           <Text style={[s.time, !mine && { color: colors.textMuted }]}>
-            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {createdAt ? new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
           </Text>
         </View>
       </View>
     );
   };
 
+  const listEmpty = (
+    <View style={s.emptyWrap}>
+      <Ionicons name="chatbubble-outline" size={36} color={colors.textMuted} />
+      <Text style={s.emptyTitle}>No messages yet</Text>
+      <Text style={s.emptySub}>Send a message to start the conversation.</Text>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <View style={s.container}>
+        <View style={s.loadWrap}>
+          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <Text style={s.loadText}>Loading conversation…</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
-      <FlatList ref={listRef} data={msgs} keyExtractor={i => i._id} renderItem={renderMsg} inverted contentContainerStyle={{ paddingVertical: spacing.md }} />
+      <FlatList
+        ref={listRef}
+        data={msgs}
+        keyExtractor={i => i._id}
+        renderItem={renderMsg}
+        inverted
+        contentContainerStyle={msgs.length === 0 ? s.emptyList : { paddingVertical: spacing.md }}
+        ListEmptyComponent={listEmpty}
+      />
       <View style={s.bar}>
         <TouchableOpacity onPress={() => setSelfDestruct(!selfDestruct)} style={[s.iconBtn, selfDestruct && s.iconActive]}>
           <Ionicons name="timer" size={20} color={selfDestruct ? colors.host : colors.textMuted} />
@@ -63,6 +151,12 @@ export default function ChatScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  loadWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
+  loadText: { color: colors.textMuted, fontSize: 14, marginTop: spacing.md },
+  emptyList: { flexGrow: 1, paddingVertical: spacing.xxl },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  emptyTitle: { color: colors.text, fontSize: 17, fontWeight: '600', marginTop: spacing.md },
+  emptySub: { color: colors.textMuted, fontSize: 14, marginTop: 4 },
   row: { marginBottom: spacing.xs, alignItems: 'flex-start', paddingHorizontal: spacing.md },
   rowMine: { alignItems: 'flex-end' },
   bubble: { maxWidth: '78%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20 },

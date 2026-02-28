@@ -19,6 +19,7 @@ interface AuthState {
   logout: () => Promise<void>;
   loadProfile: () => Promise<void>;
   setTokens: (token: string, refreshToken: string, userId: string) => void;
+  clearSession: () => void;
   clearError: () => void;
 }
 
@@ -40,6 +41,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
 
   clearError: () => set({ error: null }),
+
+  clearSession: () => {
+    setAuthToken('');
+    clearSavedToken();
+    set({ userId: null, token: null, refreshToken: null, profile: null, isAuthenticated: false });
+    router.replace('/(auth)');
+  },
 
   setTokens: (token, refreshToken, userId) => {
     setAuthToken(token);

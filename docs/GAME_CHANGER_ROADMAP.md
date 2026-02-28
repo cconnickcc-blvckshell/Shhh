@@ -360,20 +360,22 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 | 1 | Verified safe venue badge | ✅ Done | venues.verified_safe_at + metadata (018); GET venue/nearby/tonight include verifiedSafe; PUT :id/verified-safe (owner). |
 | 2 | Venue = any host (promoter) | ✅ Done | venues.venue_type (020); events.location_revealed_after_rsvp; GET event/nearby/tonight redact venue until RSVP. |
 | 2 | Private / gated events | ✅ Done | events.visibility_rule, visibility_tier_min, visibility_radius_km (021); filter nearby + 403 on GET when not allowed. |
-| 2 | Series and recurring events | ⬜ Not started | |
-| 3 | Intent as first-class | ⬜ Not started | |
-| 3 | Two-layer profile | ⬜ Not started | |
-| 3 | Event tags + onboarding intent | ⬜ Not started | |
-| 3 | Curious protected lane | ⬜ Not started | |
-| 4 | We're new / Experienced badge | ⬜ Not started | |
-| 4 | How it works / norms content | ⬜ Not started | |
-| 5 | Stories (24h) | ⬜ Not started | |
-| 5 | Live at venue | ⬜ Not started | |
-| 5 | Quick photo reply (view-once) | ⬜ Not started | |
-| 5 | Crossing paths nudge | ⬜ Not started | |
-| 5 | Tonight-only persona | ⬜ Not started | |
-| 6 | Groups / tribes | ⬜ Not started | |
-| 6 | Events as home screen | ⬜ Not started | |
+| 2 | Series and recurring events | ✅ Done | event_series, user_series_follows (022); GET /v1/series/:id, :id/upcoming, POST/DELETE :id/follow, POST /v1/series; events.seriesId on create. |
+| 3 | Intent as first-class | ✅ Done | user_profiles.primary_intent (023); discovery filter by primaryIntent; PUT /users/me accepts primaryIntent; default from profile when not in query. |
+| 3 | Two-layer profile | ✅ Done | user_profiles.profile_visibility_tier (024); GET profile returns public subset until after_reveal or after_match. |
+| 3 | Event tags + onboarding intent | ✅ Done | Reuse events.vibe_tag; onboarding intent = primary_intent on profile; discovery default filter by it. |
+| 3 | Curious protected lane | ✅ Done | user_profiles.discovery_visible_to (023); discovery only shows "them" when they allow "me" (all | social_and_curious | same_intent). |
+| 4 | We're new / Experienced badge | ✅ Done | Discovery filter by experienceLevel; profile shows experienceLevel. |
+| 4 | How it works / norms content | ✅ Done | content_slots (025); GET /v1/content?keys=guides,norms, /guides, /norms. |
+| 4 | Beginner-friendly event types | ✅ Done | vibe_tag includes talk_first (025); newbie_friendly, social_mix, talk_first filterable. |
+| 5 | Stories (24h) | ✅ Done | stories, story_views (026); POST /v1/stories, GET /v1/stories/nearby, GET /v1/venues/:id/stories, GET :id/viewers; reuse media. |
+| 5 | Live at venue | ✅ Done | venue_checkins.live_until (026); check-in accepts liveDurationMinutes; grid/stats return live count. |
+| 5 | Quick photo reply (view-once) | ✅ Done | Message schema viewOnce, ttlSeconds; client enforces. |
+| 5 | Crossing paths nudge | ✅ Done | user_profiles.crossing_paths_visible (026); GET /v1/discover/crossing-paths; PUT /users/me crossingPathsVisible. |
+| 5 | Tonight-only persona | ✅ Done | personas.expires_at, is_burn (026); create/update persona; active persona filtered by expires_at. |
+| 6 | Groups / tribes | ✅ Done | groups, group_members, group_events (027); GET/POST /v1/groups, POST :id/join, DELETE :id/leave, GET :id/members, :id/events, POST :id/events (link); discovery inMyGroups. |
+| 6 | Events as home screen | ✅ Done | GET /v1/events/this-week (next 7 days, vibe/tag + attendee count); nearby supports dateFrom/dateTo. |
+| 6 | Consent as product | ✅ Done | GET /v1/conversations includes consentState (requiresMutualConsent, grantedByMe, grantedCount) when applicable. |
 | 7 | (See Theme 7 table) | — | Wild cards: pick and prioritize. |
 
 **Implemented game-changers (add when done):**
@@ -386,6 +388,22 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 - GC-1.4 Venue density intelligence: GET /v1/venues/:id/analytics/density (peakLastDays, eventTypePerformance); tier 2 (branch `shh-enhancement-trial`).
 - GC-2.1 Venue = any host: venues.venue_type (physical|promoter|series), events.location_revealed_after_rsvp (020); venue location/name redacted until RSVP (branch `shh-enhancement-trial`).
 - GC-2.2 Private/gated events: events.visibility_rule, visibility_tier_min, visibility_radius_km (021); nearby + GET filtered by tier/attended/radius; 403 when not allowed (branch `shh-enhancement-trial`).
+- GC-2.3 Series and recurring events: event_series, user_series_follows (migration 022); events.series_id; GET /v1/series/:id, GET /v1/series/:id/upcoming, POST/DELETE /v1/series/:id/follow, POST /v1/series (create); POST /v1/events accepts optional seriesId.
+- GC-3.1 Intent as first-class: user_profiles.primary_intent (023); discovery filter by primaryIntent (query or default from profile); PUT /v1/users/me accepts primaryIntent, discoveryVisibleTo.
+- GC-3.3 Event tags + onboarding intent: events.vibe_tag (existing); onboarding intent stored in primary_intent; discovery default filter by viewer's primary_intent.
+- GC-3.4 Curious protected lane: user_profiles.discovery_visible_to (023); discovery SQL filters "them" by their discovery_visible_to (all | social_and_curious | same_intent).
+- GC-3.2 Two-layer profile: user_profiles.profile_visibility_tier (024); GET /v1/users/:id/profile returns public subset (first photo, no kinks, no trustScore) when tier is after_reveal/after_match until viewer has revealed or has conversation.
+- GC-4.1 We're new / Experienced badge: discovery filter by experienceLevel query param (new, curious, experienced, veteran); profile already shows experienceLevel.
+- GC-4.2 How it works / norms: content_slots table (025); GET /v1/content?keys=guides,norms, GET /v1/content/guides, GET /v1/content/norms (no auth).
+- GC-4.3 Beginner-friendly event types: events.vibe_tag includes talk_first (025); create/filter events by newbie_friendly, social_mix, talk_first.
+- GC-5.1 Stories (24h): stories, story_views (migration 026); POST /v1/stories (mediaId, optional venueId, ttlHours), GET /v1/stories/nearby, GET /v1/venues/:id/stories, GET /v1/stories/:id/view, GET /v1/stories/:id/viewers (author only).
+- GC-5.2 Live at venue: venue_checkins.live_until (026); POST /v1/venues/:id/checkin accepts liveDurationMinutes; GET grid/stats return liveCount and per-tile live flag.
+- GC-5.3 Quick photo reply: Message schema (Mongo) viewOnce, ttlSeconds; client enforces view-once or TTL.
+- GC-5.4 Crossing paths: user_profiles.crossing_paths_visible (026); GET /v1/discover/crossing-paths (opted-in users only); PUT /v1/users/me accepts crossingPathsVisible.
+- GC-5.5 Tonight-only persona: personas.expires_at, personas.is_burn (026); create/update persona accepts expiresAt, isBurn; getActivePersona filters expired.
+- GC-6.1 Groups/tribes: groups, group_members, group_events (migration 027); GET/POST /v1/groups, POST /v1/groups/:id/join, DELETE /v1/groups/:id/leave, GET /v1/groups/:id/members (privacy-safe), GET /v1/groups/:id/events, POST /v1/groups/:id/events (link event); discovery ?inMyGroups=true.
+- GC-6.2 Events as home screen: GET /v1/events/this-week?lat=&lng=&radius=&vibe= (next 7 days); getNearbyEvents supports dateFrom/dateTo.
+- GC-6.3 Consent as product: GET /v1/conversations returns consentState (requiresMutualConsent, grantedByMe, grantedCount) when conversation has consent columns; client can show "Revoke anytime."
 
 ---
 

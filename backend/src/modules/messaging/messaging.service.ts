@@ -36,8 +36,14 @@ export class MessagingService {
   }
 
   async getConversations(userId: string) {
+    const hasConsentCols = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'conversations' AND column_name = 'consent_granted_by'`
+    );
+    const consentCols = hasConsentCols.rows.length > 0
+      ? ', c.requires_mutual_consent, c.consent_granted_by'
+      : ', NULL AS requires_mutual_consent, NULL AS consent_granted_by';
     const result = await query(
-      `SELECT c.id, c.type, c.last_message_at, cp.unread_count
+      `SELECT c.id, c.type, c.last_message_at, cp.unread_count${consentCols}
        FROM conversations c
        JOIN conversation_participants cp ON c.id = cp.conversation_id
        WHERE cp.user_id = $1 AND cp.left_at IS NULL
@@ -45,7 +51,18 @@ export class MessagingService {
        LIMIT 50`,
       [userId]
     );
-    return result.rows;
+    return result.rows.map((row: Record<string, unknown>) => {
+      const out: Record<string, unknown> = { id: row.id, type: row.type, lastMessageAt: row.last_message_at, unreadCount: row.unread_count };
+      if (row.consent_granted_by != null) {
+        const granted = (row.consent_granted_by as string[]) || [];
+        out.consentState = {
+          requiresMutualConsent: row.requires_mutual_consent ?? true,
+          grantedByMe: granted.includes(userId),
+          grantedCount: granted.length,
+        };
+      }
+      return out;
+    });
   }
 
   async sendMessage(

@@ -14,6 +14,8 @@ const createSchema = z.object({
   kinks: z.array(z.string()).optional(),
   blurPhotos: z.boolean().optional(),
   linkedPartnerId: z.string().uuid().optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  isBurn: z.boolean().optional(),
 });
 
 router.get('/', authenticate, async (req: Request, res: Response, next: NextFunction) => {

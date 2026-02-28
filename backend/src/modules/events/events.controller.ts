@@ -21,7 +21,31 @@ export class EventsController {
         parseFloat(lng as string),
         radius ? parseFloat(radius as string) : undefined,
         {
-          vibeTag: vibe ? (vibe as 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly') : undefined,
+          vibeTag: vibe ? (vibe as 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly' | 'talk_first') : undefined,
+          viewerUserId: req.user!.userId,
+        }
+      );
+      res.json({ data: events, count: events.length });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /** GC-6.2: Events in the next 7 days (this week) for home screen. */
+  async getThisWeek(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { lat, lng, radius, vibe } = req.query;
+      const now = new Date();
+      const dateTo = new Date(now);
+      dateTo.setDate(dateTo.getDate() + 7);
+      const events = await eventsService.getNearbyEvents(
+        parseFloat(lat as string),
+        parseFloat(lng as string),
+        radius ? parseFloat(radius as string) : 50,
+        {
+          vibeTag: vibe ? (vibe as 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly' | 'talk_first') : undefined,
+          dateFrom: now.toISOString(),
+          dateTo: dateTo.toISOString(),
           viewerUserId: req.user!.userId,
         }
       );

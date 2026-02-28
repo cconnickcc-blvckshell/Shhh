@@ -1,7 +1,8 @@
 # Shhh — Architecture Document
 
 > Last updated: Sprint 5 | v0.5.0 | February 2026  
-> **Enhancement work:** Follow **docs/ENHANCEMENT_ROADMAP.md** (branch `shh-enhancement-trial`). Update this doc’s §2, §4, §6, §11 when adding modules, routes, or schema.
+> **Enhancement work:** Follow **docs/ENHANCEMENT_ROADMAP.md** (branch `shh-enhancement-trial`). Update this doc’s §2, §4, §6, §11 when adding modules, routes, or schema.  
+> **Mobile (Phases 1–5):** Auth guard + splash, 401→login, event detail + RSVP, Emergency Contacts & Privacy, chat Block/Report, Explore filters (radius, Verified, Active now), conversation list + chat polish. See **docs/FRONTEND_GAP_LIST.md** for status.
 
 ---
 
@@ -170,7 +171,11 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │   │   ├── session.service.ts
 │   │   │   │   ├── e2ee.routes.ts    # E2EE key exchange
 │   │   │   │   └── e2ee.service.ts
-│   │   │   ├── events/               # Events & RSVPs (vibe_tag, date filter)
+│   │   │   ├── events/               # Events & RSVPs (vibe_tag, date filter, series_id)
+│   │   │   ├── series/               # Recurring event series (follow, upcoming)
+│   │   │   ├── content/              # Guides, norms (content_slots)
+│   │   │   ├── stories/              # 24h stories (reuse media)
+│   │   │   ├── groups/               # Tribes / groups (membership, events)
 │   │   │   ├── tonight/              # Tonight feed (events + venues aggregator)
 │   │   │   │   ├── tonight.service.ts
 │   │   │   │   ├── tonight.controller.ts
@@ -233,6 +238,12 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │       ├── 019_events_door_code.sql
 │   │   │       ├── 020_venue_type_location_revealed.sql
 │   │   │       └── 021_events_visibility_rules.sql
+│   │   │       ├── 022_event_series.sql
+│   │   │       └── 023_primary_intent_discovery_visible.sql
+│   │   │       ├── 024_profile_visibility_tier.sql
+│   │   │       ├── 025_content_slots_vibe_talk_first.sql
+│   │   │       ├── 026_stories_live_personas_crossing.sql
+│   │   │       └── 027_groups_tribes.sql
 │   │   ├── app.ts                    # Express app, route mounting
 │   │   └── index.ts                  # Server entry, attach Socket.io
 │   ├── tests/
@@ -342,7 +353,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
 | GET | `/v1/users/me` | Yes | 0 | Get own profile |
-| PUT | `/v1/users/me` | Yes | 0 | Update profile (preferencesJson may include neutral_notifications for stealth push) |
+| PUT | `/v1/users/me` | Yes | 0 | Update profile (primaryIntent, discoveryVisibleTo, profileVisibilityTier; preferencesJson may include neutral_notifications for stealth push) |
 | GET | `/v1/users/:id/profile` | Yes | 0 | Get another user's profile (for discovery) |
 | POST | `/v1/users/:id/like` | Yes | 1 | Like user (returns match flag) |
 | POST | `/v1/users/:id/pass` | Yes | 0 | Pass on user |
@@ -377,16 +388,37 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ### Discovery
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/discover?lat=&lng=&radius=&venueId=&eventId=` | Yes | 0 | Find nearby users (PostGIS). Free tier capped at 30; premium or venue/event context uses higher cap. Response: data, count, discoveryCap, radiusUsedKm, computedRadiusKm? (density-aware suggestion). |
+| GET | `/v1/discover?lat=&lng=&...&inMyGroups=true` | Yes | 0 | Find nearby users. Optional inMyGroups (only users who share a group with me); primaryIntent, experienceLevel; discovery_visible_to. Free tier capped at 30; premium or venue/event context uses higher cap. |
+| GET | `/v1/discover/crossing-paths?minCount=` | Yes | 0 | Pairs (otherUserId, venueId, venueName, count) where both have crossing_paths_visible and overlapping check-ins >= minCount (default 2). |
 | POST | `/v1/discover/location` | Yes | 0 | Update user location |
+
+### Groups (tribes)
+| Method | Path | Auth | Tier | Description |
+|--------|------|------|------|-------------|
+| GET | `/v1/groups` | Yes | 0 | List groups (public + my groups) |
+| POST | `/v1/groups` | Yes | 2 | Create group (name, description, visibility) |
+| GET | `/v1/groups/:id` | Yes | 0 | Get group (is_member, member_count) |
+| POST | `/v1/groups/:id/join` | Yes | 0 | Join group (public only) |
+| DELETE | `/v1/groups/:id/leave` | Yes | 0 | Leave group |
+| GET | `/v1/groups/:id/members` | Yes | 0 | Privacy-safe members (total, membersPreview persona tiles) |
+| GET | `/v1/groups/:id/events` | Yes | 0 | Events linked to this group |
+| POST | `/v1/groups/:id/events` | Yes | 0 | Link event to group (body: eventId; group creator or event host) |
+
+### Stories (24h)
+| Method | Path | Auth | Tier | Description |
+|--------|------|------|------|-------------|
+| POST | `/v1/stories` | Yes | 0 | Create story (mediaId, optional venueId, ttlHours default 24) |
+| GET | `/v1/stories/nearby?lat=&lng=&radius=&limit=` | Yes | 0 | Stories from nearby venues or users |
+| GET | `/v1/stories/:id/view` | Yes | 0 | Record view (idempotent) |
+| GET | `/v1/stories/:id/viewers` | Yes | 0 | List viewers (author only) |
 
 ### Messaging
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/conversations` | Yes | 0 | List conversations |
+| GET | `/v1/conversations` | Yes | 0 | List conversations (includes consentState when applicable: requiresMutualConsent, grantedByMe, grantedCount) |
 | POST | `/v1/conversations` | Yes | 1 | Create conversation |
 | GET | `/v1/conversations/:id/messages` | Yes | 0 | Get messages |
-| POST | `/v1/conversations/:id/messages` | Yes | 0 | Send message |
+| POST | `/v1/conversations/:id/messages` | Yes | 0 | Send message (optional viewOnce, ttlSeconds on attachment for ephemeral/photo reply) |
 | PUT | `/v1/conversations/:id/retention` | Yes | 0 | Set retention (mode, archiveAt?, defaultMessageTtlSeconds?) |
 
 ### Media & Albums
@@ -412,7 +444,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
 | GET | `/v1/events/nearby?lat=&lng=&radius=&vibe=` | Yes | 0 | Find nearby events (optional vibe). Visibility-filtered by viewer; location redacted when location_revealed_after_rsvp until RSVP. |
-| POST | `/v1/events` | Yes | 2 | Create event (optional vibeTag, locationRevealedAfterRsvp, visibilityRule, visibilityTierMin, visibilityRadiusKm) |
+| GET | `/v1/events/this-week?lat=&lng=&radius=&vibe=` | Yes | 0 | Events in the next 7 days (GC-6.2 home screen); same params as nearby. |
+| POST | `/v1/events` | Yes | 2 | Create event (optional seriesId, vibeTag, locationRevealedAfterRsvp, visibilityRule, visibilityTierMin, visibilityRadiusKm) |
 | GET | `/v1/events/:id` | Yes | 0 | Get event details (visibility-checked; 403 if gated. Venue location redacted when location_revealed_after_rsvp until RSVP.) |
 | GET | `/v1/events/:id/attendees` | Yes | 0 | Privacy-safe attendee list (persona + badges) |
 | GET | `/v1/events/:id/chat-rooms` | Yes | 0 | Chat rooms linked to event |
@@ -420,6 +453,22 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | POST | `/v1/events/:id/checkin` | Yes | 0 | Check in at event |
 | PUT | `/v1/events/:id/door-code` | Yes | 0 | Set door code (host or venue staff; body: code, optional expiresAt) |
 | POST | `/v1/events/validate-door-code` | Yes | 0 | Validate code, grant RSVP + check-in (body: eventId, code); rate-limited |
+
+### Series (recurring events)
+| Method | Path | Auth | Tier | Description |
+|--------|------|------|------|-------------|
+| POST | `/v1/series` | Yes | 2 | Create series (name, optional venueId, recurrenceRule) |
+| GET | `/v1/series/:id` | Yes | 0 | Get series (includes following) |
+| GET | `/v1/series/:id/upcoming` | Yes | 0 | Upcoming events for this series (optional limit) |
+| POST | `/v1/series/:id/follow` | Yes | 0 | Follow series |
+| DELETE | `/v1/series/:id/follow` | Yes | 0 | Unfollow series |
+
+### Content (guides, norms)
+| Method | Path | Auth | Tier | Description |
+|--------|------|------|------|-------------|
+| GET | `/v1/content?keys=guides,norms&locale=` | No | — | Get content slots by key (default keys: guides, norms) |
+| GET | `/v1/content/guides` | No | — | Get guides slot |
+| GET | `/v1/content/norms` | No | — | Get community norms slot |
 
 ### Tonight feed
 | Method | Path | Auth | Tier | Description |
@@ -435,8 +484,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ### Personas
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/personas/me` | Yes | 0 | Get own personas |
-| PUT | `/v1/personas/me` | Yes | 0 | Update personas |
+| GET | `/v1/personas/me` | Yes | 0 | Get own personas (includes expiresAt, isBurn) |
+| PUT | `/v1/personas/me` | Yes | 0 | Update personas (create: optional expiresAt, isBurn; tonight-only = expires_at end of night) |
 
 ### Intents
 | Method | Path | Auth | Tier | Description |
@@ -479,7 +528,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ### Venue Identity & Dashboard
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| (mounted under `/v1/venues`) | | Yes | — | Venue accounts, announcements, check-ins, chat rooms, analytics, GET :id/analytics/density (peakLastDays, eventTypePerformance), staff, reviews, specials (see routes) |
+| (mounted under `/v1/venues`) | | Yes | — | Venue accounts, announcements; POST :id/checkin (optional liveDurationMinutes); GET :id/grid (optional liveOnly), GET :id/stats (includes liveCount), GET :id/stories; chat rooms, analytics, GET :id/analytics/density, staff, reviews, specials (see routes) |
 
 ### Session, Consent, Panic-Wipe
 | Method | Path | Auth | Tier | Description |
@@ -698,13 +747,13 @@ Self-destructing media uses two mechanisms:
 
 ## 6. Database Schema (ERD Summary)
 
-### PostgreSQL (45+ tables; migrations 001–021)
+### PostgreSQL (45+ tables; migrations 001–027)
 
 Core: `users`, `refresh_tokens`, `user_profiles`, `locations` (PostGIS, GIST), `blocks`, `user_interactions`, `reports`, `trust_scores`, `schema_migrations`.
 
 Auth & verification: `verifications`, `user_references`. Couples: `couples`. Discovery: (locations). Messaging: `conversations`, `conversation_participants` (012: retention_mode, archive_at, default_message_ttl_seconds, is_archived; worker archive-conversations every 1m). Events: `events`, `event_rsvps`, `venues`, `geofences`. Safety: `emergency_contacts`, `safety_checkins`. Compliance: `audit_logs`, `consent_records`, `data_deletion_requests` (worker processes pending requests every 5m: anonymize user + profile, then mark completed). Moderation: `moderation_queue`, `content_flags`.
 
-Added in later migrations: `push_tokens` (004), media/albums (003), `presence`, `personas`, `intent_flags`, `venue_accounts`, `venue_announcements`, `venue_checkins`, `venue_chat_rooms`, `photo_reveals` (005; 011 adds level, scope_type, scope_id), `subscriptions`, `screenshot_events` (008), `user_keys`, `prekey_bundles`, `conversation_keys` (006), `whispers`, onboarding/shield (007), `ad_placements`, `ad_impressions`, `ad_cadence_rules`, `ad_controls`, `venue_analytics`, `venue_staff`, `venue_reviews`, `venue_specials` (008), `admin_actions` (009), `bidirectional_preferences` (010). Album shares (013): `album_shares` gains share_target_type, share_target_id, watermark_mode, notify_on_view. Stealth: `user_profiles.preferences_json.neutral_notifications`; push.service uses it for generic title/body. Venue grid (014): `venue_checkins.anonymous_mode` (default true); GET /venues/:id/grid returns privacy-safe tiles. Event post prompts (015): `event_post_prompts` (event_id, user_id, prompt_type) avoids duplicate reference/keep_chatting pushes. Whispers (016): `whispers.category`, `whispers.reveal_policy`; unique index one pending per (from, to); max per day enforced. Events (017): `events.vibe_tag` optional. (019): door_code_hash, door_code_expires_at. (020): location_revealed_after_rsvp. (021): visibility_rule, visibility_tier_min, visibility_radius_km (open|tier_min|invite_only|attended_2_plus). Venues (018): verified_safe_at, verified_safe_metadata. (020): venue_type (physical|promoter|series). Phone/email hashing uses HMAC-SHA256 with `PHONE_HASH_PEPPER` (009).
+Added in later migrations: `push_tokens` (004), media/albums (003), `presence`, `personas`, `intent_flags`, `venue_accounts`, `venue_announcements`, `venue_checkins`, `venue_chat_rooms`, `photo_reveals` (005; 011 adds level, scope_type, scope_id), `subscriptions`, `screenshot_events` (008), `user_keys`, `prekey_bundles`, `conversation_keys` (006), `whispers`, onboarding/shield (007), `ad_placements`, `ad_impressions`, `ad_cadence_rules`, `ad_controls`, `venue_analytics`, `venue_staff`, `venue_reviews`, `venue_specials` (008), `admin_actions` (009), `bidirectional_preferences` (010). Album shares (013): `album_shares` gains share_target_type, share_target_id, watermark_mode, notify_on_view. Stealth: `user_profiles.preferences_json.neutral_notifications`; push.service uses it for generic title/body. Venue grid (014): `venue_checkins.anonymous_mode` (default true); GET /venues/:id/grid returns privacy-safe tiles. Event post prompts (015): `event_post_prompts` (event_id, user_id, prompt_type) avoids duplicate reference/keep_chatting pushes. Whispers (016): `whispers.category`, `whispers.reveal_policy`; unique index one pending per (from, to); max per day enforced. Events (017): `events.vibe_tag` optional. (019): door_code_hash, door_code_expires_at. (020): location_revealed_after_rsvp. (021): visibility_rule, visibility_tier_min, visibility_radius_km (open|tier_min|invite_only|attended_2_plus). Venues (018): verified_safe_at, verified_safe_metadata. (020): venue_type (physical|promoter|series). Phone/email hashing uses HMAC-SHA256 with `PHONE_HASH_PEPPER` (009). (022): event_series, user_series_follows, events.series_id. (023): user_profiles.primary_intent (social|curious|lifestyle|couple), user_profiles.discovery_visible_to (all|social_and_curious|same_intent). (024): user_profiles.profile_visibility_tier (all|after_reveal|after_match). (025): content_slots (key, title, body_md, link, locale); events.vibe_tag extended with talk_first. (026): stories, story_views; venue_checkins.live_until; personas.expires_at, is_burn; user_profiles.crossing_paths_visible. Messages (Mongo): viewOnce, ttlSeconds for ephemeral/photo reply. (027): groups, group_members, group_events.
 
 ### MongoDB
 

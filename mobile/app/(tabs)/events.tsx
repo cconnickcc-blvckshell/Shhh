@@ -37,7 +37,7 @@ export default function EventsScreen() {
       <TouchableOpacity
         style={s.card}
         activeOpacity={0.85}
-        onPress={() => item.venue_id ? router.push(`/venue/${item.venue_id}`) : null}
+        onPress={() => router.push(`/event/${item.id}`)}
       >
         <View style={s.banner}>
           <Ionicons name="sparkles" size={20} color={colors.primaryLight} />
@@ -58,7 +58,7 @@ export default function EventsScreen() {
             {item.venue_name && <Text style={s.venue}>📍 {item.venue_name}</Text>}
             {item.description && <Text style={s.desc} numberOfLines={2}>{item.description}</Text>}
           </View>
-          <TouchableOpacity style={s.rsvpBtn} onPress={() => toggleRsvp(item.id)}>
+          <TouchableOpacity style={s.rsvpBtn} onPress={(e) => { e?.stopPropagation?.(); toggleRsvp(item.id); }}>
             <Ionicons name={isGoing ? 'heart' : 'heart-outline'} size={20} color={isGoing ? '#fff' : colors.primaryLight} />
           </TouchableOpacity>
         </View>

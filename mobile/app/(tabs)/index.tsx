@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Alert, TextInput, Vibration } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { discoverApi, usersApi, api } from '../../src/api/client';
+import { discoverApi, api } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
-import { colors, fontSize } from '../../src/constants/theme';
+import { useAuthStore } from '../../src/stores/auth';
+import { colors, fontSize, spacing, borderRadius } from '../../src/constants/theme';
 
 interface NearbyUser {
   userId: string; displayName: string; bio: string; distance: number;
@@ -30,26 +31,49 @@ const INTENT_ICONS: Record<string, { icon: string; label: string }> = {
   couples_only: { icon: 'people-circle', label: 'Couples' },
 };
 
+const RADIUS_OPTIONS = [5, 25, 50] as const;
+type SortMode = 'nearest' | 'active';
+
 export default function DiscoverScreen() {
+  const profile = useAuthStore((s) => s.profile);
   const [users, setUsers] = useState<NearbyUser[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [whisperTarget, setWhisperTarget] = useState<string | null>(null);
   const [whisperText, setWhisperText] = useState('');
+  const [radiusKm, setRadiusKm] = useState<number>(50);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>('nearest');
   const { width } = useWindowDimensions();
   const cols = width > 500 ? 3 : 2;
   const tileW = (width - GAP * (cols + 1)) / cols;
   const tileH = tileW * 1.45;
 
+  const primaryIntent = profile?.primaryIntent ?? undefined;
+
   const load = useCallback(async () => {
     try {
       await discoverApi.updateLocation(40.7128, -74.006);
-      const res = await discoverApi.nearby(40.7128, -74.006, 50);
-      setUsers(res.data.sort((a: NearbyUser, b: NearbyUser) => a.distance - b.distance));
+      const res = await discoverApi.nearby(40.7128, -74.006, radiusKm, primaryIntent);
+      let list = (res.data as NearbyUser[]).sort((a, b) => a.distance - b.distance);
+      if (verifiedOnly) list = list.filter((u) => u.verificationStatus && u.verificationStatus !== 'unverified');
+      setUsers(list);
     } catch {}
-  }, []);
+  }, [radiusKm, primaryIntent, verifiedOnly]);
 
   useEffect(() => { load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+
+  const sortedUsers = useMemo(() => {
+    if (sortMode === 'active') {
+      return [...users].sort((a, b) => {
+        const aActive = a.presenceState ? 1 : 0;
+        const bActive = b.presenceState ? 1 : 0;
+        if (bActive !== aActive) return bActive - aActive;
+        return a.distance - b.distance;
+      });
+    }
+    return [...users].sort((a, b) => a.distance - b.distance);
+  }, [users, sortMode]);
 
   const handleLongPress = (item: NearbyUser) => {
     Vibration.vibrate(10);
@@ -139,8 +163,38 @@ export default function DiscoverScreen() {
         </View>
       )}
 
+      {/* Filters */}
+      <View style={s.filterBar}>
+        <View style={s.radiusRow}>
+          {RADIUS_OPTIONS.map((r) => (
+            <TouchableOpacity
+              key={r}
+              style={[s.radiusChip, radiusKm === r && s.radiusChipActive]}
+              onPress={() => setRadiusKm(r)}
+              activeOpacity={0.8}
+            >
+              <Text style={[s.radiusChipText, radiusKm === r && s.radiusChipTextActive]}>{r} km</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity style={[s.toggleChip, verifiedOnly && s.toggleChipActive]} onPress={() => setVerifiedOnly((v) => !v)} activeOpacity={0.8}>
+          <Ionicons name="shield-checkmark" size={14} color={verifiedOnly ? colors.background : colors.textMuted} />
+          <Text style={[s.toggleChipText, verifiedOnly && s.toggleChipTextActive]}>Verified</Text>
+        </TouchableOpacity>
+        <View style={s.sortRow}>
+          <TouchableOpacity style={[s.sortChip, sortMode === 'nearest' && s.sortChipActive]} onPress={() => setSortMode('nearest')} activeOpacity={0.8}>
+            <Ionicons name="navigate" size={12} color={sortMode === 'nearest' ? colors.background : colors.textMuted} />
+            <Text style={[s.sortChipText, sortMode === 'nearest' && s.sortChipTextActive]}>Nearest</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[s.sortChip, sortMode === 'active' && s.sortChipActive]} onPress={() => setSortMode('active')} activeOpacity={0.8}>
+            <Ionicons name="pulse" size={12} color={sortMode === 'active' ? colors.background : colors.textMuted} />
+            <Text style={[s.sortChipText, sortMode === 'active' && s.sortChipTextActive]}>Active now</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <FlatList
-        data={users}
+        data={sortedUsers}
         keyExtractor={i => i.userId}
         renderItem={renderTile}
         numColumns={cols}
@@ -162,6 +216,21 @@ export default function DiscoverScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
+  filterBar: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, paddingBottom: spacing.xs, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  radiusRow: { flexDirection: 'row', gap: 6 },
+  radiusChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: borderRadius.full, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  radiusChipActive: { backgroundColor: colors.primarySoft, borderColor: colors.borderGlow },
+  radiusChipText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: '600' },
+  radiusChipTextActive: { color: colors.primaryLight },
+  toggleChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: borderRadius.full, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  toggleChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  toggleChipText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: '600' },
+  toggleChipTextActive: { color: colors.textOnPrimary },
+  sortRow: { flexDirection: 'row', gap: 6, marginLeft: 'auto' },
+  sortChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: borderRadius.full, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  sortChipActive: { backgroundColor: colors.primaryLight, borderColor: colors.primaryLight },
+  sortChipText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: '600' },
+  sortChipTextActive: { color: colors.background },
   tile: { marginBottom: GAP, overflow: 'hidden', position: 'relative', backgroundColor: '#0A0A12' },
   presenceBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, zIndex: 5 },
   topRow: { position: 'absolute', top: 6, left: 8, flexDirection: 'row', gap: 4, zIndex: 5 },

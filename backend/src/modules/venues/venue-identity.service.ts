@@ -61,7 +61,7 @@ export class VenueIdentityService {
     return result.rows;
   }
 
-  async checkIn(venueId: string, userId: string, options?: { anonymousMode?: boolean }) {
+  async checkIn(venueId: string, userId: string, options?: { anonymousMode?: boolean; liveDurationMinutes?: number }) {
     const active = await query(
       `SELECT id FROM venue_checkins WHERE venue_id = $1 AND user_id = $2 AND checked_out_at IS NULL`,
       [venueId, userId]
@@ -73,16 +73,23 @@ export class VenueIdentityService {
     const hasAnonymousCol = await query(
       `SELECT 1 FROM information_schema.columns WHERE table_name = 'venue_checkins' AND column_name = 'anonymous_mode'`
     );
+    const hasLiveUntilCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'venue_checkins' AND column_name = 'live_until'`
+    );
     const anonymousMode = options?.anonymousMode !== false;
-    const result = hasAnonymousCol.rows.length > 0
-      ? await query(
-          `INSERT INTO venue_checkins (venue_id, user_id, anonymous_mode) VALUES ($1, $2, $3) RETURNING id, checked_in_at`,
-          [venueId, userId, anonymousMode]
-        )
-      : await query(
-          `INSERT INTO venue_checkins (venue_id, user_id) VALUES ($1, $2) RETURNING id, checked_in_at`,
-          [venueId, userId]
-        );
+    const liveUntil = options?.liveDurationMinutes
+      ? new Date(Date.now() + options.liveDurationMinutes * 60 * 1000)
+      : null;
+
+    const cols = ['venue_id', 'user_id'];
+    const vals: unknown[] = [venueId, userId];
+    if (hasAnonymousCol.rows.length > 0) { cols.push('anonymous_mode'); vals.push(anonymousMode); }
+    if (hasLiveUntilCol.rows.length > 0 && liveUntil) { cols.push('live_until'); vals.push(liveUntil); }
+    const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
+    const result = await query(
+      `INSERT INTO venue_checkins (${cols.join(', ')}) VALUES (${placeholders}) RETURNING id, checked_in_at, live_until`,
+      vals
+    );
     return { alreadyCheckedIn: false, ...result.rows[0] };
   }
 
@@ -108,19 +115,24 @@ export class VenueIdentityService {
     return result.rows;
   }
 
-  /** Privacy-safe grid: tiles with persona/badges or anonymous. No user ids exposed. */
-  async getVenueGrid(venueId: string): Promise<Array<{ anonymous: true; distanceBucket: string } | { personaType: string; personaDisplayName: string | null; badges: string[]; distanceBucket: string }>> {
+  /** Privacy-safe grid: tiles with persona/badges or anonymous. Optional liveOnly: only check-ins with live_until > NOW(). */
+  async getVenueGrid(venueId: string, options?: { liveOnly?: boolean }): Promise<Array<{ anonymous: true; distanceBucket: string; live?: boolean } | { personaType: string; personaDisplayName: string | null; badges: string[]; distanceBucket: string; live?: boolean }>> {
     const hasAnonymousCol = await query(
       `SELECT 1 FROM information_schema.columns WHERE table_name = 'venue_checkins' AND column_name = 'anonymous_mode'`
     );
+    const hasLiveUntilCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'venue_checkins' AND column_name = 'live_until'`
+    );
     const selectAnonymous = hasAnonymousCol.rows.length > 0 ? 'vc.anonymous_mode' : 'true AS anonymous_mode';
+    const liveFilter = options?.liveOnly && hasLiveUntilCol.rows.length > 0 ? ' AND vc.live_until IS NOT NULL AND vc.live_until > NOW()' : '';
+    const selectLive = hasLiveUntilCol.rows.length > 0 ? ', (vc.live_until IS NOT NULL AND vc.live_until > NOW()) AS is_live' : ', false AS is_live';
 
     const result = await query(
-      `SELECT ${selectAnonymous}, per.type as persona_type, per.display_name as persona_name, u.verification_tier
+      `SELECT ${selectAnonymous}${selectLive}, per.type as persona_type, per.display_name as persona_name, u.verification_tier
        FROM venue_checkins vc
        LEFT JOIN personas per ON per.user_id = vc.user_id AND per.is_active = true
        LEFT JOIN users u ON vc.user_id = u.id
-       WHERE vc.venue_id = $1 AND vc.checked_out_at IS NULL AND vc.is_visible = true
+       WHERE vc.venue_id = $1 AND vc.checked_out_at IS NULL AND vc.is_visible = true${liveFilter}
        ORDER BY vc.checked_in_at DESC`,
       [venueId]
     );
@@ -132,32 +144,41 @@ export class VenueIdentityService {
       return ['verified'];
     };
 
-    return result.rows.map((r: { anonymous_mode?: boolean; persona_type: string | null; persona_name: string | null; verification_tier: number | null }) => {
+    return result.rows.map((r: { anonymous_mode?: boolean; is_live?: boolean; persona_type: string | null; persona_name: string | null; verification_tier: number | null }) => {
       const anonymous = r.anonymous_mode !== false;
       const distanceBucket = 'here';
+      const live = r.is_live === true;
       if (anonymous) {
-        return { anonymous: true as const, distanceBucket };
+        return { anonymous: true as const, distanceBucket, ...(live && { live: true }) };
       }
       return {
         personaType: r.persona_type || 'solo',
         personaDisplayName: r.persona_name || null,
         badges: tierToBadges(r.verification_tier),
         distanceBucket,
+        ...(live && { live: true }),
       };
     });
   }
 
   async getVenueStats(venueId: string) {
-    const [current, total, events] = await Promise.all([
+    const hasLiveUntil = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'venue_checkins' AND column_name = 'live_until'`
+    );
+    const [current, total, events, withLive] = await Promise.all([
       query(`SELECT COUNT(*) as cnt FROM venue_checkins WHERE venue_id = $1 AND checked_out_at IS NULL`, [venueId]),
       query(`SELECT COUNT(DISTINCT user_id) as cnt FROM venue_checkins WHERE venue_id = $1`, [venueId]),
       query(`SELECT COUNT(*) as cnt FROM events WHERE venue_id = $1 AND status IN ('upcoming', 'active')`, [venueId]),
+      hasLiveUntil.rows.length > 0
+        ? query(`SELECT COUNT(*) as cnt FROM venue_checkins WHERE venue_id = $1 AND checked_out_at IS NULL AND live_until IS NOT NULL AND live_until > NOW()`, [venueId])
+        : Promise.resolve({ rows: [{ cnt: 0 }] }),
     ]);
 
     return {
       currentAttendees: parseInt(current.rows[0].cnt),
       totalVisitors: parseInt(total.rows[0].cnt),
       upcomingEvents: parseInt(events.rows[0].cnt),
+      ...(hasLiveUntil.rows.length > 0 && { liveCount: parseInt(withLive.rows[0].cnt) }),
     };
   }
 
