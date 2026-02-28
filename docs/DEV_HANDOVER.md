@@ -605,8 +605,10 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | GET | `/v1/events/:id/chat-rooms` | Yes | 0 | Chat rooms linked to this event |
 | POST | `/v1/events/:id/rsvp` | Yes | 0 | RSVP to event |
 | POST | `/v1/events/:id/checkin` | Yes | 0 | Check in at event |
+| PUT | `/v1/events/:id/door-code` | Yes | 0 | Set door code (host or venue staff; body: code, optional expiresAt) |
+| POST | `/v1/events/validate-door-code` | Yes | 0 | Validate code, grant RSVP + check-in (body: eventId, code); rate-limited |
 
-**Database tables owned:** `events` (017: optional `vibe_tag`), `event_rsvps`, `event_post_prompts` (015: one prompt per type per user per event)
+**Database tables owned:** `events` (017: optional `vibe_tag`; 019: `door_code_hash`, `door_code_expires_at`), `event_rsvps`, `event_post_prompts` (015: one prompt per type per user per event)
 
 **Key business rules:**
 - Event creation requires tier 2 (ID-verified)
@@ -621,6 +623,7 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 - RSVP statuses: `going`, `maybe`, `declined`, `checked_in`
 - Events can be private (require invite code) or public
 - **Vibe tag (017):** Optional `vibe_tag` on events: `social_mix`, `lifestyle`, `kink`, `couples_only`, `newbie_friendly`; filter nearby by `vibe=` query param
+- **Door code (019):** Event host or venue staff can set a door code (PUT `/v1/events/:id/door-code`). Attendees validate with POST `/v1/events/validate-door-code` (eventId, code); on success they are added/updated as checked-in. Code stored as SHA-256 hash; optional expiresAt. Rate-limited.
 
 ### 4.14.1 Tonight feed
 
@@ -708,6 +711,7 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | GET | `/v1/venues/:id/full` | Yes | 0 | Full public venue profile |
 | GET | `/v1/venues/:id/dashboard` | Yes | 2 | Owner dashboard overview |
 | GET | `/v1/venues/:id/analytics` | Yes | 2 | Analytics range (default 30 days) |
+| GET | `/v1/venues/:id/analytics/density` | Yes | 2 | Density intelligence: peakLastDays (peak check-ins), eventTypePerformance (aggregates; no PII) |
 | GET | `/v1/venues/:id/trends` | Yes | 2 | Weekly trends from 90 days |
 | PUT | `/v1/venues/:id/profile` | Yes | 2 | Update venue profile |
 | GET | `/v1/venues/:id/staff` | Yes | 0 | List staff |
@@ -727,6 +731,7 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 - Vibe tags are stored as `text[]` — freeform strings like "chill", "loud", "friendly"
 - Staff roles: `owner`, `manager`, `staff`, `security`, `dj`
 - Specials support recurring schedules (day_of_week + start/end time)
+- **Density intelligence (GC-1.4):** GET `/v1/venues/:id/analytics/density` returns `peakLastDays` (date, peakHour, peakCount from venue_analytics) and `eventTypePerformance` (event type, eventCount, totalAttendees, avgAttendees). Aggregates only; no PII.
 
 ### 4.18 Safety Module
 

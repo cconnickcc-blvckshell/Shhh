@@ -91,6 +91,7 @@ Every v1 route with method, path, auth, tier/role, and source file. Single sourc
 | GET | venues/:id/full | Yes | 0 | — | venues/venue-dashboard.routes.ts |
 | GET | venues/:id/dashboard | Yes | 2 | — | venues/venue-dashboard.routes.ts |
 | GET | venues/:id/analytics | Yes | 2 | — | venues/venue-dashboard.routes.ts |
+| GET | venues/:id/analytics/density | Yes | 2 | — | venues/venue-dashboard.routes.ts |
 | GET | venues/:id/trends | Yes | 2 | — | venues/venue-dashboard.routes.ts |
 | PUT | venues/:id/profile | Yes | 2 | — | venues/venue-dashboard.routes.ts |
 | GET | venues/:id/staff | Yes | 0 | — | venues/venue-dashboard.routes.ts |
@@ -102,12 +103,14 @@ Every v1 route with method, path, auth, tier/role, and source file. Single sourc
 | POST | venues/:id/specials | Yes | 2 | — | venues/venue-dashboard.routes.ts |
 | GET | tonight | Yes | 0 | — | tonight/tonight.routes.ts |
 | GET | events/nearby | Yes | 0 | — | events/events.routes.ts |
+| POST | events/validate-door-code | Yes | 0 | — | events/events.routes.ts |
 | POST | events | Yes | 2 | — | events/events.routes.ts |
 | GET | events/:id | Yes | 0 | — | events/events.routes.ts |
 | GET | events/:id/attendees | Yes | 0 | — | events/events.routes.ts |
 | GET | events/:id/chat-rooms | Yes | 0 | — | events/events.routes.ts |
 | POST | events/:id/rsvp | Yes | 0 | — | events/events.routes.ts |
 | POST | events/:id/checkin | Yes | 0 | — | events/events.routes.ts |
+| PUT | events/:id/door-code | Yes | 0 | — | events/events.routes.ts |
 | GET | safety/contacts | Yes | 0 | — | safety/safety.routes.ts |
 | POST | safety/contacts | Yes | 0 | — | safety/safety.routes.ts |
 | DELETE | safety/contacts/:id | Yes | 0 | — | safety/safety.routes.ts |

@@ -76,4 +76,31 @@ export class EventsController {
       next(err);
     }
   }
+
+  async setDoorCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const event = await eventsService.setDoorCode(
+        req.params.id as string,
+        req.user!.userId,
+        req.body.code,
+        req.body.expiresAt
+      );
+      res.json({ data: event });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async validateDoorCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const event = await eventsService.validateDoorCode(
+        req.body.eventId,
+        req.body.code,
+        req.user!.userId
+      );
+      res.json({ data: event, message: 'Access granted' });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

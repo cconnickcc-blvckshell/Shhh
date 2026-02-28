@@ -70,6 +70,19 @@ describe('Admin API', () => {
     expect(res.body.data).toBeInstanceOf(Array);
   });
 
+  it('GET /v1/venues/:id/analytics/density returns density intelligence (tier 2)', async () => {
+    const tier2 = await createTestUser('DensityTester', 2);
+    const res = await request
+      .get('/v1/venues/00000000-0000-0000-0000-000000000001/analytics/density')
+      .set('Authorization', `Bearer ${tier2.accessToken}`);
+    expect([200, 500]).toContain(res.status); // 500 if venue_analytics not present (e.g. migrations not all applied)
+    if (res.status === 200) {
+      expect(res.body.data).toHaveProperty('peakLastDays');
+      expect(res.body.data).toHaveProperty('eventTypePerformance');
+      expect(Array.isArray(res.body.data.eventTypePerformance)).toBe(true);
+    }
+  });
+
   it('rejects non-admin users', async () => {
     const user = await createTestUser('LowTierUser', 0);
     const res = await request

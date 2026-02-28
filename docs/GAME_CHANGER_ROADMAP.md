@@ -355,8 +355,8 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 | — | (Phase C.4) Distress to venue security | ✅ Done | Implemented in ENHANCEMENT_ROADMAP Phase C.4 (POST /v1/safety/venue-distress). |
 | 1 | Tonight feed | ✅ Done | GET /v1/tonight; events + venues with currentAttendees; optional date, radius. |
 | 1 | Venue vibe / theme nights | ✅ Done | events.vibe_tag (migration 017); create/filter by vibe. |
-| 1 | Venue-issued passes | ⬜ Not started | |
-| 1 | Venue density intelligence | ⬜ Not started | |
+| 1 | Venue-issued passes | ✅ Done | events.door_code_hash + expires (019); PUT :id/door-code, POST validate-door-code (rate-limited). |
+| 1 | Venue density intelligence | ✅ Done | GET /v1/venues/:id/analytics/density (peakLastDays, eventTypePerformance). |
 | 1 | Verified safe venue badge | ✅ Done | venues.verified_safe_at + metadata (018); GET venue/nearby/tonight include verifiedSafe; PUT :id/verified-safe (owner). |
 | 2 | Venue = any host (promoter) | ⬜ Not started | |
 | 2 | Private / gated events | ⬜ Not started | |
@@ -382,6 +382,8 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 - GC-1.1 Tonight feed: GET /v1/tonight (events + venues with currentAttendees; branch `shh-enhancement-trial`).
 - GC-1.2 Venue vibe / theme nights: events.vibe_tag (migration 017), create/filter by vibe (branch `shh-enhancement-trial`).
 - GC-1.5 Verified safe venue badge: venues.verified_safe_at, verified_safe_metadata (migration 018); GET venue/nearby/tonight include verifiedSafe; PUT /v1/venues/:id/verified-safe (owner self-attest) (branch `shh-enhancement-trial`).
+- GC-1.3 Venue-issued passes: events.door_code_hash, door_code_expires_at (migration 019); PUT /v1/events/:id/door-code (host/staff), POST /v1/events/validate-door-code (rate-limited); grants RSVP + check-in (branch `shh-enhancement-trial`).
+- GC-1.4 Venue density intelligence: GET /v1/venues/:id/analytics/density (peakLastDays, eventTypePerformance); tier 2 (branch `shh-enhancement-trial`).
 
 ---
 

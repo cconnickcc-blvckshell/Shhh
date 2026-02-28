@@ -24,6 +24,14 @@ router.get('/:id/dashboard', authenticate, requireTier(2), async (req: Request, 
   } catch (err) { next(err); }
 });
 
+router.get('/:id/analytics/density', authenticate, requireTier(2), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const days = req.query.days ? parseInt(req.query.days as string) : 30;
+    const data = await svc.getDensityIntelligence(req.params.id as string, days);
+    res.json({ data });
+  } catch (err) { next(err); }
+});
+
 router.get('/:id/analytics', authenticate, requireTier(2), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const days = req.query.days ? parseInt(req.query.days as string) : 30;

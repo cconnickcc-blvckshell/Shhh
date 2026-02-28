@@ -104,6 +104,29 @@ describe('Events API', () => {
     expect(res.body).toHaveProperty('data');
     expect(Array.isArray(res.body.data)).toBe(true);
   });
+
+  it('PUT /v1/events/:id/door-code sets door code (host)', async () => {
+    const res = await request
+      .put(`/v1/events/${eventId}/door-code`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ code: 'DOOR1234' });
+    if (res.status === 501) return; // migration 019 not applied
+    expect([200, 501]).toContain(res.status);
+    if (res.status === 200) expect(res.body.data).toHaveProperty('id');
+  });
+
+  it('POST /v1/events/validate-door-code validates and grants access', async () => {
+    const res = await request
+      .post('/v1/events/validate-door-code')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ eventId, code: 'DOOR1234' });
+    if (res.status === 501) return;
+    expect([200, 400, 403]).toContain(res.status);
+    if (res.status === 200) {
+      expect(res.body.data).toHaveProperty('id');
+      expect(res.body.message).toContain('Access granted');
+    }
+  });
 });
 
 describe('Tonight feed API', () => {

@@ -66,6 +66,45 @@ export class VenueDashboardService {
     return result.rows;
   }
 
+  /** Density intelligence: peak check-ins (last N days) and event-type performance. Aggregates only, no PII. */
+  async getDensityIntelligence(venueId: string, days: number = 30) {
+    const [peakRow, eventTypes] = await Promise.all([
+      query(
+        `SELECT va.date, va.peak_hour, va.peak_count FROM venue_analytics va
+         WHERE va.venue_id = $1 AND va.date >= CURRENT_DATE - $2 AND va.peak_count IS NOT NULL
+         ORDER BY va.peak_count DESC NULLS LAST LIMIT 1`,
+        [venueId, days]
+      ),
+      query(
+        `SELECT e.type AS event_type,
+                COUNT(DISTINCT e.id)::int AS event_count,
+                COUNT(er.user_id) FILTER (WHERE er.status IN ('going', 'checked_in'))::int AS total_attendees
+         FROM events e
+         LEFT JOIN event_rsvps er ON e.id = er.event_id
+         WHERE e.venue_id = $1 AND e.ends_at >= (CURRENT_DATE - $2)::timestamp
+         GROUP BY e.type ORDER BY total_attendees DESC NULLS LAST`,
+        [venueId, days]
+      ),
+    ]);
+
+    const peak = peakRow.rows[0]
+      ? {
+          date: peakRow.rows[0].date,
+          peakHour: peakRow.rows[0].peak_hour,
+          peakCount: peakRow.rows[0].peak_count,
+        }
+      : null;
+
+    const eventTypePerformance = eventTypes.rows.map((r: { event_type: string; event_count: number; total_attendees: number }) => ({
+      eventType: r.event_type || 'other',
+      eventCount: r.event_count,
+      totalAttendees: r.total_attendees,
+      avgAttendees: r.event_count > 0 ? Math.round(r.total_attendees / r.event_count) : 0,
+    }));
+
+    return { peakLastDays: peak, eventTypePerformance };
+  }
+
   // ==================== STAFF ====================
   async inviteStaff(venueId: string, userId: string, role: string) {
     const result = await query(

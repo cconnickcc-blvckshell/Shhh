@@ -1,4 +1,5 @@
 import { query } from '../../config/database';
+import { hashGeneric } from '../../utils/hash';
 
 export type VibeTag = 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly';
 
@@ -140,5 +141,60 @@ export class EventsService {
       [eventId]
     );
     return result.rows;
+  }
+
+  /** Set door code for at-door validation (host or venue staff only). Code stored as hash. */
+  async setDoorCode(eventId: string, userId: string, code: string, expiresAt?: string) {
+    const event = await query(
+      `SELECT e.id, e.host_user_id, e.venue_id FROM events e WHERE e.id = $1`,
+      [eventId]
+    );
+    if (event.rows.length === 0) throw Object.assign(new Error('Event not found'), { statusCode: 404 });
+    const e = event.rows[0];
+    if (e.host_user_id !== userId) {
+      if (!e.venue_id) throw Object.assign(new Error('Only event host can set door code'), { statusCode: 403 });
+      const staff = await query(
+        `SELECT 1 FROM venue_staff WHERE venue_id = $1 AND user_id = $2 AND is_active = true`,
+        [e.venue_id, userId]
+      );
+      if (staff.rows.length === 0) throw Object.assign(new Error('Only event host or venue staff can set door code'), { statusCode: 403 });
+    }
+    const hasCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'door_code_hash'`
+    );
+    if (hasCol.rows.length === 0) throw Object.assign(new Error('Door code feature not available'), { statusCode: 501 });
+    const normalized = code.trim().toUpperCase();
+    if (normalized.length < 4) throw Object.assign(new Error('Code must be at least 4 characters'), { statusCode: 400 });
+    const hash = hashGeneric(normalized);
+    await query(
+      `UPDATE events SET door_code_hash = $2, door_code_expires_at = $3, updated_at = NOW() WHERE id = $1`,
+      [eventId, hash, expiresAt || null]
+    );
+    return this.getEvent(eventId);
+  }
+
+  /** Validate door code and grant in-app access (RSVP + check-in). Rate-limit caller. */
+  async validateDoorCode(eventId: string, code: string, userId: string) {
+    const hasCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'door_code_hash'`
+    );
+    if (hasCol.rows.length === 0) throw Object.assign(new Error('Door code feature not available'), { statusCode: 501 });
+    const event = await query(
+      `SELECT id, door_code_hash, door_code_expires_at, status FROM events WHERE id = $1`,
+      [eventId]
+    );
+    if (event.rows.length === 0) throw Object.assign(new Error('Event not found'), { statusCode: 404 });
+    const e = event.rows[0] as { door_code_hash: string | null; door_code_expires_at: string | null; status: string };
+    if (!e.door_code_hash) throw Object.assign(new Error('No door code set for this event'), { statusCode: 400 });
+    if (e.door_code_expires_at && new Date(e.door_code_expires_at) < new Date()) throw Object.assign(new Error('Door code has expired'), { statusCode: 400 });
+    const hash = hashGeneric(code.trim().toUpperCase());
+    if (hash !== e.door_code_hash) throw Object.assign(new Error('Invalid door code'), { statusCode: 403 });
+    await query(
+      `INSERT INTO event_rsvps (event_id, user_id, status, arrived_at)
+       VALUES ($1, $2, 'checked_in', NOW())
+       ON CONFLICT (event_id, user_id) DO UPDATE SET status = 'checked_in', arrived_at = NOW()`,
+      [eventId, userId]
+    );
+    return this.getEvent(eventId);
   }
 }

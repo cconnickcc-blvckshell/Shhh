@@ -229,7 +229,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │       ├── 015_event_attendees_post_prompts.sql
 │   │   │       ├── 016_whispers_categories_quotas.sql
 │   │   │       ├── 017_events_vibe_tag.sql
-│   │   │       └── 018_venue_verified_safe.sql
+│   │   │       ├── 018_venue_verified_safe.sql
+│   │   │       └── 019_events_door_code.sql
 │   │   ├── app.ts                    # Express app, route mounting
 │   │   └── index.ts                  # Server entry, attach Socket.io
 │   ├── tests/
@@ -415,6 +416,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | GET | `/v1/events/:id/chat-rooms` | Yes | 0 | Chat rooms linked to event |
 | POST | `/v1/events/:id/rsvp` | Yes | 0 | RSVP to event |
 | POST | `/v1/events/:id/checkin` | Yes | 0 | Check in at event |
+| PUT | `/v1/events/:id/door-code` | Yes | 0 | Set door code (host or venue staff; body: code, optional expiresAt) |
+| POST | `/v1/events/validate-door-code` | Yes | 0 | Validate code, grant RSVP + check-in (body: eventId, code); rate-limited |
 
 ### Tonight feed
 | Method | Path | Auth | Tier | Description |
@@ -474,7 +477,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ### Venue Identity & Dashboard
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| (mounted under `/v1/venues`) | | Yes | — | Venue accounts, announcements, check-ins, chat rooms, analytics, staff, reviews, specials (see routes) |
+| (mounted under `/v1/venues`) | | Yes | — | Venue accounts, announcements, check-ins, chat rooms, analytics, GET :id/analytics/density (peakLastDays, eventTypePerformance), staff, reviews, specials (see routes) |
 
 ### Session, Consent, Panic-Wipe
 | Method | Path | Auth | Tier | Description |
@@ -693,13 +696,13 @@ Self-destructing media uses two mechanisms:
 
 ## 6. Database Schema (ERD Summary)
 
-### PostgreSQL (45+ tables; migrations 001–018)
+### PostgreSQL (45+ tables; migrations 001–019)
 
 Core: `users`, `refresh_tokens`, `user_profiles`, `locations` (PostGIS, GIST), `blocks`, `user_interactions`, `reports`, `trust_scores`, `schema_migrations`.
 
 Auth & verification: `verifications`, `user_references`. Couples: `couples`. Discovery: (locations). Messaging: `conversations`, `conversation_participants` (012: retention_mode, archive_at, default_message_ttl_seconds, is_archived; worker archive-conversations every 1m). Events: `events`, `event_rsvps`, `venues`, `geofences`. Safety: `emergency_contacts`, `safety_checkins`. Compliance: `audit_logs`, `consent_records`, `data_deletion_requests` (worker processes pending requests every 5m: anonymize user + profile, then mark completed). Moderation: `moderation_queue`, `content_flags`.
 
-Added in later migrations: `push_tokens` (004), media/albums (003), `presence`, `personas`, `intent_flags`, `venue_accounts`, `venue_announcements`, `venue_checkins`, `venue_chat_rooms`, `photo_reveals` (005; 011 adds level, scope_type, scope_id), `subscriptions`, `screenshot_events` (008), `user_keys`, `prekey_bundles`, `conversation_keys` (006), `whispers`, onboarding/shield (007), `ad_placements`, `ad_impressions`, `ad_cadence_rules`, `ad_controls`, `venue_analytics`, `venue_staff`, `venue_reviews`, `venue_specials` (008), `admin_actions` (009), `bidirectional_preferences` (010). Album shares (013): `album_shares` gains share_target_type, share_target_id, watermark_mode, notify_on_view. Stealth: `user_profiles.preferences_json.neutral_notifications`; push.service uses it for generic title/body. Venue grid (014): `venue_checkins.anonymous_mode` (default true); GET /venues/:id/grid returns privacy-safe tiles. Event post prompts (015): `event_post_prompts` (event_id, user_id, prompt_type) avoids duplicate reference/keep_chatting pushes. Whispers (016): `whispers.category`, `whispers.reveal_policy`; unique index one pending per (from, to); max per day enforced. Events (017): `events.vibe_tag` optional (social_mix, lifestyle, kink, couples_only, newbie_friendly). Venues (018): `verified_safe_at`, `verified_safe_metadata` (self-attest or partner; no PII). Phone/email hashing uses HMAC-SHA256 with `PHONE_HASH_PEPPER` (009).
+Added in later migrations: `push_tokens` (004), media/albums (003), `presence`, `personas`, `intent_flags`, `venue_accounts`, `venue_announcements`, `venue_checkins`, `venue_chat_rooms`, `photo_reveals` (005; 011 adds level, scope_type, scope_id), `subscriptions`, `screenshot_events` (008), `user_keys`, `prekey_bundles`, `conversation_keys` (006), `whispers`, onboarding/shield (007), `ad_placements`, `ad_impressions`, `ad_cadence_rules`, `ad_controls`, `venue_analytics`, `venue_staff`, `venue_reviews`, `venue_specials` (008), `admin_actions` (009), `bidirectional_preferences` (010). Album shares (013): `album_shares` gains share_target_type, share_target_id, watermark_mode, notify_on_view. Stealth: `user_profiles.preferences_json.neutral_notifications`; push.service uses it for generic title/body. Venue grid (014): `venue_checkins.anonymous_mode` (default true); GET /venues/:id/grid returns privacy-safe tiles. Event post prompts (015): `event_post_prompts` (event_id, user_id, prompt_type) avoids duplicate reference/keep_chatting pushes. Whispers (016): `whispers.category`, `whispers.reveal_policy`; unique index one pending per (from, to); max per day enforced. Events (017): `events.vibe_tag` optional. (019): `events.door_code_hash`, `door_code_expires_at` (venue-issued passes). Venues (018): `verified_safe_at`, `verified_safe_metadata` (self-attest or partner; no PII). Phone/email hashing uses HMAC-SHA256 with `PHONE_HASH_PEPPER` (009).
 
 ### MongoDB
 
