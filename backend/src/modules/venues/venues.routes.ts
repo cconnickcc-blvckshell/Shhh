@@ -23,10 +23,16 @@ const nearbyQuerySchema = z.object({
   radius: z.string().optional(),
 });
 
+const verifiedSafeSchema = z.object({
+  checklistJson: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+}).optional();
+
 router.get('/nearby', authenticate, validate(nearbyQuerySchema, 'query'), ctrl.getNearby);
 router.get('/geofence-check', authenticate, validate(nearbyQuerySchema, 'query'), ctrl.checkGeofences);
 router.post('/', authenticate, requireTier(2), validate(createVenueSchema), ctrl.create);
 router.get('/:id', authenticate, ctrl.getOne);
 router.put('/:id', authenticate, ctrl.update);
+router.put('/:id/verified-safe', authenticate, validate(verifiedSafeSchema), ctrl.setVerifiedSafe);
 
 export default router;

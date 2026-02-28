@@ -27,7 +27,15 @@ export class VenuesService {
        FROM venues v LEFT JOIN user_profiles p ON v.verified_owner_id = p.user_id
        WHERE v.id = $1`, [venueId]
     );
-    return result.rows[0] || null;
+    const row = result.rows[0] as Record<string, unknown> | undefined;
+    if (!row) return null;
+    return this._withVerifiedSafe(row);
+  }
+
+  /** Add verifiedSafe boolean for API (true when verified_safe_at is set). */
+  private _withVerifiedSafe(row: Record<string, unknown>): Record<string, unknown> & { verifiedSafe: boolean } {
+    const verifiedSafe = row.verified_safe_at != null;
+    return { ...row, verifiedSafe };
   }
 
   async getNearbyVenues(lat: number, lng: number, radiusKm: number = 50) {
@@ -46,7 +54,26 @@ export class VenuesService {
        ORDER BY distance_meters ASC LIMIT 50`,
       [lat, lng, radiusKm * 1000]
     );
-    return result.rows;
+    return result.rows.map((r: Record<string, unknown>) => this._withVerifiedSafe(r));
+  }
+
+  /** Self-attest "verified safe" checklist (venue owner only). Sets verified_safe_at and optional metadata. */
+  async setVerifiedSafe(venueId: string, ownerId: string, metadata?: Record<string, unknown>) {
+    const auth = await query('SELECT id FROM venues WHERE id = $1 AND verified_owner_id = $2', [venueId, ownerId]);
+    if (auth.rows.length === 0) {
+      throw Object.assign(new Error('Venue not found or unauthorized'), { statusCode: 403 });
+    }
+    const hasCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'venues' AND column_name = 'verified_safe_at'`
+    );
+    if (hasCol.rows.length === 0) {
+      throw Object.assign(new Error('Verified safe feature not available'), { statusCode: 501 });
+    }
+    await query(
+      `UPDATE venues SET verified_safe_at = NOW(), verified_safe_metadata = $2 WHERE id = $1 AND verified_owner_id = $3`,
+      [venueId, metadata ? JSON.stringify(metadata) : '{}', ownerId]
+    );
+    return this.getVenue(venueId);
   }
 
   async updateVenue(venueId: string, ownerId: string, data: Record<string, unknown>) {

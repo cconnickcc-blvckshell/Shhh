@@ -77,6 +77,7 @@ Every v1 route with method, path, auth, tier/role, and source file. Single sourc
 | POST | venues | Yes | 2 | — | venues/venues.routes.ts |
 | GET | venues/:id | Yes | 0 | — | venues/venues.routes.ts |
 | PUT | venues/:id | Yes | 0 | — | venues/venues.routes.ts |
+| PUT | venues/:id/verified-safe | Yes | 0 | — | venues/venues.routes.ts |
 | POST | venues/:id/claim | Yes | 2 | — | venues/venue-identity.routes.ts |
 | POST | venues/:id/announcements | Yes | 2 | — | venues/venue-identity.routes.ts |
 | GET | venues/announcements/nearby | Yes | 0 | — | venues/venue-identity.routes.ts |

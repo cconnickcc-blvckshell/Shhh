@@ -234,6 +234,7 @@ Examples to add when done: “Tonight” feed, venue vibe/theme nights, venue-is
 
 - GC-1.1 Tonight feed: GET /v1/tonight (events + venues with currentAttendees; branch `shh-enhancement-trial`).
 - GC-1.2 Venue vibe / theme nights: events.vibe_tag (migration 017), create/filter by vibe (branch `shh-enhancement-trial`).
+- GC-1.5 Verified safe venue badge: migration 018, PUT /v1/venues/:id/verified-safe, verifiedSafe in GET venue/nearby/tonight (branch `shh-enhancement-trial`).
 
 ---
 

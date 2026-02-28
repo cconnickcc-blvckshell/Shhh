@@ -357,7 +357,7 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 | 1 | Venue vibe / theme nights | ✅ Done | events.vibe_tag (migration 017); create/filter by vibe. |
 | 1 | Venue-issued passes | ⬜ Not started | |
 | 1 | Venue density intelligence | ⬜ Not started | |
-| 1 | Verified safe venue badge | ⬜ Not started | |
+| 1 | Verified safe venue badge | ✅ Done | venues.verified_safe_at + metadata (018); GET venue/nearby/tonight include verifiedSafe; PUT :id/verified-safe (owner). |
 | 2 | Venue = any host (promoter) | ⬜ Not started | |
 | 2 | Private / gated events | ⬜ Not started | |
 | 2 | Series and recurring events | ⬜ Not started | |
@@ -381,6 +381,7 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 - Venue distress to security (Phase C.4, branch `shh-enhancement-trial`).
 - GC-1.1 Tonight feed: GET /v1/tonight (events + venues with currentAttendees; branch `shh-enhancement-trial`).
 - GC-1.2 Venue vibe / theme nights: events.vibe_tag (migration 017), create/filter by vibe (branch `shh-enhancement-trial`).
+- GC-1.5 Verified safe venue badge: venues.verified_safe_at, verified_safe_metadata (migration 018); GET venue/nearby/tonight include verifiedSafe; PUT /v1/venues/:id/verified-safe (owner self-attest) (branch `shh-enhancement-trial`).
 
 ---
 

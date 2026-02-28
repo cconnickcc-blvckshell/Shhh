@@ -126,6 +126,8 @@ describe('Tonight feed API', () => {
     expect(Array.isArray(res.body.data.venues)).toBe(true);
     if (res.body.data.venues.length > 0) {
       expect(res.body.data.venues[0]).toHaveProperty('currentAttendees');
+      expect(res.body.data.venues[0]).toHaveProperty('verifiedSafe');
+      expect(typeof res.body.data.venues[0].verifiedSafe).toBe('boolean');
     }
   });
 

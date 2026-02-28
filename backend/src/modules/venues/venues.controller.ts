@@ -46,4 +46,15 @@ export class VenuesController {
       res.json({ data: fences });
     } catch (err) { next(err); }
   }
+
+  async setVerifiedSafe(req: Request, res: Response, next: NextFunction) {
+    try {
+      const venue = await svc.setVerifiedSafe(
+        req.params.id as string,
+        req.user!.userId,
+        req.body?.checklistJson ?? req.body?.metadata
+      );
+      res.json({ data: venue });
+    } catch (err) { next(err); }
+  }
 }

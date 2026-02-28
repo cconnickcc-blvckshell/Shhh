@@ -648,13 +648,15 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | POST | `/v1/venues` | Yes | 2 | Create venue (requires tier 2) |
 | GET | `/v1/venues/:id` | Yes | 0 | Get venue details |
 | PUT | `/v1/venues/:id` | Yes | 0 | Update venue (owner only) |
+| PUT | `/v1/venues/:id/verified-safe` | Yes | 0 | Self-attest verified safe (owner only; optional body: checklistJson or metadata) |
 
-**Database tables owned:** `venues`, `geofences`
+**Database tables owned:** `venues` (018: optional `verified_safe_at`, `verified_safe_metadata`), `geofences`
 
 **Key business rules:**
 - Venue creation requires tier 2
 - Geofences are stored as PostGIS `GEOMETRY(Polygon, 4326)` with GIST index
 - Geofence containment is checked via PostGIS `ST_Contains`
+- **Verified safe (018):** Owner can self-attest via PUT `/v1/venues/:id/verified-safe` (optional body: checklistJson). GET venue, nearby, and tonight feed include `verifiedSafe: true` when `verified_safe_at` is set. No PII in attestation.
 
 ### 4.16 Venue Identity Module
 

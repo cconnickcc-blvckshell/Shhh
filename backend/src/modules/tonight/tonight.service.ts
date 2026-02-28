@@ -28,7 +28,7 @@ export class TonightService {
 
     const cappedEvents = events.slice(0, EVENTS_CAP);
     const cappedVenues = venues.slice(0, VENUES_CAP);
-    const venueIds = cappedVenues.map((v: { id: string }) => v.id);
+    const venueIds = cappedVenues.map((v) => (v as unknown as { id: string }).id);
 
     let countByVenue: Record<string, number> = {};
     if (venueIds.length > 0) {
@@ -42,9 +42,9 @@ export class TonightService {
       countByVenue = Object.fromEntries(result.rows.map((r: { venue_id: string; cnt: number }) => [r.venue_id, r.cnt]));
     }
 
-    const venuesWithAttendees = cappedVenues.map((v: { id: string; [key: string]: unknown }) => ({
+    const venuesWithAttendees = cappedVenues.map((v) => ({
       ...v,
-      currentAttendees: countByVenue[v.id] ?? 0,
+      currentAttendees: countByVenue[(v as unknown as { id: string }).id] ?? 0,
     }));
 
     return {
