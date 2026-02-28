@@ -16,6 +16,7 @@ export class TonightController {
       const data = await this.tonightService.getFeed(latNum, lngNum, {
         date: (date as string) || undefined,
         radiusKm: radius ? parseFloat(radius as string) : undefined,
+        viewerUserId: req.user!.userId,
       });
       res.json({ data });
     } catch (err) {

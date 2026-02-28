@@ -20,7 +20,10 @@ export class EventsController {
         parseFloat(lat as string),
         parseFloat(lng as string),
         radius ? parseFloat(radius as string) : undefined,
-        vibe ? { vibeTag: vibe as 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly' } : undefined
+        {
+          vibeTag: vibe ? (vibe as 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly') : undefined,
+          viewerUserId: req.user!.userId,
+        }
       );
       res.json({ data: events, count: events.length });
     } catch (err) {
@@ -30,7 +33,7 @@ export class EventsController {
 
   async getOne(req: Request, res: Response, next: NextFunction) {
     try {
-      const event = await eventsService.getEvent(req.params.id as string);
+      const event = await eventsService.getEvent(req.params.id as string, { userId: req.user!.userId });
       if (!event) {
         res.status(404).json({ error: { message: 'Event not found' } });
         return;

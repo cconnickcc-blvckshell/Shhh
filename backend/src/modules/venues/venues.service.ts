@@ -4,12 +4,21 @@ export class VenuesService {
   async createVenue(ownerId: string, data: {
     name: string; description?: string; lat: number; lng: number;
     type?: string; capacity?: number; amenities?: string[];
+    venueType?: 'physical' | 'promoter' | 'series';
   }) {
+    const hasVenueType = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'venues' AND column_name = 'venue_type'`
+    );
+    const cols = hasVenueType.rows.length > 0
+      ? 'name, description, verified_owner_id, lat, lng, type, capacity, amenities, venue_type'
+      : 'name, description, verified_owner_id, lat, lng, type, capacity, amenities';
+    const vals = hasVenueType.rows.length > 0
+      ? [data.name, data.description || null, ownerId, data.lat, data.lng, data.type || 'club', data.capacity || null, data.amenities || [], data.venueType || 'physical']
+      : [data.name, data.description || null, ownerId, data.lat, data.lng, data.type || 'club', data.capacity || null, data.amenities || []];
+    const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
     const result = await query(
-      `INSERT INTO venues (name, description, verified_owner_id, lat, lng, type, capacity, amenities)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [data.name, data.description || null, ownerId, data.lat, data.lng,
-       data.type || 'club', data.capacity || null, data.amenities || []]
+      `INSERT INTO venues (${cols}) VALUES (${placeholders}) RETURNING *`,
+      vals
     );
 
     await query(

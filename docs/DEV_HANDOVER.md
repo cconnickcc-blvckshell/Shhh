@@ -599,7 +599,7 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
 | GET | `/v1/events/nearby?lat=&lng=&radius=&vibe=` | Yes | 0 | Find nearby events (optional vibe; service supports date filter for tonight feed) |
-| POST | `/v1/events` | Yes | 2 | Create event (requires tier 2; optional vibeTag) |
+| POST | `/v1/events` | Yes | 2 | Create event (optional vibeTag, locationRevealedAfterRsvp, visibilityRule, visibilityTierMin, visibilityRadiusKm) |
 | GET | `/v1/events/:id` | Yes | 0 | Get event details |
 | GET | `/v1/events/:id/attendees` | Yes | 0 | Privacy-safe attendee list (persona + badges, no user ids) |
 | GET | `/v1/events/:id/chat-rooms` | Yes | 0 | Chat rooms linked to this event |
@@ -608,7 +608,7 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | PUT | `/v1/events/:id/door-code` | Yes | 0 | Set door code (host or venue staff; body: code, optional expiresAt) |
 | POST | `/v1/events/validate-door-code` | Yes | 0 | Validate code, grant RSVP + check-in (body: eventId, code); rate-limited |
 
-**Database tables owned:** `events` (017: optional `vibe_tag`; 019: `door_code_hash`, `door_code_expires_at`), `event_rsvps`, `event_post_prompts` (015: one prompt per type per user per event)
+**Database tables owned:** `events` (017: vibe_tag; 019: door_code_hash, door_code_expires_at; 020: location_revealed_after_rsvp; 021: visibility_rule, visibility_tier_min, visibility_radius_km), `event_rsvps`, `event_post_prompts` (015)
 
 **Key business rules:**
 - Event creation requires tier 2 (ID-verified)
@@ -624,6 +624,8 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 - Events can be private (require invite code) or public
 - **Vibe tag (017):** Optional `vibe_tag` on events: `social_mix`, `lifestyle`, `kink`, `couples_only`, `newbie_friendly`; filter nearby by `vibe=` query param
 - **Door code (019):** Event host or venue staff can set a door code (PUT `/v1/events/:id/door-code`). Attendees validate with POST `/v1/events/validate-door-code` (eventId, code); on success they are added/updated as checked-in. Code stored as SHA-256 hash; optional expiresAt. Rate-limited.
+- **Location revealed after RSVP (020):** When `location_revealed_after_rsvp` is true, venue name/lat/lng are redacted in GET event and nearby/tonight until the user has RSVP'd (going or checked_in); shown as "Location revealed after RSVP".
+- **Visibility rules (021):** `visibility_rule` (open | tier_min | invite_only | attended_2_plus), `visibility_tier_min`, `visibility_radius_km`. Nearby and tonight feed filter to events the viewer can see; GET event returns 403 if viewer does not meet rule. invite_only events are excluded from lists.
 
 ### 4.14.1 Tonight feed
 
@@ -653,7 +655,7 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | PUT | `/v1/venues/:id` | Yes | 0 | Update venue (owner only) |
 | PUT | `/v1/venues/:id/verified-safe` | Yes | 0 | Self-attest verified safe (owner only; optional body: checklistJson or metadata) |
 
-**Database tables owned:** `venues` (018: optional `verified_safe_at`, `verified_safe_metadata`), `geofences`
+**Database tables owned:** `venues` (018: verified_safe_at, verified_safe_metadata; 020: venue_type physical|promoter|series), `geofences`
 
 **Key business rules:**
 - Venue creation requires tier 2

@@ -14,19 +14,27 @@ export class EventsService {
     capacity?: number;
     isPrivate?: boolean;
     vibeTag?: VibeTag;
+    locationRevealedAfterRsvp?: boolean;
+    visibilityRule?: 'open' | 'tier_min' | 'invite_only' | 'attended_2_plus';
+    visibilityTierMin?: number;
+    visibilityRadiusKm?: number;
   }) {
-    const hasVibe = await query(
-      `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'vibe_tag'`
-    );
-    const cols = hasVibe.rows.length > 0
-      ? 'host_user_id, venue_id, title, description, starts_at, ends_at, type, capacity, is_private, vibe_tag'
-      : 'host_user_id, venue_id, title, description, starts_at, ends_at, type, capacity, is_private';
-    const vals = hasVibe.rows.length > 0
-      ? [hostUserId, data.venueId || null, data.title, data.description || null, data.startsAt, data.endsAt, data.type || 'party', data.capacity || null, data.isPrivate || false, data.vibeTag || null]
-      : [hostUserId, data.venueId || null, data.title, data.description || null, data.startsAt, data.endsAt, data.type || 'party', data.capacity || null, data.isPrivate || false];
+    const [hasVibe, hasLocationRevealed, hasVisibility] = await Promise.all([
+      query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'vibe_tag'`),
+      query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'location_revealed_after_rsvp'`),
+      query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'visibility_rule'`),
+    ]);
+    const cols: string[] = ['host_user_id', 'venue_id', 'title', 'description', 'starts_at', 'ends_at', 'type', 'capacity', 'is_private'];
+    const vals: unknown[] = [hostUserId, data.venueId || null, data.title, data.description || null, data.startsAt, data.endsAt, data.type || 'party', data.capacity || null, data.isPrivate || false];
+    if (hasVibe.rows.length > 0) { cols.push('vibe_tag'); vals.push(data.vibeTag ?? null); }
+    if (hasLocationRevealed.rows.length > 0) { cols.push('location_revealed_after_rsvp'); vals.push(data.locationRevealedAfterRsvp ?? false); }
+    if (hasVisibility.rows.length > 0) {
+      cols.push('visibility_rule', 'visibility_tier_min', 'visibility_radius_km');
+      vals.push(data.visibilityRule ?? 'open', data.visibilityTierMin ?? null, data.visibilityRadiusKm ?? null);
+    }
     const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
     const result = await query(
-      `INSERT INTO events (${cols}) VALUES (${placeholders}) RETURNING *`,
+      `INSERT INTO events (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`,
       vals
     );
 
@@ -38,9 +46,14 @@ export class EventsService {
     return result.rows[0];
   }
 
-  async getNearbyEvents(lat: number, lng: number, radiusKm: number = 50, options?: { vibeTag?: VibeTag | null; date?: string }) {
+  async getNearbyEvents(lat: number, lng: number, radiusKm: number = 50, options?: {
+    vibeTag?: VibeTag | null;
+    date?: string;
+    viewerUserId?: string;
+  }) {
     const vibe = options?.vibeTag ?? null;
-    const dateOnly = options?.date ?? null; // YYYY-MM-DD for "tonight" filter
+    const dateOnly = options?.date ?? null;
+    const viewerUserId = options?.viewerUserId ?? null;
     const hasVibe = await query(
       `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'vibe_tag'`
     );
@@ -71,21 +84,108 @@ export class EventsService {
        LIMIT 50`,
       params
     );
-    return result.rows;
+    let rows = result.rows;
+    if (viewerUserId) {
+      const viewer = await this.getViewerContext(viewerUserId);
+      rows = rows.filter((e: Record<string, unknown>) => this.canUserSeeEvent(e, viewer, lat, lng));
+      const hasLocationRevealed = await query(
+        `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'location_revealed_after_rsvp'`
+      );
+      if (hasLocationRevealed.rows.length > 0) {
+        const rsvps = await query(
+          `SELECT event_id FROM event_rsvps WHERE user_id = $1 AND status IN ('going', 'checked_in')`,
+          [viewerUserId]
+        );
+        const goingSet = new Set(rsvps.rows.map((r: { event_id: string }) => r.event_id));
+        rows = rows.map((e: Record<string, unknown>) => {
+          if (e.location_revealed_after_rsvp && !goingSet.has(e.id as string))
+            return { ...e, venue_name: 'Location revealed after RSVP', venue_lat: null, venue_lng: null };
+          return e;
+        });
+      }
+    }
+    return rows;
   }
 
-  async getEvent(eventId: string) {
+  async getEvent(eventId: string, options?: { userId?: string }) {
+    const hasLocationRevealed = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'location_revealed_after_rsvp'`
+    );
+    const selectVenueCoords = hasLocationRevealed.rows.length > 0
+      ? ', v.lat as venue_lat, v.lng as venue_lng'
+      : '';
+    const groupByVenue = hasLocationRevealed.rows.length > 0 ? ', v.lat, v.lng' : '';
     const result = await query(
-      `SELECT e.*, v.name as venue_name,
+      `SELECT e.*, v.name as venue_name${selectVenueCoords},
               COUNT(er.user_id) FILTER (WHERE er.status = 'going') as attendee_count
        FROM events e
        LEFT JOIN venues v ON e.venue_id = v.id
        LEFT JOIN event_rsvps er ON e.id = er.event_id
        WHERE e.id = $1
-       GROUP BY e.id, v.name`,
+       GROUP BY e.id, v.name${groupByVenue}`,
       [eventId]
     );
-    return result.rows[0] || null;
+    let event = result.rows[0] || null;
+    if (!event) return null;
+    if (!options?.userId) return event;
+
+    const viewerContext = await this.getViewerContext(options.userId);
+    if (!this.canUserSeeEvent(event, viewerContext, undefined, undefined)) {
+      throw Object.assign(new Error('You do not have access to this event'), { statusCode: 403 });
+    }
+
+    if (event.location_revealed_after_rsvp) {
+      const rsvp = await query(
+        `SELECT status FROM event_rsvps WHERE event_id = $1 AND user_id = $2`,
+        [eventId, options.userId]
+      );
+      const goingOrCheckedIn = rsvp.rows[0] && ['going', 'checked_in'].includes(rsvp.rows[0].status);
+      if (!goingOrCheckedIn) {
+        event = { ...event, venue_name: 'Location revealed after RSVP', venue_lat: null, venue_lng: null };
+      }
+    }
+    return event;
+  }
+
+  /** Viewer's tier and attended-event count for visibility rules. */
+  async getViewerContext(userId: string): Promise<{ tier: number; attendedCount: number }> {
+    const [userRow, countRow] = await Promise.all([
+      query(`SELECT verification_tier FROM users WHERE id = $1`, [userId]),
+      query(
+        `SELECT COUNT(DISTINCT event_id)::int as cnt FROM event_rsvps WHERE user_id = $1 AND status IN ('going', 'checked_in')`,
+        [userId]
+      ),
+    ]);
+    return {
+      tier: userRow.rows[0]?.verification_tier ?? 0,
+      attendedCount: countRow.rows[0]?.cnt ?? 0,
+    };
+  }
+
+  /** Whether the viewer can see this event (visibility_rule, tier, radius, attended_2_plus). */
+  canUserSeeEvent(
+    event: Record<string, unknown>,
+    viewer: { tier: number; attendedCount: number },
+    viewerLat?: number,
+    viewerLng?: number
+  ): boolean {
+    const rule = (event.visibility_rule as string) || 'open';
+    if (rule === 'invite_only') return false;
+    if (rule === 'tier_min') {
+      const min = event.visibility_tier_min as number | undefined;
+      if (min != null && viewer.tier < min) return false;
+    }
+    if (rule === 'attended_2_plus' && viewer.attendedCount < 2) return false;
+    const radiusKm = event.visibility_radius_km as number | undefined;
+    if (radiusKm != null && viewerLat != null && viewerLng != null && event.venue_lat != null && event.venue_lng != null) {
+      const R = 6371;
+      const dLat = (event.venue_lat as number - viewerLat) * Math.PI / 180;
+      const dLon = (event.venue_lng as number - viewerLng) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(viewerLat * Math.PI/180) * Math.cos((event.venue_lat as number) * Math.PI/180) * Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      if (R * c > radiusKm) return false;
+    }
+    return true;
   }
 
   async rsvp(eventId: string, userId: string, status: string) {

@@ -358,8 +358,8 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 | 1 | Venue-issued passes | ✅ Done | events.door_code_hash + expires (019); PUT :id/door-code, POST validate-door-code (rate-limited). |
 | 1 | Venue density intelligence | ✅ Done | GET /v1/venues/:id/analytics/density (peakLastDays, eventTypePerformance). |
 | 1 | Verified safe venue badge | ✅ Done | venues.verified_safe_at + metadata (018); GET venue/nearby/tonight include verifiedSafe; PUT :id/verified-safe (owner). |
-| 2 | Venue = any host (promoter) | ⬜ Not started | |
-| 2 | Private / gated events | ⬜ Not started | |
+| 2 | Venue = any host (promoter) | ✅ Done | venues.venue_type (020); events.location_revealed_after_rsvp; GET event/nearby/tonight redact venue until RSVP. |
+| 2 | Private / gated events | ✅ Done | events.visibility_rule, visibility_tier_min, visibility_radius_km (021); filter nearby + 403 on GET when not allowed. |
 | 2 | Series and recurring events | ⬜ Not started | |
 | 3 | Intent as first-class | ⬜ Not started | |
 | 3 | Two-layer profile | ⬜ Not started | |
@@ -384,6 +384,8 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 - GC-1.5 Verified safe venue badge: venues.verified_safe_at, verified_safe_metadata (migration 018); GET venue/nearby/tonight include verifiedSafe; PUT /v1/venues/:id/verified-safe (owner self-attest) (branch `shh-enhancement-trial`).
 - GC-1.3 Venue-issued passes: events.door_code_hash, door_code_expires_at (migration 019); PUT /v1/events/:id/door-code (host/staff), POST /v1/events/validate-door-code (rate-limited); grants RSVP + check-in (branch `shh-enhancement-trial`).
 - GC-1.4 Venue density intelligence: GET /v1/venues/:id/analytics/density (peakLastDays, eventTypePerformance); tier 2 (branch `shh-enhancement-trial`).
+- GC-2.1 Venue = any host: venues.venue_type (physical|promoter|series), events.location_revealed_after_rsvp (020); venue location/name redacted until RSVP (branch `shh-enhancement-trial`).
+- GC-2.2 Private/gated events: events.visibility_rule, visibility_tier_min, visibility_radius_km (021); nearby + GET filtered by tier/attended/radius; 403 when not allowed (branch `shh-enhancement-trial`).
 
 ---
 

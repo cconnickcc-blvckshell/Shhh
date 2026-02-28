@@ -15,6 +15,7 @@ const createVenueSchema = z.object({
   type: z.enum(['club', 'hotel', 'private_residence', 'resort', 'other']).optional(),
   capacity: z.number().positive().optional(),
   amenities: z.array(z.string()).optional(),
+  venueType: z.enum(['physical', 'promoter', 'series']).optional(),
 });
 
 const nearbyQuerySchema = z.object({

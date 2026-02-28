@@ -17,12 +17,12 @@ export class TonightService {
     private venuesService: VenuesService
   ) {}
 
-  async getFeed(lat: number, lng: number, options?: { date?: string; radiusKm?: number }) {
+  async getFeed(lat: number, lng: number, options?: { date?: string; radiusKm?: number; viewerUserId?: string }) {
     const date = options?.date ?? todayUtc();
     const radiusKm = options?.radiusKm ?? DEFAULT_RADIUS_KM;
 
     const [events, venues] = await Promise.all([
-      this.eventsService.getNearbyEvents(lat, lng, radiusKm, { date }),
+      this.eventsService.getNearbyEvents(lat, lng, radiusKm, { date, viewerUserId: options?.viewerUserId }),
       this.venuesService.getNearbyVenues(lat, lng, radiusKm),
     ]);
 

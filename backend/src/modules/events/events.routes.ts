@@ -18,6 +18,8 @@ const doorCodeValidateLimiter = rateLimit({
 
 const vibeTagEnum = z.enum(['social_mix', 'lifestyle', 'kink', 'couples_only', 'newbie_friendly']);
 
+const visibilityRuleEnum = z.enum(['open', 'tier_min', 'invite_only', 'attended_2_plus']);
+
 const createEventSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().max(2000).optional(),
@@ -28,6 +30,10 @@ const createEventSchema = z.object({
   capacity: z.number().positive().optional(),
   isPrivate: z.boolean().optional(),
   vibeTag: vibeTagEnum.optional(),
+  locationRevealedAfterRsvp: z.boolean().optional(),
+  visibilityRule: visibilityRuleEnum.optional(),
+  visibilityTierMin: z.number().int().min(0).max(3).optional(),
+  visibilityRadiusKm: z.number().int().positive().optional(),
 });
 
 const rsvpSchema = z.object({

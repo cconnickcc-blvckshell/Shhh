@@ -237,6 +237,8 @@ Examples to add when done: “Tonight” feed, venue vibe/theme nights, venue-is
 - GC-1.5 Verified safe venue badge: migration 018, PUT /v1/venues/:id/verified-safe, verifiedSafe in GET venue/nearby/tonight (branch `shh-enhancement-trial`).
 - GC-1.3 Venue-issued passes: migration 019, PUT /v1/events/:id/door-code, POST /v1/events/validate-door-code (branch `shh-enhancement-trial`).
 - GC-1.4 Venue density intelligence: GET /v1/venues/:id/analytics/density (branch `shh-enhancement-trial`).
+- GC-2.1 Venue = any host: venue_type, location_revealed_after_rsvp (migrations 020); tonight/nearby pass viewerUserId (branch `shh-enhancement-trial`).
+- GC-2.2 Private/gated events: visibility_rule, visibility_tier_min, visibility_radius_km (021); filter + 403 (branch `shh-enhancement-trial`).
 
 ---
 

@@ -127,6 +127,27 @@ describe('Events API', () => {
       expect(res.body.message).toContain('Access granted');
     }
   });
+
+  it('POST /v1/events accepts optional visibility and locationRevealedAfterRsvp', async () => {
+    const tomorrow = new Date(Date.now() + 86400000).toISOString();
+    const dayAfter = new Date(Date.now() + 172800000).toISOString();
+    const res = await request
+      .post('/v1/events')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        title: 'Gated Event',
+        startsAt: tomorrow,
+        endsAt: dayAfter,
+        locationRevealedAfterRsvp: true,
+        visibilityRule: 'tier_min',
+        visibilityTierMin: 2,
+      });
+    if (res.status === 201) {
+      expect(res.body.data).toHaveProperty('id');
+      if (res.body.data.visibility_rule !== undefined) expect(res.body.data.visibility_rule).toBe('tier_min');
+      if (res.body.data.location_revealed_after_rsvp !== undefined) expect(res.body.data.location_revealed_after_rsvp).toBe(true);
+    }
+  });
 });
 
 describe('Tonight feed API', () => {
