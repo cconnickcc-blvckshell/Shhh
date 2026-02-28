@@ -38,4 +38,21 @@ export class SafetyController {
       res.json({ data: result });
     } catch (err) { next(err); }
   }
+
+  async screenshot(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await svc.recordScreenshotReport(req.user!.userId, {
+        targetUserId: req.body.targetUserId,
+        conversationId: req.body.conversationId,
+      });
+      res.status(201).json({ data: result });
+    } catch (err) { next(err); }
+  }
+
+  async venueDistress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await svc.recordVenueDistress(req.user!.userId, req.body.venueId);
+      res.json({ data: result });
+    } catch (err) { next(err); }
+  }
 }

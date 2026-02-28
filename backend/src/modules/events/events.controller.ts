@@ -57,4 +57,22 @@ export class EventsController {
       next(err);
     }
   }
+
+  async getAttendees(req: Request, res: Response, next: NextFunction) {
+    try {
+      const attendees = await eventsService.getEventAttendees(req.params.id as string);
+      res.json({ data: attendees, count: attendees.length });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getChatRooms(req: Request, res: Response, next: NextFunction) {
+    try {
+      const rooms = await eventsService.getEventChatRooms(req.params.id as string);
+      res.json({ data: rooms, count: rooms.length });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

@@ -59,4 +59,26 @@ describe('Events API', () => {
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
   });
+
+  it('GET /v1/events/:id/attendees returns privacy-safe attendee list', async () => {
+    const res = await request
+      .get(`/v1/events/${eventId}/attendees`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.count).toBeGreaterThanOrEqual(1);
+    if (res.body.data.length > 0) {
+      expect(res.body.data[0]).toHaveProperty('personaType');
+      expect(res.body.data[0]).toHaveProperty('badges');
+      expect(res.body.data[0]).not.toHaveProperty('userId');
+    }
+  });
+
+  it('GET /v1/events/:id/chat-rooms returns event chat rooms', async () => {
+    const res = await request
+      .get(`/v1/events/${eventId}/chat-rooms`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
 });

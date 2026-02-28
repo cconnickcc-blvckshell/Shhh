@@ -19,9 +19,17 @@ router.put('/preference', authenticate, validate(z.object({
 router.post('/reveal', authenticate, validate(z.object({
   toUserId: z.string().uuid(),
   expiresInHours: z.number().positive().optional(),
+  level: z.number().int().min(0).max(2).optional(),
+  scopeType: z.enum(['global', 'conversation']).optional(),
+  scopeId: z.string().uuid().optional(),
 })), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await svc.revealPhotosTo(req.user!.userId, req.body.toUserId, req.body.expiresInHours);
+    await svc.revealPhotosTo(req.user!.userId, req.body.toUserId, {
+      expiresInHours: req.body.expiresInHours,
+      level: req.body.level,
+      scopeType: req.body.scopeType,
+      scopeId: req.body.scopeId,
+    });
     res.json({ data: { revealed: true } });
   } catch (err) { next(err); }
 });

@@ -24,10 +24,14 @@ const createAlbumSchema = z.object({
 });
 
 const shareAlbumSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().uuid().optional(),
+  targetPersonaId: z.string().uuid().optional(),
+  targetCoupleId: z.string().uuid().optional(),
   canDownload: z.boolean().optional(),
   expiresInHours: z.number().positive().optional(),
-});
+  watermarkMode: z.enum(['off', 'subtle', 'invisible']).optional(),
+  notifyOnView: z.boolean().optional(),
+}).refine(d => !!(d.userId ?? d.targetPersonaId ?? d.targetCoupleId), { message: 'One of userId, targetPersonaId, targetCoupleId required' });
 
 // Media endpoints
 router.post('/upload', authenticate, upload.single('file'), ctrl.upload);

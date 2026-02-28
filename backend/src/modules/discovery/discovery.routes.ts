@@ -14,6 +14,8 @@ const discoverQuerySchema = z.object({
   gender: z.string().optional(),
   experienceLevel: z.string().optional(),
   minTier: z.string().optional(),
+  venueId: z.string().uuid().optional(),
+  eventId: z.string().uuid().optional(),
 });
 
 const updateLocationSchema = z.object({

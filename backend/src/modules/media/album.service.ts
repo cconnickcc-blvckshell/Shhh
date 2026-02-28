@@ -96,29 +96,87 @@ export class AlbumService {
     await query('DELETE FROM album_media WHERE album_id = $1 AND media_id = $2', [albumId, mediaId]);
   }
 
-  async shareAlbum(albumId: string, ownerId: string, targetUserId: string, options?: { canDownload?: boolean; expiresInHours?: number }) {
+  async shareAlbum(
+    albumId: string,
+    ownerId: string,
+    target: { type: 'user'; userId: string } | { type: 'persona'; personaId: string } | { type: 'couple'; coupleId: string },
+    options?: { canDownload?: boolean; expiresInHours?: number; watermarkMode?: 'off' | 'subtle' | 'invisible'; notifyOnView?: boolean }
+  ) {
     const album = await query('SELECT 1 FROM albums WHERE id = $1 AND owner_id = $2', [albumId, ownerId]);
     if (album.rows.length === 0) {
       throw Object.assign(new Error('Album not found or unauthorized'), { statusCode: 403 });
     }
 
-    if (ownerId === targetUserId) {
-      throw Object.assign(new Error('Cannot share with yourself'), { statusCode: 400 });
-    }
-
     const expiresAt = options?.expiresInHours
       ? new Date(Date.now() + options.expiresInHours * 3600 * 1000)
       : null;
+    const canDownload = options?.canDownload ?? false;
+    const watermarkMode = options?.watermarkMode ?? 'off';
+    const notifyOnView = options?.notifyOnView ?? false;
 
-    await query(
-      `INSERT INTO album_shares (album_id, shared_with_user_id, granted_by, can_download, expires_at)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (album_id, shared_with_user_id) DO UPDATE SET
-         revoked_at = NULL, can_download = $4, expires_at = $5, granted_at = NOW()`,
-      [albumId, targetUserId, ownerId, options?.canDownload || false, expiresAt]
+    const userIds: string[] = [];
+    let shareTargetType = 'user';
+    let shareTargetId: string | null = null;
+
+    if (target.type === 'user') {
+      if (ownerId === target.userId) {
+        throw Object.assign(new Error('Cannot share with yourself'), { statusCode: 400 });
+      }
+      userIds.push(target.userId);
+    } else if (target.type === 'persona') {
+      const p = await query('SELECT user_id FROM personas WHERE id = $1', [target.personaId]);
+      if (p.rows.length === 0) throw Object.assign(new Error('Persona not found'), { statusCode: 404 });
+      const uid = p.rows[0].user_id;
+      if (ownerId === uid) throw Object.assign(new Error('Cannot share with yourself'), { statusCode: 400 });
+      userIds.push(uid);
+      shareTargetType = 'persona';
+      shareTargetId = target.personaId;
+    } else {
+      const c = await query('SELECT partner_1_id, partner_2_id FROM couples WHERE id = $1', [target.coupleId]);
+      if (c.rows.length === 0) throw Object.assign(new Error('Couple not found'), { statusCode: 404 });
+      const { partner_1_id, partner_2_id } = c.rows[0];
+      if (partner_1_id && partner_1_id !== ownerId) userIds.push(partner_1_id);
+      if (partner_2_id && partner_2_id !== ownerId) userIds.push(partner_2_id);
+      shareTargetType = 'couple';
+      shareTargetId = target.coupleId;
+    }
+
+    const hasNewColumns = await this.albumSharesHasNewColumns();
+    for (const uid of userIds) {
+      if (hasNewColumns) {
+        await query(
+          `INSERT INTO album_shares (album_id, shared_with_user_id, granted_by, can_download, expires_at, share_target_type, share_target_id, watermark_mode, notify_on_view)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (album_id, shared_with_user_id) DO UPDATE SET
+             revoked_at = NULL, can_download = $4, expires_at = $5, granted_at = NOW(),
+             share_target_type = $6, share_target_id = $7, watermark_mode = $8, notify_on_view = $9`,
+          [albumId, uid, ownerId, canDownload, expiresAt, shareTargetType, shareTargetId, watermarkMode, notifyOnView]
+        );
+      } else {
+        await query(
+          `INSERT INTO album_shares (album_id, shared_with_user_id, granted_by, can_download, expires_at)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (album_id, shared_with_user_id) DO UPDATE SET
+             revoked_at = NULL, can_download = $4, expires_at = $5, granted_at = NOW()`,
+          [albumId, uid, ownerId, canDownload, expiresAt]
+        );
+      }
+    }
+
+    return {
+      albumId,
+      sharedWith: userIds.length === 1 ? userIds[0] : userIds,
+      shareTargetType,
+      expiresAt: expiresAt?.toISOString() ?? null,
+    };
+  }
+
+  private async albumSharesHasNewColumns(): Promise<boolean> {
+    const r = await query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_name = 'album_shares' AND column_name = 'share_target_type'`
     );
-
-    return { albumId, sharedWith: targetUserId, expiresAt: expiresAt?.toISOString() || null };
+    return r.rows.length > 0;
   }
 
   async revokeAlbumShare(albumId: string, ownerId: string, targetUserId: string) {

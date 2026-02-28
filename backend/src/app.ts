@@ -119,7 +119,8 @@ export function createApp() {
   const trustSvc = new TrustScoreService();
   app.get('/v1/users/:userId/trust-score', authMiddleware, async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
-      const score = await trustSvc.getScore(req.params.id as string || req.params.userId as string);
+      const userId = req.params.userId as string;
+      const score = await trustSvc.getScore(userId);
       res.json({ data: score });
     } catch (err) { next(err); }
   });

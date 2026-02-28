@@ -104,9 +104,21 @@ export class MediaController {
 
   async shareAlbum(req: Request, res: Response, next: NextFunction) {
     try {
+      const target = req.body.userId
+        ? { type: 'user' as const, userId: req.body.userId }
+        : req.body.targetPersonaId
+          ? { type: 'persona' as const, personaId: req.body.targetPersonaId }
+          : { type: 'couple' as const, coupleId: req.body.targetCoupleId };
       const result = await albumSvc.shareAlbum(
-        req.params.id as string, req.user!.userId, req.body.userId,
-        { canDownload: req.body.canDownload, expiresInHours: req.body.expiresInHours }
+        req.params.id as string,
+        req.user!.userId,
+        target,
+        {
+          canDownload: req.body.canDownload,
+          expiresInHours: req.body.expiresInHours,
+          watermarkMode: req.body.watermarkMode,
+          notifyOnView: req.body.notifyOnView,
+        }
       );
       res.json({ data: result });
     } catch (err) { next(err); }

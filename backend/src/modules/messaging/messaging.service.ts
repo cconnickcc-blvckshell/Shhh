@@ -65,12 +65,22 @@ export class MessagingService {
       throw Object.assign(new Error('Not a participant'), { statusCode: 403 });
     }
 
+    const conv = await query(
+      `SELECT is_archived, default_message_ttl_seconds FROM conversations WHERE id = $1`,
+      [conversationId]
+    );
+    if (conv.rows[0]?.is_archived) {
+      throw Object.assign(new Error('Conversation is archived; no new messages'), { statusCode: 403 });
+    }
+
+    const effectiveTtl = ttlSeconds ?? conv.rows[0]?.default_message_ttl_seconds ?? undefined;
+
     const message = new Message({
       conversationId,
       senderId,
       content,
       contentType,
-      expiresAt: ttlSeconds ? new Date(Date.now() + ttlSeconds * 1000) : undefined,
+      expiresAt: effectiveTtl ? new Date(Date.now() + effectiveTtl * 1000) : undefined,
     });
 
     await message.save();
@@ -140,5 +150,39 @@ export class MessagingService {
     );
 
     return messages;
+  }
+
+  async setRetention(
+    conversationId: string,
+    userId: string,
+    mode: 'ephemeral' | 'timed_archive' | 'persistent',
+    options?: { archiveAt?: Date; defaultMessageTtlSeconds?: number }
+  ) {
+    const participant = await query(
+      `SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2 AND left_at IS NULL`,
+      [conversationId, userId]
+    );
+    if (participant.rows.length === 0) {
+      throw Object.assign(new Error('Not a participant'), { statusCode: 403 });
+    }
+
+    const archiveAt = options?.archiveAt ?? null;
+    const defaultTtl = options?.defaultMessageTtlSeconds ?? null;
+
+    await query(
+      `UPDATE conversations SET retention_mode = $1, archive_at = $2, default_message_ttl_seconds = $3
+       WHERE id = $4`,
+      [mode, archiveAt, defaultTtl, conversationId]
+    );
+    return { retention_mode: mode, archive_at: archiveAt?.toISOString() ?? null, default_message_ttl_seconds: defaultTtl };
+  }
+
+  async processArchiveConversations(): Promise<number> {
+    const result = await query(
+      `UPDATE conversations SET is_archived = true
+       WHERE archive_at IS NOT NULL AND archive_at <= NOW() AND (is_archived = false OR is_archived IS NULL)
+       RETURNING id`
+    );
+    return result.rowCount ?? 0;
   }
 }

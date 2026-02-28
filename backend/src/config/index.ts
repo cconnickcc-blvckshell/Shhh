@@ -35,5 +35,7 @@ export const config = {
   geo: {
     defaultFuzzMeters: parseInt(process.env.DEFAULT_LOCATION_FUZZ_METERS || '300', 10),
     maxDiscoveryRadiusKm: parseInt(process.env.MAX_DISCOVERY_RADIUS_KM || '100', 10),
+    discoveryCapFree: parseInt(process.env.DISCOVERY_CAP_FREE || '30', 10),
+    discoveryCapPremium: parseInt(process.env.DISCOVERY_CAP_PREMIUM || '50', 10),
   },
 } as const;

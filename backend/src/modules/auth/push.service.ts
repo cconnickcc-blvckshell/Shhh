@@ -27,6 +27,16 @@ export class PushService {
     return result.rows;
   }
 
+  /** Whether user has neutral (stealth) notifications — no explicit content in title/body. */
+  async getStealthPreference(userId: string): Promise<boolean> {
+    const r = await query(
+      `SELECT preferences_json FROM user_profiles WHERE user_id = $1`,
+      [userId]
+    );
+    const prefs = r.rows[0]?.preferences_json as Record<string, unknown> | undefined;
+    return !!(prefs && prefs.neutral_notifications === true);
+  }
+
   async sendPush(userId: string, title: string, body: string, data?: Record<string, string>) {
     const tokens = await this.getActiveTokens(userId);
     if (tokens.length === 0) return;
@@ -37,11 +47,23 @@ export class PushService {
       return;
     }
 
+    let finalTitle = title;
+    let finalBody = body;
+    try {
+      const useNeutral = await this.getStealthPreference(userId);
+      if (useNeutral) {
+        finalTitle = 'Notification';
+        finalBody = 'You have a new notification';
+      }
+    } catch {
+      // ignore
+    }
+
     try {
       const messages = expoTokens.map(t => ({
         to: t.token,
-        title,
-        body,
+        title: finalTitle,
+        body: finalBody,
         data: data || {},
         sound: 'default' as const,
         priority: 'high' as const,

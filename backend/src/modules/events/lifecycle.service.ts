@@ -53,16 +53,41 @@ export class EventLifecycleService {
        RETURNING id, title`
     );
 
-    // Send reference prompts for ended events
+    // Post-event prompts (one per type per user; event_post_prompts avoids spam)
+    const hasPromptTable = await query(
+      `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'event_post_prompts'`
+    );
     for (const evt of endedEvents.rows) {
       const attendees = await query(
-        `SELECT user_id FROM event_rsvps WHERE event_id = $1 AND status = 'checked_in'`,
+        `SELECT user_id FROM event_rsvps WHERE event_id = $1 AND status IN ('going', 'checked_in')`,
         [evt.id]
       );
       for (const a of attendees.rows) {
-        await pushSvc.sendPush(a.user_id, 'How was the event?', `Leave a reference for people you met at "${evt.title}"`, { eventId: evt.id, action: 'reference_prompt' });
+        const userId = a.user_id as string;
+        if (hasPromptTable.rows.length > 0) {
+          const sent = await query(
+            `SELECT prompt_type FROM event_post_prompts WHERE event_id = $1 AND user_id = $2`,
+            [evt.id, userId]
+          );
+          const sentTypes = new Set((sent.rows as { prompt_type: string }[]).map(r => r.prompt_type));
+          if (!sentTypes.has('reference')) {
+            await pushSvc.sendPush(userId, 'How was the event?', `Leave a reference for people you met at "${evt.title}"`, { eventId: evt.id, action: 'reference_prompt' });
+            await query(
+              `INSERT INTO event_post_prompts (event_id, user_id, prompt_type) VALUES ($1, $2, 'reference') ON CONFLICT DO NOTHING`,
+              [evt.id, userId]
+            );
+          }
+          if (!sentTypes.has('keep_chatting')) {
+            await pushSvc.sendPush(userId, 'Event ended', 'Keep the conversation going with people you met?', { eventId: evt.id, action: 'keep_chatting' });
+            await query(
+              `INSERT INTO event_post_prompts (event_id, user_id, prompt_type) VALUES ($1, $2, 'keep_chatting') ON CONFLICT DO NOTHING`,
+              [evt.id, userId]
+            );
+          }
+        } else {
+          await pushSvc.sendPush(userId, 'How was the event?', `Leave a reference for people you met at "${evt.title}"`, { eventId: evt.id, action: 'reference_prompt' });
+        }
       }
-
       await query(`UPDATE events SET reference_prompts_sent = true WHERE id = $1`, [evt.id]);
     }
 

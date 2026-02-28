@@ -54,4 +54,19 @@ export class MessagingController {
       next(err);
     }
   }
+
+  async setRetention(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { mode, archiveAt, defaultMessageTtlSeconds } = req.body;
+      const data = await messagingService.setRetention(
+        req.params.id as string,
+        req.user!.userId,
+        mode,
+        { archiveAt: archiveAt ? new Date(archiveAt) : undefined, defaultMessageTtlSeconds }
+      );
+      res.json({ data });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

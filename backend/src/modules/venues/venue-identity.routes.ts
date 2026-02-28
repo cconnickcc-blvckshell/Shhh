@@ -36,9 +36,11 @@ router.get('/announcements/nearby', authenticate, async (req: Request, res: Resp
   } catch (err) { next(err); }
 });
 
-router.post('/:id/checkin', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/checkin', authenticate, validate(z.object({
+  anonymousMode: z.boolean().optional(),
+})), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await svc.checkIn(req.params.id as string, req.user!.userId);
+    const result = await svc.checkIn(req.params.id as string, req.user!.userId, { anonymousMode: req.body?.anonymousMode });
     res.json({ data: result });
   } catch (err) { next(err); }
 });
@@ -54,6 +56,13 @@ router.get('/:id/attendees', authenticate, async (req: Request, res: Response, n
   try {
     const attendees = await svc.getVenueAttendees(req.params.id as string);
     res.json({ data: attendees, count: attendees.length });
+  } catch (err) { next(err); }
+});
+
+router.get('/:id/grid', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const grid = await svc.getVenueGrid(req.params.id as string);
+    res.json({ data: grid, count: grid.length });
   } catch (err) { next(err); }
 });
 

@@ -18,8 +18,15 @@ const sendMessageSchema = z.object({
   ttlSeconds: z.number().positive().optional(),
 });
 
+const retentionSchema = z.object({
+  mode: z.enum(['ephemeral', 'timed_archive', 'persistent']),
+  archiveAt: z.string().optional(),
+  defaultMessageTtlSeconds: z.number().positive().optional(),
+});
+
 router.get('/', authenticate, requireTier(0), controller.getConversations);
 router.post('/', authenticate, requireTier(1), validate(createConversationSchema), controller.createConversation);
+router.put('/:id/retention', authenticate, validate(retentionSchema), controller.setRetention);
 router.get('/:id/messages', authenticate, controller.getMessages);
 router.post('/:id/messages', authenticate, validate(sendMessageSchema), controller.sendMessage);
 

@@ -8,6 +8,8 @@ import { ChatSessionService } from '../modules/messaging/session.service';
 import { MediaService } from '../modules/media/media.service';
 import { WhisperService } from '../modules/discovery/whisper.service';
 import { EventLifecycleService } from '../modules/events/lifecycle.service';
+import { ComplianceService } from '../modules/compliance/compliance.service';
+import { MessagingService } from '../modules/messaging/messaging.service';
 
 const connection = new IORedis(config.redis.url, { maxRetriesPerRequest: null });
 
@@ -17,6 +19,8 @@ const sessionSvc = new ChatSessionService();
 const mediaSvc = new MediaService();
 const whisperSvc = new WhisperService();
 const lifecycleSvc = new EventLifecycleService();
+const complianceSvc = new ComplianceService();
+const messagingSvc = new MessagingService();
 
 // Cleanup queue — runs scheduled jobs
 const cleanupQueue = new Queue('cleanup', { connection });
@@ -56,6 +60,16 @@ export async function startWorkers() {
         logger.info({ count, duration: Date.now() - start }, 'Event lifecycle complete');
         break;
       }
+      case 'process-deletions': {
+        const count = await complianceSvc.processDeletionRequests(10);
+        logger.info({ count, duration: Date.now() - start }, 'Deletion requests processed');
+        break;
+      }
+      case 'archive-conversations': {
+        const count = await messagingSvc.processArchiveConversations();
+        logger.info({ count, duration: Date.now() - start }, 'Conversations archived');
+        break;
+      }
     }
   }, { connection, concurrency: 2 });
 
@@ -70,6 +84,8 @@ export async function startWorkers() {
   await cleanupQueue.upsertJobScheduler('media-cleanup', { every: 600000 }, { name: 'cleanup-media' });
   await cleanupQueue.upsertJobScheduler('whisper-cleanup', { every: 300000 }, { name: 'clean-whispers' });
   await cleanupQueue.upsertJobScheduler('event-lifecycle', { every: 60000 }, { name: 'event-lifecycle' });
+  await cleanupQueue.upsertJobScheduler('process-deletions', { every: 300000 }, { name: 'process-deletions' });
+  await cleanupQueue.upsertJobScheduler('archive-conversations', { every: 60000 }, { name: 'archive-conversations' });
 
-  logger.info('Background workers started — presence (1m), intents (5m), sessions (5m), media (10m), whispers (5m), events (1m)');
+  logger.info('Background workers started — presence (1m), intents (5m), sessions (5m), media (10m), whispers (5m), events (1m), deletions (5m), archive (1m)');
 }

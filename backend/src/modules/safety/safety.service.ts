@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { query } from '../../config/database';
+import { emitToUser } from '../../websocket';
 
 function hashValue(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -57,18 +58,59 @@ export class SafetyService {
     );
 
     const contacts = await this.getEmergencyContacts(userId);
-
+    // Note: SMS/push notification to emergency contacts is not yet implemented. When implemented,
+    // send alert (and optionally lat/lng) to each contact's phone or push token; then set contactsNotified.
     await query(
       `INSERT INTO audit_logs (user_id, action, gdpr_category, metadata_json)
        VALUES ($1, 'safety.panic_triggered', 'safety', $2)`,
-      [userId, JSON.stringify({ contactsNotified: contacts.length, lat, lng })]
+      [userId, JSON.stringify({ emergencyContactsOnFile: contacts.length, lat, lng, notificationsSent: false })]
     );
 
     return {
       checkinId: checkin.rows[0].id,
-      contactsNotified: contacts.length,
-      message: 'Panic alert sent to emergency contacts',
+      contactsNotified: 0,
+      emergencyContactsOnFile: contacts.length,
+      message: 'Panic recorded. Notifications to emergency contacts are not yet sent (feature deferred).',
     };
+  }
+
+  /** Record a screenshot report (e.g. from mobile client). Optionally link to target user/conversation for moderation. */
+  async recordScreenshotReport(reporterId: string, options?: { targetUserId?: string; conversationId?: string }) {
+    const result = await query(
+      `INSERT INTO screenshot_events (reporter_id, target_user_id, conversation_id)
+       VALUES ($1, $2, $3) RETURNING id, detected_at`,
+      [reporterId, options?.targetUserId || null, options?.conversationId || null]
+    );
+    return result.rows[0];
+  }
+
+  /** Optional: signal distress to venue security when user is at venue and opts in. Notifies active venue staff via WebSocket. */
+  async recordVenueDistress(userId: string, venueId: string): Promise<{ recorded: true; staffNotified: number }> {
+    const checkedIn = await query(
+      `SELECT 1 FROM venue_checkins WHERE venue_id = $1 AND user_id = $2 AND checked_out_at IS NULL`,
+      [venueId, userId]
+    );
+    if (checkedIn.rows.length === 0) {
+      throw Object.assign(new Error('You must be checked in at this venue to signal distress'), { statusCode: 403 });
+    }
+
+    const staff = await query(
+      `SELECT user_id FROM venue_staff WHERE venue_id = $1 AND is_active = true`,
+      [venueId]
+    );
+    const staffIds = (staff.rows as { user_id: string }[]).map((r) => r.user_id);
+
+    await query(
+      `INSERT INTO audit_logs (user_id, action, gdpr_category, metadata_json)
+       VALUES ($1, 'safety.venue_distress', 'safety', $2)`,
+      [userId, JSON.stringify({ venueId, staffNotified: staffIds.length })]
+    );
+
+    for (const staffId of staffIds) {
+      emitToUser(staffId, 'venue_distress', { userId, venueId });
+    }
+
+    return { recorded: true, staffNotified: staffIds.length };
   }
 
   async getMissedCheckins() {

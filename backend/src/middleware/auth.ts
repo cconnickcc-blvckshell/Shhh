@@ -45,3 +45,22 @@ export function requireTier(minTier: number) {
     next();
   };
 }
+
+/** Feature names from subscription tiers (e.g. expandedRadius, vault, reveal_l3). */
+export type FeatureName = 'anonymousBrowsing' | 'expandedRadius' | 'visibilitySchedule' | 'prioritySafety' | 'unlimitedAlbums' | 'vault' | 'reveal_l3';
+
+/** Creates middleware that requires the user to have the given subscription feature. Uses SubscriptionService. */
+export function requireFeature(feature: FeatureName) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(createError(401, 'Authentication required'));
+    }
+    import('../modules/billing/subscription.service').then(({ SubscriptionService }) => {
+      const subscriptionService = new SubscriptionService();
+      return subscriptionService.hasFeature(req.user!.userId, feature);
+    }).then((hasIt) => {
+      if (!hasIt) return next(createError(403, `Feature "${feature}" requires a premium subscription`));
+      next();
+    }).catch(next);
+  };
+}

@@ -12,6 +12,12 @@ export interface DiscoveryFilters {
   minTier?: number;
 }
 
+/** When set, discovery result is capped (e.g. 30 for free, 50 for premium). Venue/event context can bypass cap. */
+export interface DiscoveryOptions {
+  /** Max number of results (closest by distance). Default 50. */
+  limit?: number;
+}
+
 export interface NearbyUser {
   userId: string;
   displayName: string;
@@ -47,13 +53,15 @@ export class DiscoveryService {
     userId: string,
     lat: number,
     lng: number,
-    filters: DiscoveryFilters = {}
+    filters: DiscoveryFilters = {},
+    options: DiscoveryOptions = {}
   ): Promise<NearbyUser[]> {
     const radiusKm = Math.min(filters.radius || 50, config.geo.maxDiscoveryRadiusKm);
     const radiusMeters = radiusKm * 1000;
+    const limit = options.limit ?? config.geo.discoveryCapPremium;
 
     const redis = getRedis();
-    const cacheKey = `discover:${userId}:${lat.toFixed(2)}:${lng.toFixed(2)}:${radiusKm}`;
+    const cacheKey = `discover:${userId}:${lat.toFixed(2)}:${lng.toFixed(2)}:${radiusKm}:${limit}`;
     const cached = await redis.get(cacheKey);
     if (cached) {
       return JSON.parse(cached);
@@ -124,8 +132,8 @@ export class DiscoveryService {
         AND (them.seeking_age_min IS NULL OR me.age IS NULL OR me.age >= them.seeking_age_min)
         AND (them.seeking_age_max IS NULL OR me.age IS NULL OR me.age <= them.seeking_age_max)
       ORDER BY distance ASC, l.updated_at DESC
-      LIMIT 50`,
-      [lat, lng, userId, radiusMeters, fuzz]
+      LIMIT $6`,
+      [lat, lng, userId, radiusMeters, fuzz, limit]
     );
 
     const users: NearbyUser[] = result.rows.map((row) => ({

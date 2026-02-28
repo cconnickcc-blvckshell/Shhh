@@ -108,4 +108,20 @@ export class SubscriptionService {
       priceFormatted: val.price ? `$${(val.price / 100).toFixed(2)}/mo` : 'Free',
     }));
   }
+
+  /** Returns true if user has an active subscription that includes the given feature. */
+  async hasFeature(userId: string, feature: string): Promise<boolean> {
+    const sub = await this.getSubscription(userId);
+    const row = sub as { tier?: string; features_json?: unknown };
+    if (row.tier === 'free' || !row.tier) return false;
+    const features = row.features_json as Record<string, boolean> | undefined;
+    return !!(features && features[feature] === true);
+  }
+
+  /** Returns true if user has premium (non-free) subscription. */
+  async isPremium(userId: string): Promise<boolean> {
+    const sub = await this.getSubscription(userId);
+    const tier = (sub as { tier?: string }).tier || 'free';
+    return tier !== 'free';
+  }
 }

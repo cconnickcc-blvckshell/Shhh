@@ -10,9 +10,14 @@ const svc = new WhisperService();
 router.post('/', authenticate, validate(z.object({
   toUserId: z.string().uuid(),
   message: z.string().min(1).max(100),
+  category: z.enum(['compliment', 'invite', 'curious', 'other']).optional(),
+  revealPolicy: z.enum(['on_response', 'anonymous_only', 'never']).optional(),
 })), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await svc.sendWhisper(req.user!.userId, req.body.toUserId, req.body.message);
+    const result = await svc.sendWhisper(req.user!.userId, req.body.toUserId, req.body.message, {
+      category: req.body.category,
+      revealPolicy: req.body.revealPolicy,
+    });
     res.status(201).json({ data: result });
   } catch (err) { next(err); }
 });

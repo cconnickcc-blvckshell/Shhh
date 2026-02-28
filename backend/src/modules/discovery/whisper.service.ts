@@ -3,9 +3,18 @@ import { emitToUser } from '../../websocket';
 
 const WHISPER_TTL_HOURS = 4;
 const MAX_PENDING_WHISPERS = 3;
+const MAX_WHISPERS_PER_DAY = 20;
+
+export type WhisperCategory = 'compliment' | 'invite' | 'curious' | 'other';
+export type WhisperRevealPolicy = 'on_response' | 'anonymous_only' | 'never';
 
 export class WhisperService {
-  async sendWhisper(fromUserId: string, toUserId: string, message: string) {
+  async sendWhisper(
+    fromUserId: string,
+    toUserId: string,
+    message: string,
+    options?: { category?: WhisperCategory; revealPolicy?: WhisperRevealPolicy }
+  ) {
     if (fromUserId === toUserId) {
       throw Object.assign(new Error('Cannot whisper to yourself'), { statusCode: 400 });
     }
@@ -26,6 +35,14 @@ export class WhisperService {
       throw Object.assign(new Error('Too many pending whispers. Wait for responses or expiry.'), { statusCode: 429 });
     }
 
+    const perDay = await query(
+      `SELECT COUNT(*) as cnt FROM whispers WHERE from_user_id = $1 AND created_at >= CURRENT_DATE`,
+      [fromUserId]
+    );
+    if (parseInt(perDay.rows[0].cnt) >= MAX_WHISPERS_PER_DAY) {
+      throw Object.assign(new Error('Daily whisper limit reached. Try again tomorrow.'), { statusCode: 429 });
+    }
+
     const duplicate = await query(
       `SELECT 1 FROM whispers WHERE from_user_id = $1 AND to_user_id = $2 AND status = 'pending' AND expires_at > NOW()`,
       [fromUserId, toUserId]
@@ -43,10 +60,23 @@ export class WhisperService {
     );
     const distance = senderLocation.rows[0]?.distance ? Math.round(senderLocation.rows[0].distance) : null;
 
+    const category = options?.category ?? 'curious';
+    const revealPolicy = options?.revealPolicy ?? 'on_response';
+
+    const hasCategoryCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'whispers' AND column_name = 'category'`
+    );
+    const insertCols = hasCategoryCol.rows.length > 0
+      ? 'from_user_id, to_user_id, message, expires_at, category, reveal_policy'
+      : 'from_user_id, to_user_id, message, expires_at';
+    const insertVals = hasCategoryCol.rows.length > 0
+      ? [fromUserId, toUserId, message, expiresAt, category, revealPolicy]
+      : [fromUserId, toUserId, message, expiresAt];
+    const placeholders = insertVals.map((_, i) => `$${i + 1}`).join(', ');
+
     const result = await query(
-      `INSERT INTO whispers (from_user_id, to_user_id, message, expires_at)
-       VALUES ($1, $2, $3, $4) RETURNING id, created_at`,
-      [fromUserId, toUserId, message, expiresAt]
+      `INSERT INTO whispers (${insertCols}) VALUES (${placeholders}) RETURNING id, created_at`,
+      insertVals
     );
 
     emitToUser(toUserId, 'whisper_received', {
@@ -60,8 +90,12 @@ export class WhisperService {
   }
 
   async getMyWhispers(userId: string) {
+    const hasCategory = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'whispers' AND column_name = 'category'`
+    );
+    const extraCols = hasCategory.rows.length > 0 ? ', w.category, w.reveal_policy' : '';
     const result = await query(
-      `SELECT w.id, w.message, w.status, w.created_at, w.expires_at, w.response, w.revealed,
+      `SELECT w.id, w.message, w.status, w.created_at, w.expires_at, w.response, w.revealed${extraCols},
               CASE WHEN w.revealed THEN p.display_name ELSE NULL END as from_name,
               CASE WHEN w.revealed THEN w.from_user_id ELSE NULL END as from_user_id,
               ST_Distance(l1.geom_point::geography, l2.geom_point::geography) as distance
@@ -80,8 +114,12 @@ export class WhisperService {
   }
 
   async getSentWhispers(userId: string) {
+    const hasCategory = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'whispers' AND column_name = 'category'`
+    );
+    const extraCols = hasCategory.rows.length > 0 ? ', w.category, w.reveal_policy' : '';
     const result = await query(
-      `SELECT w.id, w.message, w.status, w.created_at, w.expires_at, w.response,
+      `SELECT w.id, w.message, w.status, w.created_at, w.expires_at, w.response${extraCols},
               p.display_name as to_name
        FROM whispers w
        JOIN user_profiles p ON w.to_user_id = p.user_id

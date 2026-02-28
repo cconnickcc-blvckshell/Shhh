@@ -26,10 +26,21 @@ const panicSchema = z.object({
   lng: z.number().min(-180).max(180).optional(),
 });
 
+const screenshotSchema = z.object({
+  targetUserId: z.string().uuid().optional(),
+  conversationId: z.string().uuid().optional(),
+});
+
+const venueDistressSchema = z.object({
+  venueId: z.string().uuid(),
+});
+
 router.get('/contacts', authenticate, ctrl.getContacts);
 router.post('/contacts', authenticate, validate(addContactSchema), ctrl.addContact);
 router.delete('/contacts/:id', authenticate, ctrl.removeContact);
 router.post('/checkin', authenticate, validate(checkInSchema), ctrl.checkIn);
 router.post('/panic', authenticate, validate(panicSchema), ctrl.panic);
+router.post('/screenshot', authenticate, validate(screenshotSchema), ctrl.screenshot);
+router.post('/venue-distress', authenticate, validate(venueDistressSchema), ctrl.venueDistress);
 
 export default router;

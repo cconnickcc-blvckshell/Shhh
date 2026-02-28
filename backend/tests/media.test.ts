@@ -62,6 +62,7 @@ beforeAll(() => {
 describe('Media & Albums API', () => {
   let token1: string;
   let token2: string;
+  let userId1: string;
   let userId2: string;
   let mediaId: string;
   let albumId: string;
@@ -69,6 +70,7 @@ describe('Media & Albums API', () => {
   beforeAll(async () => {
     const u1 = await createTestUser('MediaUser1', 1);
     token1 = u1.accessToken;
+    userId1 = u1.userId;
     const u2 = await createTestUser('MediaUser2', 1);
     token2 = u2.accessToken;
     userId2 = u2.userId;
@@ -137,6 +139,41 @@ describe('Media & Albums API', () => {
       .get(`/v1/media/albums/${albumId}`)
       .set('Authorization', `Bearer ${token2}`);
     expect(res.status).toBe(404);
+  });
+
+  it('GET /v1/media/:id denied when owner has blur and no reveal to requester', async () => {
+    await getPool().query('UPDATE user_profiles SET blur_photos = true WHERE user_id = $1', [userId1]);
+    const uploadRes = await request
+      .post('/v1/media/upload')
+      .set('Authorization', `Bearer ${token1}`)
+      .attach('file', TEST_IMAGE)
+      .field('category', 'photos');
+    const privateMediaId = uploadRes.body.data.id;
+    const res = await request
+      .get(`/v1/media/${privateMediaId}`)
+      .set('Authorization', `Bearer ${token2}`);
+    expect(res.status).toBe(404);
+    await getPool().query('UPDATE user_profiles SET blur_photos = false WHERE user_id = $1', [userId1]);
+  });
+
+  it('GET /v1/media/:id allowed after owner reveals to requester', async () => {
+    await getPool().query('UPDATE user_profiles SET blur_photos = true WHERE user_id = $1', [userId1]);
+    const uploadRes = await request
+      .post('/v1/media/upload')
+      .set('Authorization', `Bearer ${token1}`)
+      .attach('file', TEST_IMAGE)
+      .field('category', 'photos');
+    const privateMediaId = uploadRes.body.data.id;
+    await request
+      .post('/v1/photos/reveal')
+      .set('Authorization', `Bearer ${token1}`)
+      .send({ toUserId: userId2 });
+    const res = await request
+      .get(`/v1/media/${privateMediaId}`)
+      .set('Authorization', `Bearer ${token2}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.id).toBe(privateMediaId);
+    await getPool().query('UPDATE user_profiles SET blur_photos = false WHERE user_id = $1', [userId1]);
   });
 
   it('POST /v1/media/albums/:id/share shares album with user', async () => {

@@ -71,4 +71,49 @@ export class ComplianceService {
       [userId, consentType]
     );
   }
+
+  /**
+   * Process pending data deletion requests: anonymize PII first, then mark completed.
+   * Semantics: anonymize first, hard delete later (conservative to avoid irreversible data loss).
+   * Does not delete the user row (preserves FKs); call this from a scheduled worker.
+   */
+  async processDeletionRequests(limit: number = 10): Promise<number> {
+    const pending = await query(
+      `SELECT id, user_id FROM data_deletion_requests WHERE status = 'pending' ORDER BY requested_at ASC LIMIT $1`,
+      [limit]
+    );
+    if (pending.rows.length === 0) return 0;
+
+    let processed = 0;
+    for (const row of pending.rows) {
+      const { id: requestId, user_id: userId } = row;
+      try {
+        await query(`UPDATE data_deletion_requests SET status = 'processing' WHERE id = $1`, [requestId]);
+
+        // Anonymize: overwrite PII so user is no longer identifiable
+        await query(
+          `UPDATE users SET phone_hash = 'deleted_' || id::text, email_hash = NULL, password_hash = NULL, is_active = false, updated_at = NOW(), deleted_at = NOW() WHERE id = $1`,
+          [userId]
+        );
+        await query(
+          `UPDATE user_profiles SET display_name = 'Deleted User', bio = '', photos_json = '[]'::jsonb, preferences_json = '{}'::jsonb, kinks = '{}', updated_at = NOW() WHERE user_id = $1`,
+          [userId]
+        );
+
+        await query(
+          `UPDATE data_deletion_requests SET status = 'completed', completed_at = NOW() WHERE id = $1`,
+          [requestId]
+        );
+        await query(
+          `INSERT INTO audit_logs (user_id, action, gdpr_category) VALUES ($1, 'compliance.deletion_processed', 'data_rights')`,
+          [userId]
+        );
+        processed++;
+      } catch (err) {
+        await query(`UPDATE data_deletion_requests SET status = 'pending' WHERE id = $1`, [requestId]);
+        throw err;
+      }
+    }
+    return processed;
+  }
 }

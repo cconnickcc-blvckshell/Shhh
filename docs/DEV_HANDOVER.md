@@ -1,6 +1,7 @@
 # Shhh — Developer Handover Document
 
-> **Version**: 0.5.0 | **Last updated**: February 2026 | **Status**: Active development (Sprint 5)
+> **Version**: 0.5.0 | **Last updated**: February 2026 | **Status**: Active development (Sprint 5)  
+> **Enhancement work:** Follow **docs/ENHANCEMENT_ROADMAP.md** (branch `shh-enhancement-trial`). Update the relevant §4.x and schema/API tables when adding or changing modules.
 
 ---
 
@@ -253,6 +254,7 @@ The backend has **24 route modules** wired in `app.ts`. Each module follows the 
 - Refresh token rotation: old token is revoked on each refresh call (one-time use)
 - OTP rate limited to 5 attempts per 15 minutes per phone number
 - In dev/test mode without Twilio credentials, OTP codes are returned in the response as `devCode`
+- **Stealth (neutral notifications):** If `user_profiles.preferences_json.neutral_notifications === true`, `push.service.sendPush` uses generic title/body ("Notification", "You have a new notification"); set via `PUT /v1/users/me` with `preferencesJson`
 - Every auth action is logged to `audit_logs`
 
 ### 4.2 Users Module
@@ -412,12 +414,14 @@ The backend has **24 route modules** wired in `app.ts`. Each module follows the 
 
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/discover?lat=&lng=&radius=` | Yes | 0 | Find nearby users within radius |
+| GET | `/v1/discover?lat=&lng=&radius=&venueId=&eventId=` | Yes | 0 | Find nearby users. Free tier capped at 30 results; premium or venue/event context uses higher cap. Response: data, count, discoveryCap, radiusUsedKm, computedRadiusKm? (density-aware). |
 | POST | `/v1/discover/location` | Yes | 0 | Update user's location |
 
 **Database tables owned:** `locations`
 
 **Key business rules:**
+- **Discovery cap:** Free subscription = 30 closest; premium = 50. Query params `venueId` or `eventId` bypass cap (e.g. "who's here" context). Config: `DISCOVERY_CAP_FREE`, `DISCOVERY_CAP_PREMIUM`.
+- **Density-aware:** When result count < 15 and radius < max, response includes `computedRadiusKm` (suggested larger radius to "expand your circle").
 - Location is stored as PostGIS `GEOMETRY(Point, 4326)` with GIST index
 - Discovery uses `ST_DWithin` with geography casts for meter-accurate distance
 - Maximum discovery radius: 100 km (configurable via `MAX_DISCOVERY_RADIUS_KM`)
@@ -480,14 +484,16 @@ See [Section 12: Presence & Persona System](#12-presence--persona-system) for th
 
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| POST | `/v1/whispers` | Yes | 0 | Send whisper to a user |
+| POST | `/v1/whispers` | Yes | 0 | Send whisper (toUserId, message; optional category, revealPolicy). Quotas: max pending, max per day; one pending per (from, to). |
 | GET | `/v1/whispers/inbox` | Yes | 0 | Received whispers |
 | GET | `/v1/whispers/sent` | Yes | 0 | Sent whispers |
 | POST | `/v1/whispers/:id/respond` | Yes | 0 | Respond to a whisper (with optional reveal) |
 | POST | `/v1/whispers/:id/seen` | Yes | 0 | Mark whisper as seen |
 | POST | `/v1/whispers/:id/ignore` | Yes | 0 | Ignore whisper |
 
-**Database tables owned:** `whispers`
+**Database tables owned:** `whispers` (migration 016: category, reveal_policy; unique index one pending per from/to)
+
+**Key business rules:** category (compliment, invite, curious, other), reveal_policy (on_response, anonymous_only, never); max pending 3, max per day 20.
 
 See [Section 13: Whisper System](#13-whisper-system) for full details.
 
@@ -510,18 +516,20 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | POST | `/v1/conversations` | Yes | 1 | Create conversation (requires tier 1) |
 | GET | `/v1/conversations/:id/messages` | Yes | 0 | Get messages for a conversation |
 | POST | `/v1/conversations/:id/messages` | Yes | 0 | Send message (text, image, location) |
+| PUT | `/v1/conversations/:id/retention` | Yes | 0 | Set retention (mode, archiveAt?, defaultMessageTtlSeconds?) |
 
 **Database tables owned:**
-- PostgreSQL: `conversations`, `conversation_participants`
+- PostgreSQL: `conversations`, `conversation_participants` (columns: retention_mode, archive_at, default_message_ttl_seconds, is_archived)
 - MongoDB: `messages` collection
 
 **Key business rules:**
 - Conversation metadata lives in PostgreSQL; message content lives in MongoDB
 - Messages have a TTL index on `expiresAt` — MongoDB auto-deletes expired documents
+- **Retention:** `retention_mode` (ephemeral | timed_archive | persistent), `archive_at` (read-only after), `default_message_ttl_seconds`; worker `archive-conversations` runs every 1m to set `is_archived` when `archive_at` passed; sending is rejected when conversation is archived
 - Message content types: `text`, `image`, `location`
 - All messages have `isEncrypted: true` by default (infrastructure ready for E2EE)
 - View-once media auto-deletes 5 seconds after all participants have viewed it
-- Ephemeral messages accept a `ttlSeconds` parameter for custom expiry
+- Ephemeral messages accept a `ttlSeconds` parameter for custom expiry (or use conversation default)
 
 ### 4.12 Sessions Module
 
@@ -593,10 +601,12 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | GET | `/v1/events/nearby` | Yes | 0 | Find nearby events |
 | POST | `/v1/events` | Yes | 2 | Create event (requires tier 2) |
 | GET | `/v1/events/:id` | Yes | 0 | Get event details |
+| GET | `/v1/events/:id/attendees` | Yes | 0 | Privacy-safe attendee list (persona + badges, no user ids) |
+| GET | `/v1/events/:id/chat-rooms` | Yes | 0 | Chat rooms linked to this event |
 | POST | `/v1/events/:id/rsvp` | Yes | 0 | RSVP to event |
 | POST | `/v1/events/:id/checkin` | Yes | 0 | Check in at event |
 
-**Database tables owned:** `events`, `event_rsvps`
+**Database tables owned:** `events`, `event_rsvps`, `event_post_prompts` (015: one prompt per type per user per event)
 
 **Key business rules:**
 - Event creation requires tier 2 (ID-verified)
@@ -605,8 +615,9 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
   - `upcoming` → `discovery`: 24h before start (sends push notifications to nearby users)
   - `discovery`/`upcoming` → `live`: at start time
   - `live` → `winding_down`: 1h before end
-  - `live`/`winding_down` → `post`: at end time (sends reference prompt push notifications to checked-in attendees)
+  - `live`/`winding_down` → `post`: at end time (sends reference + keep_chatting prompts once per attendee via `event_post_prompts`)
   - `post` → `archived`: 48h after end
+- **Post-event prompts:** `event_post_prompts` stores (event_id, user_id, prompt_type) so reference and keep_chatting are sent at most once per user per event
 - RSVP statuses: `going`, `maybe`, `declined`, `checked_in`
 - Events can be private (require invite code) or public
 
@@ -651,18 +662,21 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | POST | `/v1/venues/:id/claim` | Yes | 2 | Claim a venue (email + phone) |
 | POST | `/v1/venues/:id/announcements` | Yes | 2 | Create announcement |
 | GET | `/v1/venues/announcements/nearby` | Yes | 0 | Get nearby announcements |
-| POST | `/v1/venues/:id/checkin` | Yes | 0 | Check in at venue |
+| POST | `/v1/venues/:id/checkin` | Yes | 0 | Check in (body optional: anonymousMode; default true for privacy) |
 | POST | `/v1/venues/:id/checkout` | Yes | 0 | Check out |
 | GET | `/v1/venues/:id/attendees` | Yes | 0 | Get current attendees |
+| GET | `/v1/venues/:id/grid` | Yes | 0 | Privacy-safe grid (anonymous tiles or persona + badges; no user ids) |
 | GET | `/v1/venues/:id/stats` | Yes | 0 | Get venue stats |
 | POST | `/v1/venues/:id/chat-rooms` | Yes | 2 | Create chat room |
 | GET | `/v1/venues/:id/chat-rooms` | Yes | 0 | Get active chat rooms |
 
-**Database tables owned:** `venue_accounts`, `venue_announcements`, `venue_checkins`, `venue_chat_rooms`
+**Database tables owned:** `venue_accounts`, `venue_announcements`, `venue_checkins` (014: anonymous_mode default true), `venue_chat_rooms`
 
 **Key business rules:**
 - Venue claiming requires tier 2; email and phone are hashed before storage
 - A venue can only be claimed once (`is_claimed = true` constraint)
+- **Check-in:** optional `anonymousMode` (default true); when true, user appears as anonymous on venue grid
+- **Grid:** GET `/v1/venues/:id/grid` returns privacy-safe tiles (anonymous or personaType + badges); no user ids
 - Announcements have types: `announcement`, `promotion`, `event_promo`, `special`
 - Announcements are geospatially filtered using `ST_DWithin` against the venue location
 - Chat rooms can have `auto_close_at` for time-limited rooms (e.g., event-bound)
@@ -705,10 +719,10 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 
 ### 4.18 Safety Module
 
-**What it does:** Emergency contacts, check-ins, panic alerts.
+**What it does:** Emergency contacts, check-ins, panic alerts, screenshot reporting.
 
 **Key files:**
-- `modules/safety/safety.service.ts` — Contacts CRUD, check-in, panic
+- `modules/safety/safety.service.ts` — Contacts CRUD, check-in, panic, recordScreenshotReport
 - `modules/safety/safety.controller.ts` — HTTP handlers
 - `modules/safety/safety.routes.ts` — Route definitions
 
@@ -720,9 +734,13 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | POST | `/v1/safety/contacts` | Yes | 0 | Add emergency contact |
 | DELETE | `/v1/safety/contacts/:id` | Yes | 0 | Remove emergency contact |
 | POST | `/v1/safety/checkin` | Yes | 0 | Safety check-in |
-| POST | `/v1/safety/panic` | Yes | 0 | Trigger panic alert |
+| POST | `/v1/safety/panic` | Yes | 0 | Trigger panic (recorded; notifications to contacts not yet sent) |
+| POST | `/v1/safety/screenshot` | Yes | 0 | Record screenshot report (body: optional targetUserId, conversationId) |
+| POST | `/v1/safety/venue-distress` | Yes | 0 | Signal distress to venue security (body: venueId). User must be checked in; notifies active venue staff via WebSocket. |
 
-**Database tables owned:** `emergency_contacts`, `safety_checkins`
+**Database tables owned:** `emergency_contacts`, `safety_checkins`, `screenshot_events`
+
+**Key business rules:** Venue distress is conditional on venue staff being present; audit_logs action `safety.venue_distress` records each call.
 
 See [Section 11: Safety & Trust](#11-safety--trust) for full details.
 
@@ -754,14 +772,15 @@ See [Section 11: Safety & Trust](#11-safety--trust) for full details.
 | DELETE | `/v1/media/albums/:id` | Yes | 0 | Delete album |
 | POST | `/v1/media/albums/:id/media` | Yes | 0 | Add media to album |
 | DELETE | `/v1/media/albums/:id/media/:mediaId` | Yes | 0 | Remove media from album |
-| POST | `/v1/media/albums/:id/share` | Yes | 0 | Share album with user |
+| POST | `/v1/media/albums/:id/share` | Yes | 0 | Share album (userId or targetPersonaId or targetCoupleId; watermarkMode, notifyOnView) |
 | DELETE | `/v1/media/albums/:id/share/:userId` | Yes | 0 | Revoke album share |
 
-**Database tables owned:** `media`, `albums`, `album_media`, `album_shares`, `media_view_tracking`
+**Database tables owned:** `media`, `albums`, `album_media`, `album_shares` (share_target_type, share_target_id, watermark_mode, notify_on_view), `media_view_tracking`
 
 **Key business rules:**
 - Files are stored locally in `backend/uploads/` directory (future: S3/GCS via `storage_provider` column)
 - Sharp generates thumbnails for images
+- **Album share:** Can target user, persona, or couple; options include `watermarkMode`, `notifyOnView`; persona/couple resolved to user id(s) for access checks
 - Self-destructing media has an `expires_at` timestamp; cleanup worker runs every 10 minutes
 - View-once media tracks viewers in `media_view_tracking` — once all conversation participants have viewed, the media auto-deletes in 5 seconds
 - Album sharing emits `album_shared` via WebSocket; revoking emits `album_revoked`
@@ -792,6 +811,7 @@ See [Section 11: Safety & Trust](#11-safety--trust) for full details.
 
 **Key business rules:**
 - Users can set `blur_photos = true` on their profile; all their photos appear blurred to others
+- **Reveal level/scope (migration 011):** Optional `level` (0–2), `scope_type` (global, conversation), `scope_id`; `GET /v1/media/:id` enforces — returns 404 if requester has no reveal from owner
 - Reveals are directional: A can reveal to B without B revealing to A
 - Reveals can have an `expires_at` for time-limited reveals
 - The `getMutualReveals` query includes an `is_mutual` flag showing if the other person has also revealed to you
@@ -818,7 +838,7 @@ See [Section 11: Safety & Trust](#11-safety--trust) for full details.
 
 **Key business rules:**
 - Data export aggregates from all tables: profile, conversations, messages, locations, interactions, verifications
-- Account deletion soft-deletes the user (`deleted_at` timestamp) and creates a tracking record
+- Account deletion: `requestAccountDeletion` inserts a row into `data_deletion_requests`; a **background worker** (`process-deletions`, every 5m) processes pending requests by **anonymizing** the user (phone_hash, email_hash, password_hash cleared; user_profiles PII cleared), then marking the request completed. Semantics: anonymize first, hard delete later.
 - Consent records track `consent_type`, `version`, `granted_at`, `withdrawn_at`
 
 ### 4.22 Admin Module
@@ -1543,6 +1563,8 @@ All background jobs run via **BullMQ** with a single `cleanup` queue connected t
 | `cleanup-media` | Every **10 minutes** | Finds media with `expires_at < NOW()`, deletes files from disk, soft-deletes records |
 | `clean-whispers` | Every **5 minutes** | Updates expired whispers to status `expired` |
 | `event-lifecycle` | Every **60 seconds** | Transitions events through phases (discovery→upcoming→live→winding_down→post→archived), sends push notifications |
+| `process-deletions` | Every **5 minutes** | Processes pending `data_deletion_requests`: anonymizes user + profile, marks request completed |
+| `archive-conversations` | Every **1 minute** | Sets `is_archived = true` on conversations where `archive_at <= NOW()` (read-only thereafter) |
 
 ### 8.2 Worker Configuration
 
@@ -1940,7 +1962,11 @@ This distance is rounded to the nearest meter and sent as "245m away" or "nearby
 | Ad-free | ❌ | ✅ | ✅ | ✅ |
 | Persona slots | 1 | 2 | 3 | 5 |
 
-### 14.3 Stripe Integration Points
+### 14.3 Feature Gating (API)
+
+Use **`requireFeature(feature)`** from `middleware/auth.ts` to protect routes by subscription feature. Features are stored in `subscriptions.features_json` (e.g. `expandedRadius`, `anonymousBrowsing`, `vault`). `SubscriptionService.hasFeature(userId, feature)` returns true if the user has an active subscription that includes the feature. Apply on relevant endpoints so UI and API stay in sync.
+
+### 14.4 Stripe Integration Points
 
 **Stripe SDK:** `stripe` npm package (v20.x)
 
@@ -1961,7 +1987,7 @@ This distance is rounded to the nearest meter and sent as "245m away" or "nearby
 5. Client opens `checkoutUrl` in browser/webview
 6. On success, Stripe sends webhook to `POST /v1/billing/webhook`
 
-### 14.4 Webhook Handling
+### 14.5 Webhook Handling
 
 The webhook handler processes two event types:
 

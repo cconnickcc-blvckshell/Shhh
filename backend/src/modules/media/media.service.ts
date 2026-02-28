@@ -1,7 +1,9 @@
 import { query } from '../../config/database';
 import { StorageService } from './storage.service';
+import { BlurRevealService } from '../users/blur.service';
 
 const storage = new StorageService();
+const blurSvc = new BlurRevealService();
 
 export class MediaService {
   async uploadMedia(
@@ -61,7 +63,9 @@ export class MediaService {
       if (access.rows.length > 0) return media;
     }
 
-    return null;
+    const canSee = await blurSvc.canSeeUnblurred(requesterId, media.user_id);
+    if (!canSee) return null;
+    return media;
   }
 
   async deleteMedia(mediaId: string, userId: string) {

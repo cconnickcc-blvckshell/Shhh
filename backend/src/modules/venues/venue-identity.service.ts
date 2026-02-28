@@ -61,7 +61,7 @@ export class VenueIdentityService {
     return result.rows;
   }
 
-  async checkIn(venueId: string, userId: string) {
+  async checkIn(venueId: string, userId: string, options?: { anonymousMode?: boolean }) {
     const active = await query(
       `SELECT id FROM venue_checkins WHERE venue_id = $1 AND user_id = $2 AND checked_out_at IS NULL`,
       [venueId, userId]
@@ -70,10 +70,19 @@ export class VenueIdentityService {
       return { alreadyCheckedIn: true, checkinId: active.rows[0].id };
     }
 
-    const result = await query(
-      `INSERT INTO venue_checkins (venue_id, user_id) VALUES ($1, $2) RETURNING id, checked_in_at`,
-      [venueId, userId]
+    const hasAnonymousCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'venue_checkins' AND column_name = 'anonymous_mode'`
     );
+    const anonymousMode = options?.anonymousMode !== false;
+    const result = hasAnonymousCol.rows.length > 0
+      ? await query(
+          `INSERT INTO venue_checkins (venue_id, user_id, anonymous_mode) VALUES ($1, $2, $3) RETURNING id, checked_in_at`,
+          [venueId, userId, anonymousMode]
+        )
+      : await query(
+          `INSERT INTO venue_checkins (venue_id, user_id) VALUES ($1, $2) RETURNING id, checked_in_at`,
+          [venueId, userId]
+        );
     return { alreadyCheckedIn: false, ...result.rows[0] };
   }
 
@@ -97,6 +106,45 @@ export class VenueIdentityService {
       [venueId]
     );
     return result.rows;
+  }
+
+  /** Privacy-safe grid: tiles with persona/badges or anonymous. No user ids exposed. */
+  async getVenueGrid(venueId: string): Promise<Array<{ anonymous: true; distanceBucket: string } | { personaType: string; personaDisplayName: string | null; badges: string[]; distanceBucket: string }>> {
+    const hasAnonymousCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'venue_checkins' AND column_name = 'anonymous_mode'`
+    );
+    const selectAnonymous = hasAnonymousCol.rows.length > 0 ? 'vc.anonymous_mode' : 'true AS anonymous_mode';
+
+    const result = await query(
+      `SELECT ${selectAnonymous}, per.type as persona_type, per.display_name as persona_name, u.verification_tier
+       FROM venue_checkins vc
+       LEFT JOIN personas per ON per.user_id = vc.user_id AND per.is_active = true
+       LEFT JOIN users u ON vc.user_id = u.id
+       WHERE vc.venue_id = $1 AND vc.checked_out_at IS NULL AND vc.is_visible = true
+       ORDER BY vc.checked_in_at DESC`,
+      [venueId]
+    );
+
+    const tierToBadges = (tier: number | null): string[] => {
+      if (tier == null || tier < 1) return [];
+      if (tier >= 3) return ['trusted'];
+      if (tier >= 2) return ['id_verified'];
+      return ['verified'];
+    };
+
+    return result.rows.map((r: { anonymous_mode?: boolean; persona_type: string | null; persona_name: string | null; verification_tier: number | null }) => {
+      const anonymous = r.anonymous_mode !== false;
+      const distanceBucket = 'here';
+      if (anonymous) {
+        return { anonymous: true as const, distanceBucket };
+      }
+      return {
+        personaType: r.persona_type || 'solo',
+        personaDisplayName: r.persona_name || null,
+        badges: tierToBadges(r.verification_tier),
+        distanceBucket,
+      };
+    });
   }
 
   async getVenueStats(venueId: string) {

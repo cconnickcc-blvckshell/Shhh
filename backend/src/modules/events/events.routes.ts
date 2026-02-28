@@ -31,6 +31,8 @@ const nearbyQuerySchema = z.object({
 router.get('/nearby', authenticate, validate(nearbyQuerySchema, 'query'), controller.getNearby);
 router.post('/', authenticate, requireTier(2), validate(createEventSchema), controller.create);
 router.get('/:id', authenticate, controller.getOne);
+router.get('/:id/attendees', authenticate, controller.getAttendees);
+router.get('/:id/chat-rooms', authenticate, controller.getChatRooms);
 router.post('/:id/rsvp', authenticate, validate(rsvpSchema), controller.rsvp);
 router.post('/:id/checkin', authenticate, controller.checkIn);
 

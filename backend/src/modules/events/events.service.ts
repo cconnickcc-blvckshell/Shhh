@@ -91,4 +91,41 @@ export class EventsService {
       [eventId, userId]
     );
   }
+
+  /** Privacy-safe list: persona + badges, no user ids. */
+  async getEventAttendees(eventId: string): Promise<Array<{ personaType: string; personaDisplayName: string | null; badges: string[] }>> {
+    const result = await query(
+      `SELECT per.type as persona_type, per.display_name as persona_name, u.verification_tier
+       FROM event_rsvps er
+       LEFT JOIN personas per ON per.user_id = er.user_id AND per.is_active = true
+       LEFT JOIN users u ON er.user_id = u.id
+       WHERE er.event_id = $1 AND er.status IN ('going', 'checked_in')
+       ORDER BY er.arrived_at ASC NULLS LAST, er.created_at ASC`,
+      [eventId]
+    );
+    const tierToBadges = (tier: number | null): string[] => {
+      if (tier == null || tier < 1) return [];
+      if (tier >= 3) return ['trusted'];
+      if (tier >= 2) return ['id_verified'];
+      return ['verified'];
+    };
+    return result.rows.map((r: { persona_type: string | null; persona_name: string | null; verification_tier: number | null }) => ({
+      personaType: r.persona_type || 'solo',
+      personaDisplayName: r.persona_name || null,
+      badges: tierToBadges(r.verification_tier),
+    }));
+  }
+
+  /** Chat rooms linked to this event (venue_chat_rooms where event_id = eventId). */
+  async getEventChatRooms(eventId: string) {
+    const result = await query(
+      `SELECT id, venue_id, event_id, name, is_active, auto_close_at, created_at
+       FROM venue_chat_rooms
+       WHERE event_id = $1 AND is_active = true
+         AND (auto_close_at IS NULL OR auto_close_at > NOW())
+       ORDER BY created_at DESC`,
+      [eventId]
+    );
+    return result.rows;
+  }
 }
