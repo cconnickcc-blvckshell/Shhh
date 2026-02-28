@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../src/api/client';
+import { couplesApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 export default function CoupleScreen() {
@@ -14,7 +14,7 @@ export default function CoupleScreen() {
 
   const load = async () => {
     try {
-      const res = await api<{ data: any }>('/v1/couples/me');
+      const res = await couplesApi.getMe();
       setCouple(res.data);
     } catch { setCouple(null); }
     setLoading(false);
@@ -24,7 +24,7 @@ export default function CoupleScreen() {
 
   const createCouple = async () => {
     try {
-      const res = await api<{ data: { inviteCode: string } }>('/v1/couples', { method: 'POST' });
+      const res = await couplesApi.create();
       setNewCode(res.data.inviteCode);
       load();
     } catch (err: any) { Alert.alert('Error', err.message); }
@@ -33,20 +33,39 @@ export default function CoupleScreen() {
   const linkPartner = async () => {
     if (linkCode.length !== 8) return;
     try {
-      await api('/v1/couples/link', { method: 'POST', body: JSON.stringify({ inviteCode: linkCode }) });
+      await couplesApi.link(linkCode.trim().toUpperCase());
       Alert.alert('Linked!', 'You are now a couple');
+      setLinkCode('');
       load();
     } catch (err: any) { Alert.alert('Error', err.message); }
   };
 
   const requestDissolution = async () => {
-    Alert.alert('Dissolve Couple', 'This starts a 7-day cooling period. Both partners must confirm.', [
+    Alert.alert('Dissolve Couple', 'This starts a 7-day cooling period. Both partners must confirm to finalize.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Proceed', style: 'destructive', onPress: async () => {
-        await api('/v1/couples/dissolve', { method: 'POST', body: JSON.stringify({}) });
-        load();
+        try {
+          await couplesApi.requestDissolution();
+          load();
+        } catch (err: any) { Alert.alert('Error', err.message); }
       }},
     ]);
+  };
+
+  const confirmDissolution = async () => {
+    const cooldownOver = couple?.cooldown_expires_at && new Date(couple.cooldown_expires_at) <= new Date();
+    if (!cooldownOver) {
+      Alert.alert(
+        'Cooling period',
+        'Both partners must confirm after the cooling period ends. You can confirm now to record your choice; the link will dissolve once both have confirmed and the period has ended.',
+        [{ text: 'OK' }]
+      );
+    }
+    try {
+      const res = await couplesApi.confirmDissolution();
+      await load();
+      if (res.data?.dissolved) Alert.alert('Dissolved', 'The couple link has been dissolved.');
+    } catch (err: any) { Alert.alert('Error', err.message); }
   };
 
   if (loading) return <View style={styles.container}><Text style={styles.loadingText}>Loading...</Text></View>;
@@ -72,9 +91,17 @@ export default function CoupleScreen() {
           </View>
 
           {couple.dissolution_requested_at ? (
-            <View style={styles.dissolutionBox}>
-              <Ionicons name="hourglass" size={20} color={colors.warning} />
-              <Text style={styles.dissolutionText}>Dissolution requested — cooling period ends {new Date(couple.cooldown_expires_at).toLocaleDateString()}</Text>
+            <View style={styles.dissolutionSection}>
+              <View style={styles.dissolutionBox}>
+                <Ionicons name="hourglass" size={20} color={colors.warning} />
+                <Text style={styles.dissolutionText}>
+                  Dissolution requested — cooling period ends {couple.cooldown_expires_at ? new Date(couple.cooldown_expires_at).toLocaleDateString() : '—'}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.confirmDissolveBtn} onPress={confirmDissolution}>
+                <Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />
+                <Text style={styles.confirmDissolveText}>Confirm dissolution</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <TouchableOpacity style={styles.dissolveBtn} onPress={requestDissolution}>
@@ -128,8 +155,14 @@ const styles = StyleSheet.create({
   partnerAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   coupleNames: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
   coupleStatus: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 4 },
+  dissolutionSection: { gap: spacing.md },
   dissolutionBox: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: 'rgba(255,165,2,0.1)', padding: spacing.md, borderRadius: borderRadius.md },
   dissolutionText: { color: colors.warning, fontSize: fontSize.sm, flex: 1 },
+  confirmDissolveBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
+    backgroundColor: colors.primarySoft, padding: 16, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.primary,
+  },
+  confirmDissolveText: { color: colors.primary, fontSize: fontSize.md, fontWeight: '600' },
   dissolveBtn: { backgroundColor: colors.card, padding: 16, borderRadius: borderRadius.md, alignItems: 'center' },
   dissolveText: { color: colors.danger, fontSize: fontSize.md, fontWeight: '600' },
   section: { marginBottom: spacing.lg },

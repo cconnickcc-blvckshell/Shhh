@@ -3,7 +3,7 @@
 > **Source**: Cross-reference of **ARCHITECTURE.md**, **UX_UI_SPEC.md**, and **UX_BEHAVIOR_SPEC.md** against the mobile app.  
 > **Purpose**: Single list of missing or partial features on the frontend so they can be prioritized and implemented.
 
-**Recent implementation (Phases 1–5):** Auth guard + premium splash, 401 → login, route guards in (tabs)/(auth). Event detail screen + “events open” from list. Report/block in chat (header menu), Emergency Contacts screen, Privacy & Data screen. Explore: radius + primaryIntent filters, Verified toggle, “Active now” sort. Conversation list: Direct/Group label, time ago, unread badge. Chat: loading state, empty state. See git history for details.
+**Recent implementation (Phases 1–6):** Auth guard + premium splash, 401 → login, route guards in (tabs)/(auth). Event detail screen + “events open” from list. Report/block in chat (header menu), Emergency Contacts screen, Privacy & Data screen. Explore: radius + primaryIntent filters, Verified toggle, “Active now” sort. Conversation list: Direct/Group label, time ago, unread badge. Chat: loading state, empty state. **Phase 6:** Onboarding intent step (primary_intent + discovery_visible_to); Couples confirm-dissolution flow. See git history for details.
 
 ---
 
@@ -86,7 +86,7 @@
 | # | Gap | Spec reference | Current state |
 |---|-----|----------------|---------------|
 | 6.1 | **Auth route guard** | UX_UI §2.2: no global route guard. | **DONE.** `AuthGuard` + premium splash; (tabs)/_layout and (auth)/_layout redirect by auth state; root layout wraps Stack with AuthGuard. |
-| 6.2 | **Onboarding intent** | UX_UI §7.2: onboarding does not set primary_intent or discovery_visible_to. | No step to choose Social / Curious / Lifestyle / Couple or set discovery_visible_to. |
+| 6.2 | **Onboarding intent** | UX_UI §7.2: onboarding does not set primary_intent or discovery_visible_to. | **DONE.** New screen `(auth)/onboarding-intent`: primary vibe (Social/Curious/Lifestyle/Couple) + who can see you (all/social_and_curious/same_intent). Persisted via PUT /v1/users/me. New users see slides → intent → tabs; returning users skip to tabs (expo-secure-store flag). |
 | 6.3 | **Emergency contacts** | UX_UI §3.8: Emergency Contacts → no route (onPress empty). | **DONE.** `app/profile/emergency.tsx`: list, add (name, phone, relationship), remove; Me → Emergency Contacts. |
 | 6.4 | **Privacy & Data** | UX_UI §3.8: Privacy & Data → no route. | **DONE.** `app/profile/privacy.tsx`: Export my data, Request account deletion; Me → Privacy & Data. |
 | 6.5 | **Panic copy** | UX_BEHAVIOR §3.5, §4.3: do not say “contacts notified” if backend only records. | Confirm copy matches backend behavior (SYSTEM_REALITY_REPORT). |
@@ -115,7 +115,7 @@
 | 8.2 | **Venue event card** | UX_UI §3.13: Event card → router.push('/events'). | Should go to event detail or at least events list with context. |
 | 8.3 | **Venue grid (GC-5.2)** | UX_UI §3.13: NOT IMPLEMENTED in venue screen. | GET `/v1/venues/:id/grid` exists; venue detail does not show grid. |
 | 8.4 | **Un-RSVP** | UX_UI §3.7: no DELETE or “not_going” API call. | **DONE.** Event detail calls `eventsApi.rsvp(id, 'going'|'not_going')`; toggle reflects server state. |
-| 8.5 | **Couple dissolution confirm** | UX_UI §3.16: confirm dissolution NOT IMPLEMENTED. | Backend has POST `/v1/couples/confirm-dissolution`; UI has no confirm step. |
+| 8.5 | **Couple dissolution confirm** | UX_UI §3.16: confirm dissolution NOT IMPLEMENTED. | **DONE.** Couple screen shows "Confirm dissolution" when dissolution requested; calls POST `/v1/couples/confirm-dissolution`. Both partners can confirm; after cooldown and both confirmed, link dissolves. |
 | 8.6 | **Stripe checkout in app** | UX_UI §3.18: opening Stripe URL in browser NOT IMPLEMENTED. | Upgrade shows Alert with URL only. |
 | 8.7 | **Ads in Discover** | UX_UI §5.2: VenueAdCard NOT REFERENCED. | Discover does not show ad placements. |
 | 8.8 | **Tonight feed** | ARCH: GET `/v1/tonight`. | No screen or tab for tonight aggregator (events + venues). |

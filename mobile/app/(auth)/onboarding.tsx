@@ -45,11 +45,11 @@ export default function OnboardingScreen() {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      router.replace('/(tabs)');
+      router.replace('/(auth)/onboarding-intent');
     }
   };
 
-  const handleSkip = () => router.replace('/(tabs)');
+  const handleSkip = () => router.replace('/(auth)/onboarding-intent');
 
   return (
     <View style={styles.container}>

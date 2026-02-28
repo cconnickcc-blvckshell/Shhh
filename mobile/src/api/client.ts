@@ -120,6 +120,14 @@ export const complianceApi = {
   requestDeletion: () => api<{ data: { message?: string } }>('/v1/compliance/account-deletion', { method: 'DELETE' }),
 };
 
+export const couplesApi = {
+  getMe: () => api<{ data: any }>('/v1/couples/me'),
+  create: () => api<{ data: { inviteCode: string } }>('/v1/couples', { method: 'POST', body: JSON.stringify({}) }),
+  link: (inviteCode: string) => api('/v1/couples/link', { method: 'POST', body: JSON.stringify({ inviteCode }) }),
+  requestDissolution: () => api('/v1/couples/dissolve', { method: 'POST', body: JSON.stringify({}) }),
+  confirmDissolution: () => api<{ data: { dissolved?: boolean; confirmations?: number; required?: number; cooldownExpires?: string } }>('/v1/couples/confirm-dissolution', { method: 'POST', body: JSON.stringify({}) }),
+};
+
 export const albumsApi = {
   getMyAlbums: () => api<{ data: any[] }>('/v1/media/albums/my'),
   getShared: () => api<{ data: any[] }>('/v1/media/albums/shared'),
