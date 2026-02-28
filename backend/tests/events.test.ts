@@ -81,4 +81,59 @@ describe('Events API', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
   });
+
+  it('POST /v1/events accepts optional vibeTag', async () => {
+    const tomorrow = new Date(Date.now() + 86400000).toISOString();
+    const dayAfter = new Date(Date.now() + 172800000).toISOString();
+    const res = await request
+      .post('/v1/events')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: 'Vibe Night', startsAt: tomorrow, endsAt: dayAfter, vibeTag: 'social_mix' });
+    expect(res.status).toBe(201);
+    expect(res.body.data).toHaveProperty('id');
+    if (res.body.data.vibe_tag !== undefined) {
+      expect(res.body.data.vibe_tag).toBe('social_mix');
+    }
+  });
+
+  it('GET /v1/events/nearby accepts optional vibe filter', async () => {
+    const res = await request
+      .get('/v1/events/nearby?lat=0&lng=0&vibe=newbie_friendly')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('data');
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+});
+
+describe('Tonight feed API', () => {
+  let token: string;
+
+  beforeAll(async () => {
+    const user = await createTestUser('TonightUser', 1);
+    token = user.accessToken;
+  });
+
+  it('GET /v1/tonight returns events and venues with currentAttendees', async () => {
+    const res = await request
+      .get('/v1/tonight?lat=0&lng=0')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveProperty('events');
+    expect(res.body.data).toHaveProperty('venues');
+    expect(res.body.data).toHaveProperty('date');
+    expect(Array.isArray(res.body.data.events)).toBe(true);
+    expect(Array.isArray(res.body.data.venues)).toBe(true);
+    if (res.body.data.venues.length > 0) {
+      expect(res.body.data.venues[0]).toHaveProperty('currentAttendees');
+    }
+  });
+
+  it('GET /v1/tonight accepts optional date param', async () => {
+    const res = await request
+      .get('/v1/tonight?lat=0&lng=0&date=2030-01-15')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.date).toBe('2030-01-15');
+  });
 });

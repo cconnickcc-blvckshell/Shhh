@@ -15,11 +15,12 @@ export class EventsController {
 
   async getNearby(req: Request, res: Response, next: NextFunction) {
     try {
-      const { lat, lng, radius } = req.query;
+      const { lat, lng, radius, vibe } = req.query;
       const events = await eventsService.getNearbyEvents(
         parseFloat(lat as string),
         parseFloat(lng as string),
-        radius ? parseFloat(radius as string) : undefined
+        radius ? parseFloat(radius as string) : undefined,
+        vibe ? { vibeTag: vibe as 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly' } : undefined
       );
       res.json({ data: events, count: events.length });
     } catch (err) {

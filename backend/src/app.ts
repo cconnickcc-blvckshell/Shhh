@@ -29,6 +29,7 @@ import billingRoutes from './modules/billing/billing.routes';
 import whisperRoutes from './modules/discovery/whisper.routes';
 import adRoutes from './modules/ads/ad.routes';
 import venueDashboardRoutes from './modules/venues/venue-dashboard.routes';
+import tonightRoutes from './modules/tonight/tonight.routes';
 import path from 'path';
 import { TrustScoreService } from './modules/users/trust.service';
 import { authenticate as authMiddleware } from './middleware/auth';
@@ -76,6 +77,7 @@ export function createApp() {
   app.use('/v1/discover', discoveryRoutes);
   app.use('/v1/conversations', messagingRoutes);
   app.use('/v1/events', eventsRoutes);
+  app.use('/v1/tonight', tonightRoutes);
   app.use('/v1/venues', venuesRoutes);
   app.use('/v1/safety', safetyRoutes);
   app.use('/v1/compliance', complianceRoutes);

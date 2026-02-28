@@ -353,8 +353,8 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 | Theme | Item | Status | Notes |
 |-------|------|--------|-------|
 | — | (Phase C.4) Distress to venue security | ✅ Done | Implemented in ENHANCEMENT_ROADMAP Phase C.4 (POST /v1/safety/venue-distress). |
-| 1 | Tonight feed | ⬜ Not started | |
-| 1 | Venue vibe / theme nights | ⬜ Not started | |
+| 1 | Tonight feed | ✅ Done | GET /v1/tonight; events + venues with currentAttendees; optional date, radius. |
+| 1 | Venue vibe / theme nights | ✅ Done | events.vibe_tag (migration 017); create/filter by vibe. |
 | 1 | Venue-issued passes | ⬜ Not started | |
 | 1 | Venue density intelligence | ⬜ Not started | |
 | 1 | Verified safe venue badge | ⬜ Not started | |
@@ -379,6 +379,8 @@ These are **additions** for product/team review; not from FEATURE_ADDITIONS_CRIT
 **Implemented game-changers (add when done):**
 
 - Venue distress to security (Phase C.4, branch `shh-enhancement-trial`).
+- GC-1.1 Tonight feed: GET /v1/tonight (events + venues with currentAttendees; branch `shh-enhancement-trial`).
+- GC-1.2 Venue vibe / theme nights: events.vibe_tag (migration 017), create/filter by vibe (branch `shh-enhancement-trial`).
 
 ---
 

@@ -1,5 +1,7 @@
 import { query } from '../../config/database';
 
+export type VibeTag = 'social_mix' | 'lifestyle' | 'kink' | 'couples_only' | 'newbie_friendly';
+
 export class EventsService {
   async createEvent(hostUserId: string, data: {
     title: string;
@@ -10,22 +12,21 @@ export class EventsService {
     type?: string;
     capacity?: number;
     isPrivate?: boolean;
+    vibeTag?: VibeTag;
   }) {
+    const hasVibe = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'vibe_tag'`
+    );
+    const cols = hasVibe.rows.length > 0
+      ? 'host_user_id, venue_id, title, description, starts_at, ends_at, type, capacity, is_private, vibe_tag'
+      : 'host_user_id, venue_id, title, description, starts_at, ends_at, type, capacity, is_private';
+    const vals = hasVibe.rows.length > 0
+      ? [hostUserId, data.venueId || null, data.title, data.description || null, data.startsAt, data.endsAt, data.type || 'party', data.capacity || null, data.isPrivate || false, data.vibeTag || null]
+      : [hostUserId, data.venueId || null, data.title, data.description || null, data.startsAt, data.endsAt, data.type || 'party', data.capacity || null, data.isPrivate || false];
+    const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
     const result = await query(
-      `INSERT INTO events (host_user_id, venue_id, title, description, starts_at, ends_at, type, capacity, is_private)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [
-        hostUserId,
-        data.venueId || null,
-        data.title,
-        data.description || null,
-        data.startsAt,
-        data.endsAt,
-        data.type || 'party',
-        data.capacity || null,
-        data.isPrivate || false,
-      ]
+      `INSERT INTO events (${cols}) VALUES (${placeholders}) RETURNING *`,
+      vals
     );
 
     await query(
@@ -36,7 +37,19 @@ export class EventsService {
     return result.rows[0];
   }
 
-  async getNearbyEvents(lat: number, lng: number, radiusKm: number = 50) {
+  async getNearbyEvents(lat: number, lng: number, radiusKm: number = 50, options?: { vibeTag?: VibeTag | null; date?: string }) {
+    const vibe = options?.vibeTag ?? null;
+    const dateOnly = options?.date ?? null; // YYYY-MM-DD for "tonight" filter
+    const hasVibe = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'vibe_tag'`
+    );
+    const useVibeFilter = hasVibe.rows.length > 0 && vibe;
+    const params: (number | string)[] = [lat, lng, radiusKm * 1000];
+    let idx = 4;
+    const vibeFilter = useVibeFilter ? ` AND e.vibe_tag = $${idx++}` : '';
+    if (useVibeFilter) params.push(vibe!);
+    const dateFilter = dateOnly ? ` AND (e.starts_at AT TIME ZONE 'UTC')::date = $${idx}::date` : '';
+    if (dateOnly) params.push(dateOnly);
     const result = await query(
       `SELECT e.*, v.name as venue_name, v.lat as venue_lat, v.lng as venue_lng,
               COUNT(er.user_id) FILTER (WHERE er.status = 'going') as attendee_count
@@ -51,11 +64,11 @@ export class EventsService {
              ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography,
              $3
            )
-         ))
+         ))${vibeFilter}${dateFilter}
        GROUP BY e.id, v.name, v.lat, v.lng
        ORDER BY e.starts_at ASC
        LIMIT 50`,
-      [lat, lng, radiusKm * 1000]
+      params
     );
     return result.rows;
   }

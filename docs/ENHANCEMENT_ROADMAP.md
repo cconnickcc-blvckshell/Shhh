@@ -232,7 +232,8 @@ Examples to add when done: “Tonight” feed, venue vibe/theme nights, venue-is
 
 **Implemented game-changers:** (add when done)
 
-- (none yet)
+- GC-1.1 Tonight feed: GET /v1/tonight (events + venues with currentAttendees; branch `shh-enhancement-trial`).
+- GC-1.2 Venue vibe / theme nights: events.vibe_tag (migration 017), create/filter by vibe (branch `shh-enhancement-trial`).
 
 ---
 

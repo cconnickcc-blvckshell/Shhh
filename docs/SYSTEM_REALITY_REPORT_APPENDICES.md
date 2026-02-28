@@ -99,6 +99,7 @@ Every v1 route with method, path, auth, tier/role, and source file. Single sourc
 | POST | venues/:id/reviews | Yes | 0 | — | venues/venue-dashboard.routes.ts |
 | GET | venues/:id/specials | Yes | 0 | — | venues/venue-dashboard.routes.ts |
 | POST | venues/:id/specials | Yes | 2 | — | venues/venue-dashboard.routes.ts |
+| GET | tonight | Yes | 0 | — | tonight/tonight.routes.ts |
 | GET | events/nearby | Yes | 0 | — | events/events.routes.ts |
 | POST | events | Yes | 2 | — | events/events.routes.ts |
 | GET | events/:id | Yes | 0 | — | events/events.routes.ts |

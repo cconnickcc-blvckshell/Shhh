@@ -7,6 +7,8 @@ import { authenticate, requireTier } from '../../middleware/auth';
 const router = Router();
 const controller = new EventsController();
 
+const vibeTagEnum = z.enum(['social_mix', 'lifestyle', 'kink', 'couples_only', 'newbie_friendly']);
+
 const createEventSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().max(2000).optional(),
@@ -16,6 +18,7 @@ const createEventSchema = z.object({
   type: z.enum(['party', 'club_night', 'hotel_takeover', 'travel_meetup']).optional(),
   capacity: z.number().positive().optional(),
   isPrivate: z.boolean().optional(),
+  vibeTag: vibeTagEnum.optional(),
 });
 
 const rsvpSchema = z.object({
@@ -26,6 +29,7 @@ const nearbyQuerySchema = z.object({
   lat: z.string().refine((v) => !isNaN(parseFloat(v)), 'Must be a number'),
   lng: z.string().refine((v) => !isNaN(parseFloat(v)), 'Must be a number'),
   radius: z.string().optional(),
+  vibe: vibeTagEnum.optional(),
 });
 
 router.get('/nearby', authenticate, validate(nearbyQuerySchema, 'query'), controller.getNearby);

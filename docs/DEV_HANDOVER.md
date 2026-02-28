@@ -158,7 +158,7 @@ npm run lint
 npm run typecheck
 ```
 
-The test suite contains **47 tests** across 7 suites: `auth`, `discovery`, `events`, `couples`, `safety`, `admin`, and the test framework uses **Jest** with **Supertest** for HTTP assertions.
+The test suite contains **55 tests** across 7 suites: `auth`, `discovery`, `events` (including Tonight feed), `couples`, `safety`, `admin`, `media`, and the test framework uses **Jest** with **Supertest** for HTTP assertions.
 
 ---
 
@@ -598,15 +598,15 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/events/nearby` | Yes | 0 | Find nearby events |
-| POST | `/v1/events` | Yes | 2 | Create event (requires tier 2) |
+| GET | `/v1/events/nearby?lat=&lng=&radius=&vibe=` | Yes | 0 | Find nearby events (optional vibe; service supports date filter for tonight feed) |
+| POST | `/v1/events` | Yes | 2 | Create event (requires tier 2; optional vibeTag) |
 | GET | `/v1/events/:id` | Yes | 0 | Get event details |
 | GET | `/v1/events/:id/attendees` | Yes | 0 | Privacy-safe attendee list (persona + badges, no user ids) |
 | GET | `/v1/events/:id/chat-rooms` | Yes | 0 | Chat rooms linked to this event |
 | POST | `/v1/events/:id/rsvp` | Yes | 0 | RSVP to event |
 | POST | `/v1/events/:id/checkin` | Yes | 0 | Check in at event |
 
-**Database tables owned:** `events`, `event_rsvps`, `event_post_prompts` (015: one prompt per type per user per event)
+**Database tables owned:** `events` (017: optional `vibe_tag`), `event_rsvps`, `event_post_prompts` (015: one prompt per type per user per event)
 
 **Key business rules:**
 - Event creation requires tier 2 (ID-verified)
@@ -620,6 +620,15 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 - **Post-event prompts:** `event_post_prompts` stores (event_id, user_id, prompt_type) so reference and keep_chatting are sent at most once per user per event
 - RSVP statuses: `going`, `maybe`, `declined`, `checked_in`
 - Events can be private (require invite code) or public
+- **Vibe tag (017):** Optional `vibe_tag` on events: `social_mix`, `lifestyle`, `kink`, `couples_only`, `newbie_friendly`; filter nearby by `vibe=` query param
+
+### 4.14.1 Tonight feed
+
+**What it does:** Single aggregator for "what's happening tonight": nearby events (filtered by date) and nearby venues with current check-in counts.
+
+**Key files:** `modules/tonight/tonight.service.ts`, `tonight.controller.ts`, `tonight.routes.ts`
+
+**Endpoint:** GET `/v1/tonight?lat=&lng=&date=&radius=` (auth required). Returns `{ data: { events, venues, date } }`. Events capped at 30, venues at 20; each venue includes `currentAttendees`. Date defaults to today (UTC) if omitted.
 
 ### 4.15 Venues Module
 
