@@ -82,7 +82,7 @@ function SidebarItem({
 const styles = StyleSheet.create({
   sidebar: {
     width: layout.sidebarWidth,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.03)',
     borderRightWidth: 1,
     borderRightColor: colors.border,
     paddingVertical: spacing.lg,
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    borderRadius: 8,
+    borderRadius: 14,
     marginBottom: spacing.xs,
   },
   itemActive: {
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   itemFocus: {
     borderWidth: 2,
     borderColor: colors.primary,
-    borderRadius: 10,
+    borderRadius: 14,
   },
   label: {
     color: colors.textSecondary,

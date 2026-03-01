@@ -13,8 +13,8 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
 
   return (
     <LinearGradient
-      colors={['#030204', '#0D0818', '#120A1C', '#050208']}
-      locations={[0, 0.3, 0.7, 1]}
+      colors={['#06040A', '#0B0712', '#08050E', '#06040A']}
+      locations={[0, 0.25, 0.6, 1]}
       style={styles.full}
     >
       <View style={styles.glow} />
@@ -31,6 +31,12 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
             accessibilityRole="button"
             accessibilityLabel="Enter Shhh"
           >
+            <LinearGradient
+              colors={['rgba(124,43,255,0.95)', 'rgba(179,92,255,0.65)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
             <Text style={styles.enterBtnText}>Enter</Text>
           </Pressable>
           <Pressable
@@ -87,8 +93,8 @@ const styles = StyleSheet.create({
     width: 400,
     height: 400,
     borderRadius: 200,
-    backgroundColor: 'rgba(147,51,234,0.15)',
-    opacity: 0.7,
+    backgroundColor: 'rgba(124,43,255,0.22)',
+    opacity: 0.85,
   },
   content: {
     flex: 1,
@@ -114,18 +120,22 @@ const styles = StyleSheet.create({
   enterBtn: {
     paddingVertical: 16,
     paddingHorizontal: 40,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    overflow: 'hidden',
+    position: 'relative',
     ...shadows.glow,
   },
-  enterBtnPressed: { opacity: 0.9 },
-  enterBtnText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '800', letterSpacing: 0.5 },
+  enterBtnPressed: { opacity: 0.98 },
+  enterBtnText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '700', letterSpacing: 0.5 },
   learnBtn: {
     paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: borderRadius.lg,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.borderGlow,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   learnBtnPressed: { opacity: 0.85 },
   learnBtnText: { color: colors.primaryLight, fontSize: fontSize.md, fontWeight: '600' },
@@ -134,7 +144,7 @@ const styles = StyleSheet.create({
   trustLine: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: spacing.xs },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
@@ -142,13 +152,14 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 440,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: borderRadius.xxl,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
+    ...shadows.card,
   },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
   modalTitle: { fontSize: fontSize.xl, fontWeight: '700', color: colors.text },
   modalClose: { fontSize: 28, color: colors.textMuted, lineHeight: 28 },
   modalBody: { padding: spacing.lg, maxHeight: 360 },

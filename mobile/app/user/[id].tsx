@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, useWindowDimensions, Vibration } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, useWindowDimensions, Vibration, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, usersApi, messagingApi } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
-import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
+import { colors, spacing, fontSize, borderRadius, layout } from '../../src/constants/theme';
+import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 
 const PRESENCE_LABELS: Record<string, { label: string; color: string }> = {
   open_to_chat: { label: 'Open to chat', color: '#34D399' },
@@ -27,6 +28,8 @@ export default function UserDetailScreen() {
   const [showWhisper, setShowWhisper] = useState(false);
   const [liked, setLiked] = useState(false);
   const { width } = useWindowDimensions();
+  const { isDesktop } = useBreakpoint();
+  const heroSize = Platform.OS === 'web' && isDesktop ? Math.min(width, 480) : width;
 
   const load = useCallback(() => {
     if (!id) return;
@@ -92,9 +95,10 @@ export default function UserDetailScreen() {
 
   return (
     <ScrollView style={s.container} bounces={false}>
-      {/* Hero photo */}
-      <View style={[s.hero, { height: width * 0.9 }]}>
-        <ProfilePhoto photosJson={profile.photosJson} fill borderRadius={0} size={width} />
+      {/* Hero photo — capped on desktop so it doesn't blow up */}
+      <View style={[s.heroWrap, isDesktop && s.heroWrapDesktop]}>
+        <View style={[s.hero, { height: heroSize * 0.9, width: heroSize }]}>
+          <ProfilePhoto photosJson={profile.photosJson} fill borderRadius={0} size={heroSize} />
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
@@ -119,6 +123,7 @@ export default function UserDetailScreen() {
             {profile.showAsRole && profile.showAsRole !== 'n_a' && <><Text style={s.metaDot}>·</Text><Text style={s.metaText}>{profile.showAsRole}</Text></>}
             {profile.showAsRelationship && <><Text style={s.metaDot}>·</Text><Text style={s.metaText}>{profile.showAsRelationship}</Text></>}
           </View>
+        </View>
         </View>
       </View>
 
@@ -228,7 +233,9 @@ const s = StyleSheet.create({
   retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
   retryBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
   backLink: { marginTop: spacing.md, paddingVertical: 8 }, backLinkText: { color: colors.textMuted, fontSize: 14 },
-  hero: { position: 'relative', backgroundColor: '#0A0A12' },
+  heroWrap: {},
+  heroWrapDesktop: { alignItems: 'center', maxWidth: layout.contentMaxWidth, alignSelf: 'center', width: '100%' },
+  hero: { position: 'relative', backgroundColor: '#0A0A12', overflow: 'hidden' },
   backBtn: { position: 'absolute', top: 50, left: 16, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', zIndex: 10 },
   presenceBadge: { position: 'absolute', top: 50, right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, borderWidth: 1, zIndex: 10 },
   presenceDotSmall: { width: 6, height: 6, borderRadius: 3 },

@@ -6,9 +6,12 @@ import { discoverApi, api } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { useAuthStore } from '../../src/stores/auth';
 import { useLocation } from '../../src/hooks/useLocation';
-import { colors, fontSize, spacing, borderRadius, shadows } from '../../src/constants/theme';
+import { colors, fontSize, spacing, borderRadius, shadows, layout } from '../../src/constants/theme';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { useHover } from '../../src/hooks/useHover';
+
+/** Max width per discover tile on desktop so photos don't blow up. */
+const MAX_TILE_WIDTH_DESKTOP = 300;
 
 interface NearbyUser {
   userId: string; displayName: string; bio: string; distance: number;
@@ -145,8 +148,10 @@ export default function DiscoverScreen() {
   const [sortMode, setSortMode] = useState<SortMode>('nearest');
   const { width } = useWindowDimensions();
   const { isDesktop } = useBreakpoint();
-  const cols = isDesktop ? 5 : width > 500 ? 3 : 2;
-  const tileW = (width - GAP * (cols + 1)) / cols;
+  const cols = isDesktop ? 3 : width > 500 ? 3 : 2;
+  const contentWidth = isDesktop ? Math.min(width, layout.contentMaxWidth) : width;
+  const rawTileW = (contentWidth - GAP * (cols + 1)) / cols;
+  const tileW = isDesktop ? Math.min(rawTileW, MAX_TILE_WIDTH_DESKTOP) : rawTileW;
   const tileH = tileW * 1.45;
 
   const primaryIntent = profile?.primaryIntent ?? undefined;

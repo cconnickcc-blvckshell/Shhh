@@ -12,24 +12,27 @@ const images = {
 
 export { images as backgroundImages };
 
-/** Premium dark gradient background — no images. Deep black with subtle purple depth. */
+/** Premium dark gradient — aligned with coming soon: bg0→bg1 + plum/gold atmosphere. */
 export function PremiumDarkBackground({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   return (
     <LinearGradient
-      colors={['#030204', '#0D0818', '#0A0612', '#050308']}
-      locations={[0, 0.35, 0.7, 1]}
+      colors={['#06040A', '#0B0712', '#08050E', '#06040A']}
+      locations={[0, 0.25, 0.6, 1]}
       style={[styles.full, style]}
     >
+      <View style={styles.plumGlowTop} pointerEvents="none" />
+      <View style={styles.plumGlowRight} pointerEvents="none" />
+      <View style={styles.goldGlowBottom} pointerEvents="none" />
       {children}
     </LinearGradient>
   );
 }
 
-/** Auth screens (login/register): same premium gradient, slightly warmer purple center. */
+/** Auth screens (login/register): same palette with stronger plum center. */
 export function AuthScreenBackground({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   return (
     <LinearGradient
-      colors={['#040206', '#120A1C', '#0E0618', '#050208']}
+      colors={['#06040A', '#0D0818', '#0B0712', '#06040A']}
       locations={[0, 0.4, 0.75, 1]}
       style={[styles.full, style]}
     >
@@ -107,14 +110,41 @@ const styles = StyleSheet.create({
     width: 360,
     height: 360,
     borderRadius: 180,
-    backgroundColor: 'rgba(147,51,234,0.08)',
+    backgroundColor: 'rgba(124,43,255,0.12)',
   },
-  galaxyOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,5,8,0.35)' },
-  bubbleScreenOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,5,8,0.45)' },
-  wrapper: { overflow: 'hidden', borderRadius: 16 },
-  bubbleOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(14,11,22,0.6)' },
+  plumGlowTop: {
+    position: 'absolute',
+    top: '-10%',
+    left: '-5%',
+    width: '60%',
+    height: '50%',
+    borderRadius: 9999,
+    backgroundColor: 'rgba(124,43,255,0.22)',
+  },
+  plumGlowRight: {
+    position: 'absolute',
+    top: '15%',
+    right: '-15%',
+    width: '55%',
+    height: '45%',
+    borderRadius: 9999,
+    backgroundColor: 'rgba(179,92,255,0.16)',
+  },
+  goldGlowBottom: {
+    position: 'absolute',
+    bottom: '-15%',
+    left: '20%',
+    width: '70%',
+    height: '50%',
+    borderRadius: 9999,
+    backgroundColor: 'rgba(212,175,55,0.12)',
+  },
+  galaxyOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,4,10,0.35)' },
+  bubbleScreenOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,4,10,0.45)' },
+  wrapper: { overflow: 'hidden', borderRadius: 18 },
+  bubbleOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(11,7,18,0.6)' },
   banner: { minHeight: 50, justifyContent: 'center', alignItems: 'center' },
   demonLayer: { ...StyleSheet.absoluteFillObject },
   demonImageOpacity: { opacity: 0.2 },
-  demonOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,5,8,0.5)' },
+  demonOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,4,10,0.5)' },
 });
