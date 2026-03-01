@@ -6,6 +6,7 @@ import { usersApi } from '../../src/api/client';
 import { useAuthStore } from '../../src/stores/auth';
 import { usePhotoUpload } from '../../src/hooks/usePhotoUpload';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 const GENDERS = ['man', 'woman', 'couple', 'trans_man', 'trans_woman', 'non_binary', 'other'];
@@ -53,7 +54,8 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <ScrollView style={s.container} bounces={false}>
+    <PremiumDarkBackground style={s.wrapper}>
+    <ScrollView style={s.container} contentContainerStyle={s.scrollContent} bounces={false}>
       {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
@@ -144,11 +146,14 @@ export default function EditProfileScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+    </PremiumDarkBackground>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  wrapper: { flex: 1 },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  scrollContent: { paddingBottom: 24 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },

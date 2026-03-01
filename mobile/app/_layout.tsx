@@ -25,6 +25,15 @@ export default function RootLayout() {
         <Stack.Screen name="profile/edit" />
         <Stack.Screen name="profile/emergency" />
         <Stack.Screen name="profile/privacy" />
+        <Stack.Screen name="profile/hosting" />
+        <Stack.Screen name="profile/create-event" />
+        <Stack.Screen name="profile/venues" />
+        <Stack.Screen name="profile/create-venue" />
+        <Stack.Screen name="profile/venue-dashboard/[id]" />
+        <Stack.Screen name="profile/venue-edit/[id]" />
+        <Stack.Screen name="profile/venue-add-special/[id]" />
+        <Stack.Screen name="profile/venue-staff/[id]" />
+        <Stack.Screen name="profile/venue-invite-staff/[id]" />
         <Stack.Screen name="album/index" />
         <Stack.Screen name="album/[id]" />
         <Stack.Screen name="couple/index" />

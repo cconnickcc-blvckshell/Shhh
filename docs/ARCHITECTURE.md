@@ -1,8 +1,8 @@
 # Shhh — Architecture Document
 
-> Last updated: Sprint 5 | v0.5.0 | February 2026  
-> **Enhancement work:** Follow **docs/ENHANCEMENT_ROADMAP.md** (branch `shh-enhancement-trial`). Update this doc’s §2, §4, §6, §11 when adding modules, routes, or schema.  
-> **Mobile (Phases 1–5):** Auth guard + splash, 401→login, event detail + RSVP, Emergency Contacts & Privacy, chat Block/Report, Explore filters (radius, Verified, Active now), conversation list + chat polish. See **docs/FRONTEND_GAP_LIST.md** for status.
+> Last updated: February 2026 (aligned with current codebase)  
+> **When changing the system:** Update this doc’s §2 (file tree), §4 (API ledger), §6 (schema) when adding modules, routes, or tables.  
+> **Implementation status:** See **docs/E2E_CAPABILITY_AUDIT_REPORT.md**, **docs/MASTER_IMPLEMENTATION_CHECKLIST.md**, **docs/SCOPE_PIVOT_TODO.md**. **docs/SOFT_LAUNCH_WEB_PLAN.md** for web-first soft launch.
 
 ---
 
@@ -76,39 +76,53 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   └── tsconfig.json
 ├── mobile/                           # React Native + Expo 55
 │   ├── app/
-│   │   ├── _layout.tsx               # Root layout, auth guard
+│   │   ├── _layout.tsx               # Root layout, AuthGuard, 401→login
 │   │   ├── (auth)/
 │   │   │   ├── _layout.tsx
 │   │   │   ├── index.tsx             # Login
+│   │   │   ├── register.tsx          # Registration
 │   │   │   ├── verify-code.tsx       # OTP entry
-│   │   │   └── register.tsx          # Registration
+│   │   │   ├── onboarding.tsx        # Post-registration onboarding
+│   │   │   └── onboarding-intent.tsx # Intent selection
 │   │   ├── (tabs)/
-│   │   │   ├── _layout.tsx           # Tab navigator
+│   │   │   ├── _layout.tsx           # Tab navigator (Explore, Chat, Events, Me)
 │   │   │   ├── index.tsx             # Discover (nearby grid)
-│   │   │   ├── messages.tsx          # Conversations
+│   │   │   ├── messages.tsx          # Conversations list
 │   │   │   ├── events.tsx            # Nearby events
-│   │   │   └── profile.tsx           # Profile + safety
-│   │   ├── onboarding/
-│   │   │   └── index.tsx             # Onboarding flow
+│   │   │   └── profile.tsx          # Me (profile + menu)
+│   │   ├── chat/
+│   │   │   └── [id].tsx              # Chat (WebSocket, self-destruct)
 │   │   ├── user/
 │   │   │   └── [id].tsx              # User profile view
 │   │   ├── venue/
 │   │   │   └── [id].tsx              # Venue detail
+│   │   ├── event/
+│   │   │   └── [id].tsx              # Event detail
 │   │   ├── album/
-│   │   │   └── [id].tsx              # Album view
+│   │   │   ├── index.tsx             # Album list
+│   │   │   └── [id].tsx              # Album detail
 │   │   ├── couple/
 │   │   │   └── index.tsx             # Couple linking
 │   │   ├── verify/
 │   │   │   └── index.tsx             # Verification
 │   │   ├── subscription/
-│   │   │   └── index.tsx             # Subscription / billing
+│   │   │   └── index.tsx             # Subscription / Stripe
 │   │   ├── whispers/
-│   │   │   └── index.tsx             # Whispers list
-│   │   ├── profile/
-│   │   │   ├── edit.tsx              # Edit profile
-│   │   │   └── status.tsx            # Status
-│   │   └── chat/
-│   │       └── [id].tsx              # Chat (self-destruct toggle)
+│   │   │   └── index.tsx             # Whispers inbox/sent
+│   │   └── profile/
+│   │       ├── edit.tsx              # Edit profile
+│   │       ├── status.tsx            # Presence & intents
+│   │       ├── emergency.tsx         # Emergency contacts
+│   │       ├── privacy.tsx          # Privacy & data
+│   │       ├── hosting.tsx           # Hosting
+│   │       ├── create-event.tsx     # Create event
+│   │       ├── venues.tsx           # My venues
+│   │       ├── create-venue.tsx      # Create venue
+│   │       ├── venue-dashboard/[id].tsx
+│   │       ├── venue-edit/[id].tsx
+│   │       ├── venue-add-special/[id].tsx
+│   │       ├── venue-staff/[id].tsx
+│   │       └── venue-invite-staff/[id].tsx
 │   ├── src/
 │   │   ├── api/client.ts             # Full API client
 │   │   ├── stores/auth.ts            # Zustand auth store
@@ -237,9 +251,9 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │       ├── 018_venue_verified_safe.sql
 │   │   │       ├── 019_events_door_code.sql
 │   │   │       ├── 020_venue_type_location_revealed.sql
-│   │   │       └── 021_events_visibility_rules.sql
+│   │   │       ├── 021_events_visibility_rules.sql
 │   │   │       ├── 022_event_series.sql
-│   │   │       └── 023_primary_intent_discovery_visible.sql
+│   │   │       ├── 023_primary_intent_discovery_visible.sql
 │   │   │       ├── 024_profile_visibility_tier.sql
 │   │   │       ├── 025_content_slots_vibe_talk_first.sql
 │   │   │       ├── 026_stories_live_personas_crossing.sql
@@ -266,8 +280,15 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ├── README.md
 ├── terraform/                        # Optional infra (e.g. GCP)
 └── docs/
+    ├── README.md                     # Doc index
     ├── ARCHITECTURE.md               # This file
-    ├── DEV_HANDOVER.md              # Dev handover
+    ├── DEV_HANDOVER.md              # Backend + mobile reference
+    ├── UX_UI_SPEC.md                # Per-screen UX/UI
+    ├── UX_BEHAVIOR_SPEC.md          # Invariants, safety, copy
+    ├── E2E_CAPABILITY_AUDIT_REPORT.md   # Implemented vs partial vs missing
+    ├── MASTER_IMPLEMENTATION_CHECKLIST.md # Single checklist (tiers)
+    ├── SCOPE_PIVOT_TODO.md          # Scope when pivoting
+    ├── SOFT_LAUNCH_WEB_PLAN.md      # Web-first soft launch
     ├── SYSTEM_REALITY_REPORT.md     # CTO audit
     └── SYSTEM_REALITY_REPORT_APPENDICES.md
 ```

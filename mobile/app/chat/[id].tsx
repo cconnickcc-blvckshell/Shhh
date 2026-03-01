@@ -1,9 +1,11 @@
-import { useEffect, useState, useRef, useMemo, useLayoutEffect } from 'react';
+import { useEffect, useState, useRef, useMemo, useLayoutEffect, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { messagingApi, usersApi } from '../../src/api/client';
 import { useAuthStore } from '../../src/stores/auth';
+import { useSocket } from '../../src/hooks/useSocket';
+import { useScreenshotDetection } from '../../src/hooks/useScreenshotDetection';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 
 interface Message { _id: string; senderId: string; content: string; contentType: string; createdAt: string; expiresAt?: string; }
@@ -12,8 +14,11 @@ export default function ChatScreen() {
   const { id: convId } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const userId = useAuthStore(s => s.userId);
+  const socket = useSocket();
+  useScreenshotDetection(convId as string | undefined);
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [selfDestruct, setSelfDestruct] = useState(false);
   const listRef = useRef<FlatList>(null);
@@ -68,14 +73,30 @@ export default function ChatScreen() {
     );
   }
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!convId) return;
     setLoading(true);
+    setLoadError(null);
     messagingApi
       .getMessages(convId)
-      .then((r) => setMsgs(Array.isArray(r.data) ? r.data : []))
-      .catch(() => setMsgs([]))
+      .then((r) => { setMsgs(Array.isArray(r.data) ? r.data : []); setLoadError(null); })
+      .catch((err: any) => { setLoadError(err?.message || 'Could not load messages.'); setMsgs([]); })
       .finally(() => setLoading(false));
+  }, [convId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (!convId) return;
+    socket.joinConversation(convId);
+    const unsub = socket.onNewMessage((data: any) => {
+      const msg = data?.message ?? data;
+      if (msg && msg._id) setMsgs(prev => [msg, ...prev]);
+    });
+    return () => {
+      socket.leaveConversation(convId);
+      unsub?.();
+    };
   }, [convId]);
 
   const send = async () => {
@@ -111,12 +132,24 @@ export default function ChatScreen() {
     </View>
   );
 
-  if (loading) {
+  if (loading && msgs.length === 0 && !loadError) {
     return (
       <View style={s.container}>
         <View style={s.loadWrap}>
           <ActivityIndicator size="large" color={colors.primaryLight} />
           <Text style={s.loadText}>Loading conversation…</Text>
+        </View>
+      </View>
+    );
+  }
+  if (loadError && msgs.length === 0) {
+    return (
+      <View style={s.container}>
+        <View style={s.errorWrap}>
+          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+          <Text style={s.errorText}>{loadError}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={load}><Text style={s.retryBtnText}>Try again</Text></TouchableOpacity>
+          <TouchableOpacity style={s.backLink} onPress={() => router.back()}><Text style={s.backLinkText}>Go back</Text></TouchableOpacity>
         </View>
       </View>
     );
@@ -153,6 +186,11 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   loadWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
   loadText: { color: colors.textMuted, fontSize: 14, marginTop: spacing.md },
+  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingTop: 80 },
+  errorText: { color: colors.text, fontSize: 14, textAlign: 'center', marginTop: spacing.md },
+  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
+  retryBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  backLink: { marginTop: spacing.md, paddingVertical: 8 }, backLinkText: { color: colors.textMuted, fontSize: 14 },
   emptyList: { flexGrow: 1, paddingVertical: spacing.xxl },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
   emptyTitle: { color: colors.text, fontSize: 17, fontWeight: '600', marginTop: spacing.md },

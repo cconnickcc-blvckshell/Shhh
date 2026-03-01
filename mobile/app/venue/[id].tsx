@@ -110,7 +110,7 @@ export default function VenueDetailScreen() {
           <View style={s.section}>
             <Text style={s.sectionTitle}>UPCOMING EVENTS</Text>
             {venue.upcomingEvents.map((ev: any) => (
-              <TouchableOpacity key={ev.id} style={s.eventCard} onPress={() => router.push(`/events`)}>
+              <TouchableOpacity key={ev.id} style={s.eventCard} onPress={() => router.push(`/event/${ev.id}`)}>
                 <Text style={s.eventTitle}>{ev.title}</Text>
                 <Text style={s.eventDate}>{new Date(ev.starts_at).toLocaleDateString()}</Text>
               </TouchableOpacity>

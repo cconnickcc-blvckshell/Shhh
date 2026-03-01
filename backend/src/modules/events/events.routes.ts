@@ -60,6 +60,7 @@ const setDoorCodeSchema = z.object({
 
 router.get('/nearby', authenticate, validate(nearbyQuerySchema, 'query'), controller.getNearby);
 router.get('/this-week', authenticate, validate(nearbyQuerySchema, 'query'), controller.getThisWeek);
+router.get('/my', authenticate, controller.getMyHosted);
 router.post('/', authenticate, requireTier(2), validate(createEventSchema), controller.create);
 router.post('/validate-door-code', authenticate, doorCodeValidateLimiter, validate(validateDoorCodeSchema), controller.validateDoorCode);
 router.get('/:id', authenticate, controller.getOne);

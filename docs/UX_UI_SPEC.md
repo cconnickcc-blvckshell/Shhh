@@ -1,9 +1,9 @@
 # Shhh — UX/UI Specification
 
-> **Version**: 1.0.0 | **Last updated**: February 2026  
-> **Purpose**: Frontend/visual counterpart to **ARCHITECTURE.md**. Screens, layout, components, interactions, animations, imagery, and how the UI connects to the backend.  
-> **Scope**: Mobile app (React Native + Expo 55, expo-router), Admin Dashboard (React + Vite). Routes and structure from **DEV_HANDOVER.md** §6; mobile folder scanned for screens and components.  
-> **Companion**: For behavioral contract, invariants, user states, safety flows, copy rules, and accessibility gates, see **UX_BEHAVIOR_SPEC.md** (human truth). This doc = surface truth; that doc = what must be true for the product to feel right and be safe.
+> **Version**: 1.1.0 | **Last updated**: February 2026  
+> **Purpose**: Frontend/visual counterpart to **ARCHITECTURE.md**. Screens, layout, components, interactions, and how the UI connects to the backend.  
+> **Scope**: Mobile app (React Native + Expo 55, expo-router), Admin Dashboard (React + Vite). Routes and implementation status aligned with current codebase and **DEV_HANDOVER.md** §6; **E2E_CAPABILITY_AUDIT_REPORT.md** and **MASTER_IMPLEMENTATION_CHECKLIST.md** for full gap list.  
+> **Companion**: **UX_BEHAVIOR_SPEC.md** (invariants, user states, safety flows, copy, a11y gates).
 
 ---
 
@@ -50,14 +50,14 @@
 
 ### 2.1 Mobile (expo-router, file-based)
 
-- **Root** (`app/_layout.tsx`): Stack with `(auth)`, `(tabs)`, and modal/stack screens. QueryClientProvider wraps app.
-- **Auth group** `(auth)/`: index (login), register, verify-code, onboarding. No tab bar.
+- **Root** (`app/_layout.tsx`): Stack with `(auth)`, `(tabs)`, and stack screens. QueryClientProvider wraps app; **AuthGuard** wraps children and redirects unauthenticated users to `/(auth)`; 401 triggers `onUnauthorized` (clear session, redirect to login).
+- **Auth group** `(auth)/`: index (login), register, verify-code, onboarding, onboarding-intent. No tab bar.
 - **Tabs** `(tabs)/`: index (Explore/Discover), messages (Chat), events (Events), profile (Me). Tab bar: 64px height, purple active, bottom.
-- **Stack (no tab bar)**: chat/[id], user/[id], profile/edit, profile/status, venue/[id], album/index, album/[id], couple/index, verify/index, subscription/index, whispers/index.
+- **Stack (no tab bar)**: chat/[id], user/[id], venue/[id], event/[id], album/index, album/[id], couple/index, verify/index, subscription/index, whispers/index; profile/edit, profile/status, profile/emergency, profile/privacy, profile/hosting, profile/create-event, profile/venues, profile/create-venue, profile/venue-dashboard/[id], profile/venue-edit/[id], profile/venue-add-special/[id], profile/venue-staff/[id], profile/venue-invite-staff/[id].
 
 ### 2.2 Auth Gate
 
-- **NOT IMPLEMENTED**: No global route guard in codebase. Recommended: middleware or layout that checks `useAuthStore.getState().isAuthenticated` and redirects unauthenticated users to `/(auth)` and authenticated users away from `/(auth)` to `/(tabs)`.
+- **Implemented:** `AuthGuard` in `app/_layout.tsx` checks auth state; unauthenticated users are redirected to `/(auth)`; authenticated users leaving `/(auth)` go to `/(tabs)` or onboarding as appropriate. On 401 from API, `onUnauthorized` clears tokens and redirects to login.
 
 ### 2.3 Admin Dashboard
 
@@ -122,7 +122,7 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Components** | Inline only. |
 | **Interactions** | Type digits (auto-advance); on 6 digits submit; Backspace moves focus back; Resend when timer 0. |
 | **States** | Loading: ActivityIndicator. Error: red box, digits cleared, focus first. Empty: initial. |
-| **Edge cases** | Wrong code: error message. Resend rate limit: from API. Missing params (phone/mode): NOT IMPLEMENTED — no guard; can crash. |
+| **Edge cases** | Wrong code: error message. Resend rate limit: from API. Missing params (phone/mode): guard in place — redirect or safe fallback when phone/mode missing. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | No live region for error; digit inputs not grouped with label. |
 
@@ -161,8 +161,8 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Layout** | Full-screen FlatList, 2 or 3 columns (by width), 1.5px gap; pull-to-refresh. Whisper overlay: bottom bar with input, send, close. ListEmpty: compass icon, "No one nearby", "Pull down to refresh". |
 | **Components** | **ProfilePhoto** (photosJson, fill, size=tileW). Inline: presence bar, host badge, shield badge, intent badge, presence dot, distance/gender. |
 | **Interactions** | Tap tile → user profile. Long-press (400ms) → vibration, open whisper bar; type, send or close. Pull to refresh. |
-| **States** | **Loading**: initial load no spinner (list appears when data arrives). **Empty**: ListEmptyComponent. **Error**: NOT IMPLEMENTED — load() catch is empty; no error UI. **Offline**: NOT IMPLEMENTED. |
-| **Edge cases** | Location hardcoded 40.7128, -74.006 (NYC); useLocation hook exists but Discover does not use it. Discovery cap (30/50) from API; UI does not show "cap reached". |
+| **States** | **Loading**: spinner/loading state when fetching. **Empty**: ListEmptyComponent. **Error**: error UI with retry. **Offline**: not implemented. |
+| **Edge cases** | Location from **useLocation()** (web fallback to NYC 40.7128, -74.006). Discovery cap (30/50) from API; UI does not show "cap reached". |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Tiles not labeled by name/role; long-press not announced. |
 
@@ -180,8 +180,8 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Layout** | FlatList of rows: avatar (person/people icon + online dot), "Conversation" title, timeAgo(last_message_at), "Tap to view messages", unread badge. ListEmpty: icon, "No conversations", "Match with someone to start chatting". |
 | **Components** | Inline only. |
 | **Interactions** | Tap row → chat. Pull to refresh. |
-| **States** | **Loading**: none shown. **Empty**: ListEmptyComponent. **Error**: NOT IMPLEMENTED — load catch empty. |
-| **Edge cases** | Conversation list does not show participant names or last message preview — always "Conversation" and "Tap to view messages". NOT IMPLEMENTED: real participant names and last message snippet require API to return them and UI to display. |
+| **States** | **Loading**: loading state shown. **Empty**: ListEmptyComponent. **Error**: error UI with retry. |
+| **Edge cases** | Conversation list may show "Conversation" and "Tap to view messages" if API does not return participant names/last message; real names/snippet require API support and UI display. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Row has no accessibilityLabel with name/count. |
 
@@ -199,8 +199,8 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Layout** | FlatList of cards: banner (sparkles), date box (day, month), title, time, attendee count, venue name, description, heart button. ListEmpty: flame icon, "No events nearby". |
 | **Components** | Inline only. |
 | **Interactions** | Tap card → venue if venue_id else no nav. Tap heart → rsvp('going') or remove from attending (optimistic). Pull to refresh. |
-| **States** | **Loading**: none. **Empty**: ListEmptyComponent. **Error**: NOT IMPLEMENTED. |
-| **Edge cases** | Location hardcoded 40.7128, -74.006. Un-RSVP: local state only; NOT IMPLEMENTED — no DELETE or "not_going" API call. |
+| **States** | **Loading**: loading state when fetching. **Empty**: ListEmptyComponent. **Error**: error UI. |
+| **Edge cases** | Location from useLocation (web fallback NYC). Un-RSVP: local state; backend may support DELETE or "not_going" — check API. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Card not labeled by event name + date. |
 
@@ -218,8 +218,8 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Layout** | ScrollView: hero (ProfilePhoto, name, bio), stat pills (verification, experience, host), kinks tags, menu card (rows with icon, label, optional badge, chevron), Panic button (red), Log out. |
 | **Components** | **ProfilePhoto**. Inline: StatPill, MenuItem (icon, label, onPress, badge, accent). |
 | **Interactions** | Tap menu items; tap Panic → Alert then API; tap Log out. |
-| **States** | **Loading**: profile may be null on first load; no spinner. **Empty**: name fallback "User". **Error**: NOT IMPLEMENTED. |
-| **Edge cases** | Emergency Contacts and Privacy & Data: NOT IMPLEMENTED — no screens or handlers. |
+| **States** | **Loading**: profile load spinner; loadProfile() when profile missing. **Empty**: name fallback "User". **Error**: error UI. |
+| **Edge cases** | Emergency Contacts → `/profile/emergency`; Privacy & Data → `/profile/privacy` (screens exist). |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Menu items not grouped; Panic should be clearly labeled. |
 
@@ -237,8 +237,8 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Layout** | KeyboardAvoidingView: inverted FlatList (messages), input bar: timer (self-destruct toggle), camera (no handler), TextInput, send. Header: "Chat" (Stack config). |
 | **Components** | Inline bubbles (mine/theirs), self-destruct label, time. |
 | **Interactions** | Type and send; toggle timer for self-destruct (30s); camera button NOT IMPLEMENTED — no action. |
-| **States** | **Loading**: initial load no spinner. **Empty**: no messages. **Error**: NOT IMPLEMENTED. **Offline**: NOT IMPLEMENTED. |
-| **Edge cases** | No WebSocket join/typing/real-time messages in this screen — only initial fetch and optimistic append. NOT IMPLEMENTED: useSocket joinConversation, onNewMessage, typing. |
+| **States** | **Loading**: loading state. **Empty**: no messages. **Error**: error UI. **Offline**: not implemented. |
+| **Edge cases** | **WebSocket:** useSocket joinConversation, onNewMessage, leaveConversation wired; real-time messages and typing supported. useScreenshotDetection reports screenshots. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Messages not announced as sender + content; input has no label. |
 
@@ -256,7 +256,7 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Layout** | ScrollView: hero (ProfilePhoto fill, back, presence badge), name/age/shield, meta (gender, showAsRole, showAsRelationship), intents chips, bio, interests, stats (experience, references, rating, host), trust row, action buttons (block, whisper, like, message), whisper box (if open), report link, "Member since". |
 | **Components** | **ProfilePhoto** (photosJson, fill). Inline: presence badge, intent chips, stats, action circles, whisper input. |
 | **Interactions** | Back, set presence (no UI), like (vibration, match alert), message (create conv → chat), whisper (toggle box, send), block (then back), report. |
-| **States** | **Loading**: hourglass placeholder while !profile. **Error**: on profile fetch failure router.back() — no message. **Empty**: N/A. |
+| **States** | **Loading**: hourglass placeholder while !profile. **Error**: error UI with retry (no silent router.back()). **Empty**: N/A. |
 | **Edge cases** | Like requires tier 1; API may reject — error in catch not always shown. GET `/v1/users/:id/profile` returns public/private by profile_visibility_tier (backend); UI does not show "reveal to see more". |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Large action buttons; report is low emphasis; no live region for match. |
@@ -332,7 +332,7 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Layout** | Header (back, title, add), tabs (My Albums | Shared with Me), create row (input + Create + close when showCreate), FlatList 2-col grid of album cards (icon, lock badge, name, count, owner if shared). ListEmpty per tab. |
 | **Components** | Inline album card. |
 | **Interactions** | Tab switch; add → show create row; Create → API, refresh; tap card → album detail. |
-| **States** | **Empty**: "No albums yet" / "No shared albums". **Error**: NOT IMPLEMENTED. |
+| **States** | **Loading**: loading state. **Empty**: "No albums yet" / "No shared albums". **Error**: error UI. |
 | **Edge cases** | create(name, undefined, true) — description not in UI. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Tabs and cards need names. |
@@ -402,14 +402,14 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 |-------|-------------|
 | **Intent** | Show subscription tiers; upgrade via Stripe checkout. |
 | **Entry points** | Profile → Premium. |
-| **Exit paths** | Back. Upgrade → POST checkout, Alert with checkoutUrl (no external browser open in code). |
+| **Exit paths** | Back. Upgrade → POST checkout; **Linking.openURL(checkoutUrl)** opens Stripe in browser. |
 | **Data dependencies (API)** | GET `/v1/billing/subscription`. POST `/v1/billing/checkout` (tier). |
-| **Store state** | None. Local: currentTier. |
+| **Store state** | None. Local: currentTier. Refetch on focus (useFocusEffect). |
 | **Layout** | ScrollView: header, hero "More privacy. More control.", tier cards (icon, name, price, features, Current badge or Upgrade button), disclaimer. |
 | **Components** | Inline. |
-| **Interactions** | Tap Upgrade → checkout API; Alert shows URL or "Stripe not configured". |
+| **Interactions** | Tap Upgrade → checkout API; **Linking.openURL** opens Stripe checkout in external browser. |
 | **States** | **Error**: Alert on checkout failure. |
-| **Edge cases** | Opening Stripe URL in browser NOT IMPLEMENTED — Alert only. Webhook success: no in-app refresh of currentTier. |
+| **Edge cases** | Webhook success: refetch subscription on screen focus so currentTier updates after return from Stripe. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Tiers and Upgrade need clear labels. |
 

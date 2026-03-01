@@ -1,15 +1,23 @@
 # Shhh — Documentation Index
 
-Use this index to keep scope when working on the codebase. **Update the relevant docs as you progress** (see ENHANCEMENT_ROADMAP.md Doc Sync Checklist).
+Use this index to keep scope when working on the codebase. **Docs are aligned with the current program** (February 2026). Update the relevant doc when you add or change routes, modules, or screens.
 
 | Document | Purpose | When to read/update |
 |----------|---------|---------------------|
-| **ENHANCEMENT_ROADMAP.md** | **Single source for enhancement work on branch `shh-enhancement-trial`.** Gold standard rules, phase-by-phase tasks, "where existing things live," doc sync checklist. | **Read before every enhancement task.** Update after every phase or batch (progress log, "Last roadmap update"). |
-| **ARCHITECTURE.md** | System overview, file tree, API ledger (§4), DB schema (§6), security, env. | When adding routes, modules, or tables: update §2, §4, §6, §11 as needed. |
-| **DEV_HANDOVER.md** | Deep backend reference: every module (§4), schema, mobile, real-time, workers, safety, billing, conventions. | When changing a module or adding endpoints: update the corresponding §4.x and any schema/API tables. |
-| **SYSTEM_REALITY_REPORT_APPENDICES.md** | Appendix A = full route matrix (method, path, auth, tier, source file). Schema/migrations, threat model, etc. | When adding or changing any route: update Appendix A. Update schema/migrations list if needed. |
-| **SYSTEM_REALITY_REPORT.md** | CTO-facing audit: capability matrix, deep dives, roadmap, test strategy. | Update when capability set or high-level architecture changes. |
-| **FEATURE_ADDITIONS_CRITIQUE.md** | Feature grades vs current system; Part 2 = game-changer ideas; Part 3 = GPT review + discovery cap. | Optional: mark implemented items in checklists; add implementation notes. |
-| **GAME_CHANGER_ROADMAP.md** | **Prioritized backlog of game-changer ideas** (from Critique Part 2 + new ideas). Same gold standard as ENHANCEMENT_ROADMAP; themed phases (Venues, Promoters, Intent, Ephemeral, Community, Wild cards). Progress log and "Implemented" list. | When picking or implementing a game-changer: read "Existing" and "Do not duplicate"; after build, update ARCHITECTURE, DEV_HANDOVER, Appendix A, and both roadmaps. |
+| **ARCHITECTURE.md** | System overview, file tree, API ledger (§4), dependencies, workflows. | When adding routes, modules, or tables: update §2, §4, §6. |
+| **DEV_HANDOVER.md** | Deep reference: every backend module (§4), schema, mobile routes and API, real-time, workers, safety, billing, env. | When changing a module or endpoints: update the corresponding §4.x and schema/API tables. |
+| **UX_UI_SPEC.md** | Per-screen UX/UI (mobile + admin): layout, API, states, implementation notes. Aligned with current screens. | When implementing or auditing a screen. |
+| **UX_BEHAVIOR_SPEC.md** | Invariants, user states, safety flows, copy, consent, a11y gates. | When designing flows or copy. |
+| **E2E_CAPABILITY_AUDIT_REPORT.md** | **E2E audit** of what exists vs partial vs missing (mobile, admin, backend). No optimistic gloss. | When assessing ship-readiness or planning fixes. |
+| **MASTER_IMPLEMENTATION_CHECKLIST.md** | **Single checklist** for E2E audit items and discussed-but-not-implemented features. Tiers 0–8, status ✅/⬜. | When planning sprints or prioritizing; use with E2E audit. |
+| **SCOPE_PIVOT_TODO.md** | **Scope when pivoting:** done vs remaining by tier; full remaining list with ID, action, where. | When switching tasks or returning to implementation. |
+| **SOFT_LAUNCH_WEB_PLAN.md** | **Web soft launch:** one codebase, sidebar on web, entry shell, layout constraint, trust signals. Phases 1–4 (post–CTO review). | When doing web-first soft launch or web layout. |
+| **SYSTEM_REALITY_REPORT.md** | CTO-facing audit: capability matrix, deep dives, test strategy. | When capability set or high-level architecture changes. |
+| **SYSTEM_REALITY_REPORT_APPENDICES.md** | Full route matrix (method, path, auth, tier, file); schema/migrations; threat model. | When adding or changing any route: update Appendix A. |
+| **GAME_CHANGER_ROADMAP.md** | Prioritized backlog of game-changer ideas; themed phases. Progress and "Implemented" list. | When picking or implementing a game-changer; update after build. |
+| **ENHANCEMENT_ROADMAP.md** | Enhancement work (branch `shh-enhancement-trial`): phases, doc sync checklist. | Optional: when following that branch. |
+| **FRONTEND_GAP_LIST.md** | Frontend gap list (mobile) by feature. | Sync with E2E audit and checklist. |
+| **FEATURE_ADDITIONS_CRITIQUE.md** | Feature grades vs current system; game-changer ideas; discovery cap. | Optional: mark implemented items. |
+| **REVIEW_CREDENTIALS.md** | Review/test credentials and access. | When testing or handing off to reviewers. |
 
-**Rule:** Work with the existing system; do not create duplicates. Follow **ENHANCEMENT_ROADMAP.md** for all enhancement work on `shh-enhancement-trial`. Use **GAME_CHANGER_ROADMAP.md** for the ideas backlog and themed implementation order.
+**Working from this codebase:** Use **ARCHITECTURE.md**, **DEV_HANDOVER.md**, and **UX_UI_SPEC.md** as the source of truth for what exists. Use **E2E_CAPABILITY_AUDIT_REPORT.md** and **MASTER_IMPLEMENTATION_CHECKLIST.md** to drive what to build next; **SCOPE_PIVOT_TODO.md** to avoid losing scope when pivoting.

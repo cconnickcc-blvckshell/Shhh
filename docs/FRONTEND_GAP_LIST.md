@@ -3,7 +3,7 @@
 > **Source**: Cross-reference of **ARCHITECTURE.md**, **UX_UI_SPEC.md**, and **UX_BEHAVIOR_SPEC.md** against the mobile app.  
 > **Purpose**: Single list of missing or partial features on the frontend so they can be prioritized and implemented.
 
-**Recent implementation (Phases 1–6):** Auth guard + premium splash, 401 → login, route guards in (tabs)/(auth). Event detail screen + “events open” from list. Report/block in chat (header menu), Emergency Contacts screen, Privacy & Data screen. Explore: radius + primaryIntent filters, Verified toggle, “Active now” sort. Conversation list: Direct/Group label, time ago, unread badge. Chat: loading state, empty state. **Phase 6:** Onboarding intent step (primary_intent + discovery_visible_to); Couples confirm-dissolution flow. See git history for details.
+**Recent implementation (Phases 1–6):** Auth guard + premium splash, 401 → login, route guards in (tabs)/(auth). Event detail screen + “events open” from list. Report/block in chat (header menu), Emergency Contacts screen, Privacy & Data screen. Explore: radius + primaryIntent filters, Verified toggle, “Active now” sort. Conversation list: Direct/Group label, time ago, unread badge. Chat: loading state, empty state. **Phase 6:** Onboarding intent step (primary_intent + discovery_visible_to); Couples confirm-dissolution flow. **Event-host:** Me → Hosting (when isHost), “Events I’m hosting” (GET `/v1/events/my`), Create event form (POST `/v1/events`). **Venue controls** (owner/dashboard, create venue, staff, analytics): backend only — not in mobile. See git history for details.
 
 ---
 
@@ -28,9 +28,9 @@
 |---|-----|----------------|---------------|
 | 1.1 | **Event detail screen** | ARCH: GET `/v1/events/:id`; UX_UI §3.7: tap card → venue. | **DONE.** `app/event/[id].tsx` added; Events tab taps open event detail (title, date/time, venue, vibe tag, description, RSVP, venue link). |
 | 1.2 | **Events “don’t open”** | Same. | **DONE.** Tap event card → `/event/[id]` → event detail screen. |
-| 1.3 | **Host-specific experience** | ARCH: POST `/v1/events` (tier 2), PUT `/v1/events/:id/door-code`; GAME_CHANGER: create events under venue/promoter. | No dedicated “host” or “my events” experience. Hosts see the same profile and tabs as everyone else. No way to **create events**, **edit events**, or **manage door codes** from the app. |
-| 1.4 | **Create event (hosts)** | ARCH: POST `/v1/events` (tier 2). | No UI to create an event (title, date, venue/series, vibe tag, visibility, location-revealed-after-RSVP). Hosts cannot add events from mobile. |
-| 1.5 | **Control host “page”** | UX expectation: event hosters have a different page (their events, controls). | User profile is the same for hosts and non-hosts. No “Hosting” section, “My events,” or “Events I’m hosting” on profile or Me tab. |
+| 1.3 | **Host-specific experience** | ARCH: POST `/v1/events` (tier 2), PUT `/v1/events/:id/door-code`; GAME_CHANGER: create events under venue/promoter. | **PARTIAL.** Me tab shows “Hosting” (when `isHost`); Hosting screen lists “Events I’m hosting” (GET `/v1/events/my`) and “Create event.” Still missing: **edit event**, **door code** UI (PUT `/v1/events/:id/door-code`), create-under-venue/series in UI. |
+| 1.4 | **Create event (hosts)** | ARCH: POST `/v1/events` (tier 2). | **DONE (basic).** `profile/create-event.tsx`: title, description, start/end; calls POST `/v1/events`. Not yet: venue/series picker, vibe tag, visibility, location-revealed-after-RSVP. |
+| 1.5 | **Control host “page”** | UX expectation: event hosters have a different page (their events, controls). | **DONE.** Me → Hosting (host-only) → list of events I host + Create event. |
 | 1.6 | **Event vibe tags in UI** | UX_UI §7.2: eventsApi.nearby and GET /v1/events/this-week support vibe; UI does not filter or show tags. | Events list does not show vibe_tag (e.g. newbie_friendly, social_mix, talk_first) on cards; no filter chips. |
 
 ---
@@ -111,6 +111,7 @@
 
 | # | Gap | Spec reference | Current state |
 |---|-----|----------------|---------------|
+| 8.0 | **Venue controls (owner/dashboard)** | ARCH: POST `/v1/venues`, GET `/v1/venues/:id/dashboard`, venue-identity (claim, announcements, checkin, grid, stats, stories, chat-rooms), venue-dashboard (analytics, staff, reviews, specials). | **DONE (mobile).** Me → Venues (when verificationTier ≥ 2): GET `/v1/venues/my`, list “Venues I manage,” Create venue (POST `/v1/venues`), Venue Dashboard (realtime, today, upcoming events, specials, reviews, ads, Manage staff). Dashboard and staff/analytics routes require owner or staff (requireVenueAccess). Seed: The Purple Room owned by Marcus & Nia (+15550000003). |
 | 8.1 | **Venue Share/Review** | UX_UI §3.13: Share/Review no-op. | Buttons do nothing. |
 | 8.2 | **Venue event card** | UX_UI §3.13: Event card → router.push('/events'). | Should go to event detail or at least events list with context. |
 | 8.3 | **Venue grid (GC-5.2)** | UX_UI §3.13: NOT IMPLEMENTED in venue screen. | GET `/v1/venues/:id/grid` exists; venue detail does not show grid. |
@@ -139,8 +140,13 @@
 
 ## 10. Quick reference: backend exists, mobile missing
 
-- **Event detail**: GET `/v1/events/:id` — no event detail screen.
-- **Create event**: POST `/v1/events` — no create UI for hosts.
+- **Event detail**: GET `/v1/events/:id` — **DONE.** Event detail screen + RSVP.
+- **My hosted events**: GET `/v1/events/my` — **DONE.** Hosting screen.
+- **Create event**: POST `/v1/events` — **DONE (basic).** Create event form (title, description, start/end); no venue/series/vibe in UI yet.
+- **Door code**: PUT `/v1/events/:id/door-code` — no host UI in app.
+- **Venue owner / dashboard**: GET `/v1/venues/:id/dashboard` — **DONE.** Me → Venues → tap venue → dashboard (realtime, today, events, specials, reviews, ads, staff).
+- **Create venue**: POST `/v1/venues` — **DONE.** Me → Venues → Create venue.
+- **My venues**: GET `/v1/venues/my` — **DONE.** Me → Venues list (owner/staff).
 - **Stories**: POST/GET `/v1/stories`, GET nearby, view, viewers — no stories UI.
 - **Tonight**: GET `/v1/tonight` — no tonight feed.
 - **Groups**: GET/POST `/v1/groups`, join, events — no groups UI.
@@ -148,7 +154,6 @@
 - **Venue stories**: GET `/v1/venues/:id/stories` — not shown.
 - **Blur check**: GET `/v1/photos/check/:userId` (or equivalent) — not used in ProfilePhoto.
 - **This week events**: GET `/v1/events/this-week` — events tab uses only nearby.
-- **Door code**: PUT `/v1/events/:id/door-code` — no host UI.
 
 ---
 

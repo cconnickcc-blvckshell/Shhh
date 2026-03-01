@@ -1,7 +1,7 @@
 # Shhh — Developer Handover Document
 
-> **Version**: 0.5.0 | **Last updated**: February 2026 | **Status**: Active development (Sprint 5)  
-> **Enhancement work:** Follow **docs/ENHANCEMENT_ROADMAP.md** (branch `shh-enhancement-trial`). Update the relevant §4.x and schema/API tables when adding or changing modules.
+> **Version**: 0.5.0 | **Last updated**: February 2026 | **Status**: Active development  
+> **Implementation status:** **docs/E2E_CAPABILITY_AUDIT_REPORT.md** (what's done vs partial vs missing), **docs/MASTER_IMPLEMENTATION_CHECKLIST.md** (single checklist), **docs/SCOPE_PIVOT_TODO.md** (scope when pivoting), **docs/SOFT_LAUNCH_WEB_PLAN.md** (web soft launch). Update the relevant §4.x and schema/API tables when adding or changing modules.
 
 ---
 
@@ -1371,23 +1371,36 @@ The mobile app uses **expo-router** (file-based routing). All screens are in `mo
 | `/(auth)` | `app/(auth)/_layout.tsx` | Auth flow layout |
 | `/(auth)/index` | `app/(auth)/index.tsx` | Login screen |
 | `/(auth)/register` | `app/(auth)/register.tsx` | Registration screen |
-| `/(auth)/verify-code` | `app/(auth)/verify-code.tsx` | OTP verification |
+| `/(auth)/verify-code` | `app/(auth)/verify-code.tsx` | OTP verification (guard when phone/mode missing) |
 | `/(auth)/onboarding` | `app/(auth)/onboarding.tsx` | Post-registration onboarding |
-| `/(tabs)` | `app/(tabs)/_layout.tsx` | Tab navigator |
-| `/(tabs)/index` | `app/(tabs)/index.tsx` | **Discover** — nearby user grid |
-| `/(tabs)/messages` | `app/(tabs)/messages.tsx` | Conversations list |
-| `/(tabs)/events` | `app/(tabs)/events.tsx` | Nearby events |
-| `/(tabs)/profile` | `app/(tabs)/profile.tsx` | Profile + safety controls |
-| `/chat/[id]` | `app/chat/[id].tsx` | Chat screen with self-destruct toggle |
-| `/user/[id]` | `app/user/[id].tsx` | User profile view |
-| `/profile/edit` | `app/profile/edit.tsx` | Edit profile |
-| `/profile/status` | `app/profile/status.tsx` | Presence & intent status |
-| `/venue/[id]` | `app/venue/[id].tsx` | Venue detail page |
-| `/album/index` | `app/album/index.tsx` | Album list |
+| `/(auth)/onboarding-intent` | `app/(auth)/onboarding-intent.tsx` | Intent selection |
+| `/(tabs)` | `app/(tabs)/_layout.tsx` | Tab navigator (Explore, Chat, Events, Me) |
+| `/(tabs)/index` | `app/(tabs)/index.tsx` | **Discover** — nearby user grid (useLocation, loading/error UI) |
+| `/(tabs)/messages` | `app/(tabs)/messages.tsx` | Conversations list (loading/error UI) |
+| `/(tabs)/events` | `app/(tabs)/events.tsx` | Nearby events (useLocation, loading/error UI) |
+| `/(tabs)/profile` | `app/(tabs)/profile.tsx` | Me — profile + menu (loadProfile spinner, error UI) |
+| `/chat/[id]` | `app/chat/[id].tsx` | Chat (WebSocket join/onNewMessage/leave, error UI, screenshot detection) |
+| `/user/[id]` | `app/user/[id].tsx` | User profile view (error UI with retry) |
+| `/venue/[id]` | `app/venue/[id].tsx` | Venue detail |
+| `/event/[id]` | `app/event/[id].tsx` | Event detail |
+| `/album/index` | `app/album/index.tsx` | Album list (loading/error UI) |
 | `/album/[id]` | `app/album/[id].tsx` | Album detail |
+| `/profile/edit` | `app/profile/edit.tsx` | Edit profile |
+| `/profile/status` | `app/profile/status.tsx` | Presence & intents |
+| `/profile/emergency` | `app/profile/emergency.tsx` | Emergency contacts |
+| `/profile/privacy` | `app/profile/privacy.tsx` | Privacy & data |
+| `/profile/hosting` | `app/profile/hosting.tsx` | Hosting |
+| `/profile/create-event` | `app/profile/create-event.tsx` | Create event |
+| `/profile/venues` | `app/profile/venues.tsx` | My venues |
+| `/profile/create-venue` | `app/profile/create-venue.tsx` | Create venue |
+| `/profile/venue-dashboard/[id]` | `app/profile/venue-dashboard/[id].tsx` | Venue dashboard |
+| `/profile/venue-edit/[id]` | `app/profile/venue-edit/[id].tsx` | Edit venue |
+| `/profile/venue-add-special/[id]` | `app/profile/venue-add-special/[id].tsx` | Add special |
+| `/profile/venue-staff/[id]` | `app/profile/venue-staff/[id].tsx` | Venue staff |
+| `/profile/venue-invite-staff/[id]` | `app/profile/venue-invite-staff/[id].tsx` | Invite staff |
 | `/couple/index` | `app/couple/index.tsx` | Couple management |
 | `/verify/index` | `app/verify/index.tsx` | Verification submission |
-| `/subscription/index` | `app/subscription/index.tsx` | Subscription tiers |
+| `/subscription/index` | `app/subscription/index.tsx` | Subscription / Stripe (Linking.openURL for checkout, refetch on focus) |
 | `/whispers/index` | `app/whispers/index.tsx` | Whisper inbox/sent |
 
 ### 6.2 Hooks
@@ -1446,10 +1459,12 @@ safetyApi.{getContacts, addContact, checkIn, panic}
 albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare}
 ```
 
-**API base URL:**
+**API base URL:** Hardcoded in `src/api/client.ts` (and in usePhotoUpload, useSocket, ProfilePhoto):
 - Web: `http://localhost:3000`
-- Android emulator: `http://10.0.2.2:3000`
-- iOS simulator: `http://localhost:3000`
+- Native: `http://10.0.2.2:3000` (Android emulator); iOS simulator typically `localhost:3000`
+- For production web/native, introduce `EXPO_PUBLIC_API_URL` and use it when set; document in SOFT_LAUNCH_WEB_PLAN.
+
+**Auth guard:** Root `app/_layout.tsx` wraps the app in `AuthGuard` (`src/components/AuthGuard.tsx`): unauthenticated users are redirected to `/(auth)`; 401 responses trigger `onUnauthorized` (clear session, redirect to login).
 
 ### 6.5 Theme System
 

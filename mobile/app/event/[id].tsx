@@ -9,10 +9,10 @@ import {
   Vibration,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { eventsApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
+import { BannerImage } from '../../src/components/Backgrounds';
 
 const VIBE_LABELS: Record<string, string> = {
   social_mix: 'Social mix',
@@ -74,11 +74,9 @@ export default function EventDetailScreen() {
 
   return (
     <ScrollView style={s.container} bounces={false}>
-      {/* Hero */}
-      <LinearGradient
-        colors={[colors.primarySoft, 'transparent']}
-        style={s.hero}
-      >
+      {/* Hero with banner */}
+      <BannerImage style={s.hero}>
+        <View style={s.heroOverlay} />
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -102,7 +100,7 @@ export default function EventDetailScreen() {
             </View>
           )}
         </View>
-      </LinearGradient>
+      </BannerImage>
 
       <View style={s.body}>
         {/* Venue row */}
@@ -181,6 +179,11 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    minHeight: 180,
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(5,5,8,0.5)',
   },
   backBtn: {
     position: 'absolute',
@@ -194,7 +197,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 10,
   },
-  heroContent: { marginTop: spacing.sm },
+  heroContent: { marginTop: spacing.sm, zIndex: 1 },
   dateBadge: {
     alignSelf: 'flex-start',
     backgroundColor: colors.surface,

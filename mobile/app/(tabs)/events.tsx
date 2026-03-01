@@ -1,21 +1,45 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Vibration } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Vibration, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { eventsApi } from '../../src/api/client';
-import { colors, fontSize, borderRadius } from '../../src/constants/theme';
+import { useLocation } from '../../src/hooks/useLocation';
+import { colors, fontSize, borderRadius, spacing } from '../../src/constants/theme';
+import { BannerImage } from '../../src/components/Backgrounds';
+
+const FALLBACK_LAT = 40.7128;
+const FALLBACK_LNG = -74.006;
 
 export default function EventsScreen() {
+  const location = useLocation();
+  const lat = location.loading ? FALLBACK_LAT : location.latitude;
+  const lng = location.loading ? FALLBACK_LNG : location.longitude;
   const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [attending, setAttending] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    try { const r = await eventsApi.nearby(40.7128, -74.006); setEvents(r.data); } catch {}
-  }, []);
+    setLoadError(null);
+    try {
+      const r = await eventsApi.nearby(lat, lng);
+      setEvents(r.data);
+    } catch (err: any) {
+      setLoadError(err?.message || 'Something went wrong. Pull down to try again.');
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [lat, lng]);
 
-  useEffect(() => { load(); }, [load]);
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+  useEffect(() => {
+    if (!location.loading) {
+      setLoading(true);
+      load();
+    }
+  }, [load, location.loading]);
+  const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); setRefreshing(false); };
 
   const toggleRsvp = async (eventId: string) => {
     Vibration.vibrate(10);
@@ -39,9 +63,9 @@ export default function EventsScreen() {
         activeOpacity={0.85}
         onPress={() => router.push(`/event/${item.id}`)}
       >
-        <View style={s.banner}>
+        <BannerImage style={s.banner}>
           <Ionicons name="sparkles" size={20} color={colors.primaryLight} />
-        </View>
+        </BannerImage>
         <View style={s.cardBody}>
           <View style={s.dateBox}>
             <Text style={s.dateDay}>{d.getDate()}</Text>
@@ -66,6 +90,30 @@ export default function EventsScreen() {
     );
   };
 
+  if (loading && events.length === 0) {
+    return (
+      <View style={s.container}>
+        <View style={s.centerLoad}>
+          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <Text style={s.loadText}>Loading events...</Text>
+        </View>
+      </View>
+    );
+  }
+  if (loadError && events.length === 0) {
+    return (
+      <View style={s.container}>
+        <View style={s.errorBox}>
+          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+          <Text style={s.errorText}>{loadError}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }}>
+            <Text style={s.retryBtnText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={s.container}>
       <FlatList data={events} keyExtractor={i => i.id} renderItem={renderEvent} contentContainerStyle={{ padding: 12 }}
@@ -80,9 +128,15 @@ export default function EventsScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  centerLoad: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  loadText: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.md },
+  errorBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 80 },
+  errorText: { color: colors.text, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.md },
+  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
+  retryBtnText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
   card: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 14, overflow: 'hidden', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.06)' },
-  banner: { height: 50, backgroundColor: 'rgba(147,51,234,0.06)', alignItems: 'center', justifyContent: 'center' },
+  banner: { height: 50, alignItems: 'center', justifyContent: 'center' },
   cardBody: { flexDirection: 'row', alignItems: 'center', padding: 14 },
   dateBox: { width: 42, alignItems: 'center', marginRight: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8, paddingVertical: 6 },
   dateDay: { color: colors.primaryLight, fontSize: 20, fontWeight: '800', lineHeight: 22 },

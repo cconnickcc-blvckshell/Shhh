@@ -12,6 +12,7 @@ export interface UserProfile {
   sexuality: string | null;
   photosJson: unknown[];
   verificationStatus: string;
+  verificationTier?: number;
   preferencesJson: Record<string, unknown>;
   kinks: string[];
   experienceLevel: string;
@@ -44,6 +45,7 @@ export class UsersService {
       sexuality: row.sexuality,
       photosJson: row.photos_json,
       verificationStatus: row.verification_status,
+      verificationTier: row.verification_tier ?? 0,
       preferencesJson: row.preferences_json,
       kinks: row.kinks,
       experienceLevel: row.experience_level,

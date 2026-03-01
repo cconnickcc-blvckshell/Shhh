@@ -131,6 +131,11 @@ async function seed() {
     }
   }
 
+  // Venue owner: The Purple Room (index 0) owned by Marcus & Nia (user index 2) for venue dashboard testing
+  if (venueIds[0] && userIds[2]) {
+    await query(`UPDATE venues SET verified_owner_id = $1 WHERE id = $2`, [userIds[2], venueIds[0]]).catch(() => {});
+  }
+
   // Specials (idempotent: skip if same venue+title exists)
   for (const sp of SPECIALS) {
     if (venueIds[sp.venue]) {

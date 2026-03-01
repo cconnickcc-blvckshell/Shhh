@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { albumsApi } from '../../src/api/client';
@@ -8,16 +8,25 @@ import { colors, spacing, fontSize, borderRadius } from '../../src/constants/the
 export default function AlbumsScreen() {
   const [myAlbums, setMyAlbums] = useState<any[]>([]);
   const [sharedAlbums, setSharedAlbums] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<'mine' | 'shared'>('mine');
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
 
   const load = useCallback(async () => {
+    setLoadError(null);
     try {
       const [mine, shared] = await Promise.all([albumsApi.getMyAlbums(), albumsApi.getShared()]);
       setMyAlbums(mine.data);
       setSharedAlbums(shared.data);
-    } catch {}
+    } catch (err: any) {
+      setLoadError(err?.message || 'Something went wrong. Pull down to try again.');
+      setMyAlbums([]);
+      setSharedAlbums([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -47,6 +56,44 @@ export default function AlbumsScreen() {
       {tab === 'shared' && <Text style={styles.albumOwner}>by {item.owner_name}</Text>}
     </TouchableOpacity>
   );
+
+  if (loading && myAlbums.length === 0 && sharedAlbums.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Albums</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <View style={styles.centerLoad}>
+          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <Text style={styles.loadText}>Loading albums...</Text>
+        </View>
+      </View>
+    );
+  }
+  if (loadError && myAlbums.length === 0 && sharedAlbums.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Albums</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <View style={styles.errorBox}>
+          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+          <Text style={styles.errorText}>{loadError}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }}>
+            <Text style={styles.retryBtnText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -121,6 +168,12 @@ const styles = StyleSheet.create({
   albumName: { color: colors.text, fontSize: fontSize.sm, fontWeight: '600', paddingHorizontal: spacing.sm, paddingTop: spacing.sm },
   albumCount: { color: colors.textMuted, fontSize: fontSize.xxs, paddingHorizontal: spacing.sm, paddingBottom: spacing.sm },
   albumOwner: { color: colors.info, fontSize: fontSize.xxs, paddingHorizontal: spacing.sm, paddingBottom: spacing.sm },
+  centerLoad: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  loadText: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.md },
+  errorBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 80 },
+  errorText: { color: colors.text, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.md },
+  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
+  retryBtnText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
   empty: { alignItems: 'center', paddingTop: 80 },
   emptyText: { color: colors.textMuted, fontSize: fontSize.md, marginTop: spacing.md },
 });

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { useEffect, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
@@ -19,19 +19,31 @@ const TIER_DETAILS = [
 export default function SubscriptionScreen() {
   const [currentTier, setCurrentTier] = useState('free');
 
-  useEffect(() => {
+  const fetchSubscription = useCallback(() => {
     api<{ data: any }>('/v1/billing/subscription')
       .then(r => setCurrentTier(r.data.tier || 'free'))
       .catch(() => {});
   }, []);
+
+  useEffect(() => { fetchSubscription(); }, [fetchSubscription]);
+
+  useFocusEffect(useCallback(() => { fetchSubscription(); }, [fetchSubscription]));
 
   const handleUpgrade = async (tier: string) => {
     try {
       const res = await api<{ data: { checkoutUrl: string } }>('/v1/billing/checkout', {
         method: 'POST', body: JSON.stringify({ tier }),
       });
-      if (res.data.checkoutUrl) {
-        Alert.alert('Checkout', `Stripe checkout would open: ${res.data.checkoutUrl}`);
+      const url = res?.data?.checkoutUrl;
+      if (url) {
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          Alert.alert('Checkout', 'Open this link in your browser: ' + url);
+        }
+      } else {
+        Alert.alert('Checkout', 'No checkout URL returned. Try again later.');
       }
     } catch (err: any) {
       Alert.alert('Info', err.message || 'Stripe not configured yet. Coming soon!');

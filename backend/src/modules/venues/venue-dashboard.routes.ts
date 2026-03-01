@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { VenueDashboardService } from './venue-dashboard.service';
 import { validate } from '../../middleware/validation';
-import { authenticate, requireTier } from '../../middleware/auth';
+import { authenticate, requireTier, requireVenueAccess } from '../../middleware/auth';
 
 const router = Router();
 const svc = new VenueDashboardService();
@@ -16,15 +16,15 @@ router.get('/:id/full', authenticate, async (req: Request, res: Response, next: 
   } catch (err) { next(err); }
 });
 
-// Venue owner dashboard
-router.get('/:id/dashboard', authenticate, requireTier(2), async (req: Request, res: Response, next: NextFunction) => {
+// Venue owner/staff dashboard (tier 2 + must be owner or staff)
+router.get('/:id/dashboard', authenticate, requireTier(2), requireVenueAccess, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const dashboard = await svc.getDashboard(req.params.id as string);
     res.json({ data: dashboard });
   } catch (err) { next(err); }
 });
 
-router.get('/:id/analytics/density', authenticate, requireTier(2), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id/analytics/density', authenticate, requireTier(2), requireVenueAccess, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const days = req.query.days ? parseInt(req.query.days as string) : 30;
     const data = await svc.getDensityIntelligence(req.params.id as string, days);
@@ -32,7 +32,7 @@ router.get('/:id/analytics/density', authenticate, requireTier(2), async (req: R
   } catch (err) { next(err); }
 });
 
-router.get('/:id/analytics', authenticate, requireTier(2), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id/analytics', authenticate, requireTier(2), requireVenueAccess, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const days = req.query.days ? parseInt(req.query.days as string) : 30;
     const analytics = await svc.getAnalyticsRange(req.params.id as string, days);
@@ -40,7 +40,7 @@ router.get('/:id/analytics', authenticate, requireTier(2), async (req: Request, 
   } catch (err) { next(err); }
 });
 
-router.get('/:id/trends', authenticate, requireTier(2), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id/trends', authenticate, requireTier(2), requireVenueAccess, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const trends = await svc.getWeeklyTrends(req.params.id as string);
     res.json({ data: trends });
@@ -48,7 +48,7 @@ router.get('/:id/trends', authenticate, requireTier(2), async (req: Request, res
 });
 
 // Venue profile updates
-router.put('/:id/profile', authenticate, requireTier(2), async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id/profile', authenticate, requireTier(2), requireVenueAccess, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const venue = await svc.updateVenueProfile(req.params.id as string, req.body);
     res.json({ data: venue });
@@ -56,11 +56,11 @@ router.put('/:id/profile', authenticate, requireTier(2), async (req: Request, re
 });
 
 // Staff
-router.get('/:id/staff', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id/staff', authenticate, requireVenueAccess, async (req: Request, res: Response, next: NextFunction) => {
   try { res.json({ data: await svc.getStaff(req.params.id as string) }); } catch (err) { next(err); }
 });
 
-router.post('/:id/staff', authenticate, requireTier(2), validate(z.object({
+router.post('/:id/staff', authenticate, requireTier(2), requireVenueAccess, validate(z.object({
   userId: z.string().uuid(), role: z.enum(['owner', 'manager', 'staff', 'security', 'dj']),
 })), async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -69,7 +69,7 @@ router.post('/:id/staff', authenticate, requireTier(2), validate(z.object({
   } catch (err) { next(err); }
 });
 
-router.delete('/:id/staff/:staffId', authenticate, requireTier(2), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id/staff/:staffId', authenticate, requireTier(2), requireVenueAccess, async (req: Request, res: Response, next: NextFunction) => {
   try { await svc.removeStaff(req.params.id as string, req.params.staffId as string); res.status(204).send(); } catch (err) { next(err); }
 });
 
@@ -94,7 +94,7 @@ router.get('/:id/specials', authenticate, async (req: Request, res: Response, ne
   try { res.json({ data: await svc.getSpecials(req.params.id as string) }); } catch (err) { next(err); }
 });
 
-router.post('/:id/specials', authenticate, requireTier(2), validate(z.object({
+router.post('/:id/specials', authenticate, requireTier(2), requireVenueAccess, validate(z.object({
   title: z.string().min(2).max(100),
   description: z.string().max(500).optional(),
   dayOfWeek: z.number().int().min(0).max(6).optional(),

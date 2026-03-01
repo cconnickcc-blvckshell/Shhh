@@ -28,7 +28,7 @@ Use these **phone numbers** to sign in after running the seed. Auth is **phone-b
 |------|--------|---------------|--------|
 | **Admin** | `+15550000001` | Alex & Jamie | Use for **Admin dashboard** (Command Center). Also a linked couple (with Kira), host, ID-verified, lifestyle. |
 | **Premium (Phantom)** | `+15550000004` | Jade | Active Phantom subscription (no ads, 3 personas, etc.). Use to test Premium screen and paywalled features. |
-| **Venue host** | `+15550000003` | Marcus & Nia | `is_host` true, hosts events, reference-verified. Also: Sasha & Dom `+15550000007`, Zara `+15550000010`, Nyx & Atlas `+15550000012`. |
+| **Venue host / Venue owner** | `+15550000003` | Marcus & Nia | `is_host` true, hosts events, reference-verified. After seed: **The Purple Room** is owned by this user — Me → **Venues** → tap venue for full Venue Dashboard (realtime, today, events, specials, staff). Tier 2+ required for “Venues” menu. Also hosts: Sasha & Dom `+15550000007`, Zara `+15550000010`, Nyx & Atlas `+15550000012`. |
 | **Normal user** | `+15550000008` | Kai | Photo-verified, social intent, no host, no premium. Good default “normal” account. |
 | **Curious (protected lane)** | `+15550000002` | Kira | Curious intent, `discovery_visible_to: social_and_curious`. Linked as partner to Alex & Jamie in seed. |
 | **New / unverified** | `+15550000013` | Lily | Tier 0, unverified, curious. Use to test onboarding and tier-gated flows. |

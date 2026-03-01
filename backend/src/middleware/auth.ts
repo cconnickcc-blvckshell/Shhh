@@ -46,6 +46,24 @@ export function requireTier(minTier: number) {
   };
 }
 
+/** Requires user to be venue owner or active staff for the venue in req.params.id. Use after authenticate. */
+export function requireVenueAccess(req: Request, _res: Response, next: NextFunction) {
+  const venueId = req.params.id as string;
+  const userId = req.user?.userId;
+  if (!userId) return next(createError(401, 'Authentication required'));
+  import('../config/database').then(({ query }) =>
+    query(
+      `SELECT 1 FROM venues WHERE id = $1 AND verified_owner_id = $2
+       UNION ALL
+       SELECT 1 FROM venue_staff WHERE venue_id = $1 AND user_id = $2 AND is_active = true`,
+      [venueId, userId]
+    )
+  ).then((result: { rows: unknown[] }) => {
+    if (!result.rows.length) return next(createError(403, 'Venue access required (owner or staff)'));
+    next();
+  }).catch(next);
+}
+
 /** Feature names from subscription tiers (e.g. expandedRadius, vault, reveal_l3). */
 export type FeatureName = 'anonymousBrowsing' | 'expandedRadius' | 'visibilitySchedule' | 'prioritySafety' | 'unlimitedAlbums' | 'vault' | 'reveal_l3';
 

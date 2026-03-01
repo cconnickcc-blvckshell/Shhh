@@ -4,6 +4,7 @@ import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
+import { AuthScreenBackground, AppIconImage } from '../../src/components/Backgrounds';
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState('');
@@ -20,27 +21,27 @@ export default function LoginScreen() {
       try {
         const result = await sendOTP(phone);
         if (result.devCode) {
-          Alert.alert('Dev Mode', `Your OTP code is: ${result.devCode}`, [
-            { text: 'OK', onPress: () => router.push({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login' } }) }
-          ]);
+          router.replace({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login', devCode: result.devCode } });
+          setTimeout(() => Alert.alert('Dev Mode', `Your OTP code is: ${result.devCode}\n\nEnter it below to continue.`, [{ text: 'OK' }]), 300);
         } else {
-          router.push({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login' } });
+          router.replace({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login' } });
         }
       } catch {}
     }
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.glow} />
-      <View style={styles.content}>
-        <View style={styles.logoWrap}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="finger-print" size={32} color={colors.primaryLight} />
+    <AuthScreenBackground>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.glow} />
+        <View style={styles.content}>
+          <View style={styles.logoWrap}>
+            <View style={styles.iconFrame}>
+              <AppIconImage size={72} />
+            </View>
+            <Text style={styles.logo}>Shhh</Text>
+            <Text style={styles.tagline}>YOUR SECRET IS SAFE</Text>
           </View>
-          <Text style={styles.logo}>Shhh</Text>
-          <Text style={styles.tagline}>YOUR SECRET IS SAFE</Text>
-        </View>
 
         <View style={styles.form}>
           <Text style={styles.label}>PHONE NUMBER</Text>
@@ -61,15 +62,16 @@ export default function LoginScreen() {
         </Link>
       </View>
     </KeyboardAvoidingView>
+    </AuthScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  glow: { position: 'absolute', top: -120, left: '50%', marginLeft: -150, width: 300, height: 300, borderRadius: 150, backgroundColor: colors.primaryGlow, opacity: 0.4 },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  glow: { position: 'absolute', top: -120, left: '50%', marginLeft: -150, width: 300, height: 300, borderRadius: 150, backgroundColor: 'rgba(147,51,234,0.12)', opacity: 0.6 },
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.xl, maxWidth: 420, width: '100%', alignSelf: 'center' },
   logoWrap: { alignItems: 'center', marginBottom: spacing.xxl },
-  iconCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.borderGlow, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md, ...shadows.glow },
+  iconFrame: { width: 72, height: 72, borderRadius: 14, overflow: 'hidden', backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.borderGlow, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md, ...shadows.glow },
   logo: { fontSize: 48, fontWeight: '900', color: colors.text, letterSpacing: -2 },
   tagline: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: spacing.xs, letterSpacing: 2, textTransform: 'uppercase' },
   form: { marginBottom: spacing.xl },

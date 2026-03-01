@@ -122,6 +122,23 @@ export class EventsService {
     return rows;
   }
 
+  /** Events the current user is hosting (for host dashboard). */
+  async getMyHostedEvents(userId: string) {
+    const result = await query(
+      `SELECT e.*, v.name as venue_name,
+              COUNT(er.user_id) FILTER (WHERE er.status IN ('going', 'checked_in')) as attendee_count
+       FROM events e
+       LEFT JOIN venues v ON e.venue_id = v.id
+       LEFT JOIN event_rsvps er ON e.id = er.event_id
+       WHERE e.host_user_id = $1
+       GROUP BY e.id, v.name
+       ORDER BY e.starts_at ASC
+       LIMIT 100`,
+      [userId]
+    );
+    return result.rows;
+  }
+
   async getEvent(eventId: string, options?: { userId?: string }) {
     const hasLocationRevealed = await query(
       `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'location_revealed_after_rsvp'`

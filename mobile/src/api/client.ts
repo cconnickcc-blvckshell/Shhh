@@ -97,10 +97,31 @@ export const messagingApi = {
 export const eventsApi = {
   nearby: (lat: number, lng: number) =>
     api<{ data: any[] }>(`/v1/events/nearby?lat=${lat}&lng=${lng}`),
+  getMyHosted: () => api<{ data: any[]; count: number }>('/v1/events/my'),
   create: (data: any) => api<{ data: any }>('/v1/events', { method: 'POST', body: JSON.stringify(data) }),
   get: (id: string) => api<{ data: any }>(`/v1/events/${id}`),
   rsvp: (id: string, status: string) =>
     api<{ data: any }>(`/v1/events/${id}/rsvp`, { method: 'POST', body: JSON.stringify({ status }) }),
+  setDoorCode: (id: string, code: string, expiresAt?: string) =>
+    api<{ data: any }>(`/v1/events/${id}/door-code`, { method: 'PUT', body: JSON.stringify({ code, expiresAt }) }),
+};
+
+export const venuesApi = {
+  getMyVenues: () => api<{ data: any[]; count: number }>('/v1/venues/my'),
+  getDashboard: (venueId: string) => api<{ data: any }>(`/v1/venues/${venueId}/dashboard`),
+  getAnalytics: (venueId: string, days = 30) => api<{ data: any[] }>(`/v1/venues/${venueId}/analytics?days=${days}`),
+  getStaff: (venueId: string) => api<{ data: any[] }>(`/v1/venues/${venueId}/staff`),
+  get: (id: string) => api<{ data: any }>(`/v1/venues/${id}`),
+  create: (data: { name: string; description?: string; lat: number; lng: number; type?: string; capacity?: number; amenities?: string[] }) =>
+    api<{ data: any }>('/v1/venues', { method: 'POST', body: JSON.stringify(data) }),
+  updateProfile: (venueId: string, data: Record<string, unknown>) =>
+    api<{ data: any }>(`/v1/venues/${venueId}/profile`, { method: 'PUT', body: JSON.stringify(data) }),
+  createSpecial: (venueId: string, data: { title: string; description?: string; dayOfWeek?: number; startTime?: string; endTime?: string; isRecurring?: boolean }) =>
+    api<{ data: any }>(`/v1/venues/${venueId}/specials`, { method: 'POST', body: JSON.stringify(data) }),
+  inviteStaff: (venueId: string, userId: string, role: string) =>
+    api<{ data: any }>(`/v1/venues/${venueId}/staff`, { method: 'POST', body: JSON.stringify({ userId, role }) }),
+  removeStaff: (venueId: string, staffId: string) =>
+    api(`/v1/venues/${venueId}/staff/${staffId}`, { method: 'DELETE' }),
 };
 
 export const safetyApi = {

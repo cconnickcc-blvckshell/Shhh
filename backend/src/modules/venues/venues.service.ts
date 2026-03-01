@@ -30,6 +30,25 @@ export class VenuesService {
     return result.rows[0];
   }
 
+  /** Venues the user owns or is staff of (for venue-enabled accounts). */
+  async getMyVenues(userId: string) {
+    const result = await query(
+      `SELECT DISTINCT v.id, v.name, v.description, v.tagline, v.lat, v.lng, v.type, v.capacity,
+              v.cover_photo_url, v.verified_owner_id, v.is_active, v.verified_safe_at, v.updated_at,
+              p.display_name as owner_name,
+              CASE WHEN v.verified_owner_id = $1 THEN 'owner' ELSE 'staff' END as my_role
+       FROM venues v
+       LEFT JOIN user_profiles p ON v.verified_owner_id = p.user_id
+       LEFT JOIN venue_staff vs ON v.id = vs.venue_id AND vs.user_id = $1 AND vs.is_active = true
+       WHERE v.verified_owner_id = $1 OR vs.id IS NOT NULL`,
+      [userId]
+    );
+    return result.rows.map((r: Record<string, unknown>) => ({
+      ...this._withVerifiedSafe(r),
+      myRole: r.my_role,
+    }));
+  }
+
   async getVenue(venueId: string) {
     const result = await query(
       `SELECT v.*, p.display_name as owner_name

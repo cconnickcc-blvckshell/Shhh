@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, useWindowDimensions, Vibration } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,17 +21,41 @@ const INTENT_ICONS: Record<string, string> = {
 export default function UserDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [profile, setProfile] = useState<any>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [whisperText, setWhisperText] = useState('');
   const [showWhisper, setShowWhisper] = useState(false);
   const [liked, setLiked] = useState(false);
   const { width } = useWindowDimensions();
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!id) return;
-    api<{ data: any }>(`/v1/users/${id}/profile`).then(r => setProfile(r.data)).catch(() => router.back());
+    setLoadError(null);
+    setLoading(true);
+    api<{ data: any }>(`/v1/users/${id}/profile`)
+      .then(r => { setProfile(r.data); setLoadError(null); })
+      .catch((err: any) => setLoadError(err?.message || 'Could not load profile.'))
+      .finally(() => setLoading(false));
   }, [id]);
 
-  if (!profile) return <View style={s.container}><View style={s.loadingWrap}><Ionicons name="hourglass-outline" size={24} color="rgba(255,255,255,0.2)" /></View></View>;
+  useEffect(() => { load(); }, [load]);
+
+  if (loading && !profile) {
+    return <View style={s.container}><View style={s.loadingWrap}><Ionicons name="hourglass-outline" size={24} color="rgba(255,255,255,0.2)" /></View></View>;
+  }
+  if (loadError && !profile) {
+    return (
+      <View style={s.container}>
+        <View style={s.errorWrap}>
+          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+          <Text style={s.errorMsg}>{loadError}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={load}><Text style={s.retryBtnText}>Try again</Text></TouchableOpacity>
+          <TouchableOpacity style={s.backLink} onPress={() => router.back()}><Text style={s.backLinkText}>Go back</Text></TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+  if (!profile) return null;
 
   const handleLike = async () => {
     if (!id) return;
@@ -199,6 +223,11 @@ export default function UserDetailScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 200 },
+  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 120 },
+  errorMsg: { color: colors.text, fontSize: 14, textAlign: 'center', marginTop: spacing.md },
+  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
+  retryBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  backLink: { marginTop: spacing.md, paddingVertical: 8 }, backLinkText: { color: colors.textMuted, fontSize: 14 },
   hero: { position: 'relative', backgroundColor: '#0A0A12' },
   backBtn: { position: 'absolute', top: 50, left: 16, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', zIndex: 10 },
   presenceBadge: { position: 'absolute', top: 50, right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, borderWidth: 1, zIndex: 10 },

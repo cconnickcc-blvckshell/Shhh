@@ -31,6 +31,7 @@ const verifiedSafeSchema = z.object({
 
 router.get('/nearby', authenticate, validate(nearbyQuerySchema, 'query'), ctrl.getNearby);
 router.get('/geofence-check', authenticate, validate(nearbyQuerySchema, 'query'), ctrl.checkGeofences);
+router.get('/my', authenticate, requireTier(2), ctrl.getMy);
 router.post('/', authenticate, requireTier(2), validate(createVenueSchema), ctrl.create);
 router.get('/:id', authenticate, ctrl.getOne);
 router.put('/:id', authenticate, ctrl.update);

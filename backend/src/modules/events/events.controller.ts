@@ -55,6 +55,15 @@ export class EventsController {
     }
   }
 
+  async getMyHosted(req: Request, res: Response, next: NextFunction) {
+    try {
+      const events = await eventsService.getMyHostedEvents(req.user!.userId);
+      res.json({ data: events, count: events.length });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getOne(req: Request, res: Response, next: NextFunction) {
     try {
       const event = await eventsService.getEvent(req.params.id as string, { userId: req.user!.userId });

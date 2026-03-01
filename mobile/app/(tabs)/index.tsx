@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Alert, TextInput, Vibration } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Alert, TextInput, Vibration, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { discoverApi, api } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { useAuthStore } from '../../src/stores/auth';
+import { useLocation } from '../../src/hooks/useLocation';
 import { colors, fontSize, spacing, borderRadius } from '../../src/constants/theme';
 
 interface NearbyUser {
@@ -34,9 +35,17 @@ const INTENT_ICONS: Record<string, { icon: string; label: string }> = {
 const RADIUS_OPTIONS = [5, 25, 50] as const;
 type SortMode = 'nearest' | 'active';
 
+const FALLBACK_LAT = 40.7128;
+const FALLBACK_LNG = -74.006;
+
 export default function DiscoverScreen() {
   const profile = useAuthStore((s) => s.profile);
+  const location = useLocation();
+  const lat = location.loading ? FALLBACK_LAT : location.latitude;
+  const lng = location.loading ? FALLBACK_LNG : location.longitude;
   const [users, setUsers] = useState<NearbyUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [whisperTarget, setWhisperTarget] = useState<string | null>(null);
   const [whisperText, setWhisperText] = useState('');
@@ -51,17 +60,28 @@ export default function DiscoverScreen() {
   const primaryIntent = profile?.primaryIntent ?? undefined;
 
   const load = useCallback(async () => {
+    setLoadError(null);
     try {
-      await discoverApi.updateLocation(40.7128, -74.006);
-      const res = await discoverApi.nearby(40.7128, -74.006, radiusKm, primaryIntent);
+      await discoverApi.updateLocation(lat, lng);
+      const res = await discoverApi.nearby(lat, lng, radiusKm, primaryIntent);
       let list = (res.data as NearbyUser[]).sort((a, b) => a.distance - b.distance);
       if (verifiedOnly) list = list.filter((u) => u.verificationStatus && u.verificationStatus !== 'unverified');
       setUsers(list);
-    } catch {}
-  }, [radiusKm, primaryIntent, verifiedOnly]);
+    } catch (err: any) {
+      setLoadError(err?.message || 'Something went wrong. Pull down to try again.');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [lat, lng, radiusKm, primaryIntent, verifiedOnly]);
 
-  useEffect(() => { load(); }, [load]);
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+  useEffect(() => {
+    if (!location.loading) {
+      setLoading(true);
+      load();
+    }
+  }, [load, location.loading]);
+  const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); setRefreshing(false); };
 
   const sortedUsers = useMemo(() => {
     if (sortMode === 'active') {
@@ -193,6 +213,20 @@ export default function DiscoverScreen() {
         </View>
       </View>
 
+      {loading && users.length === 0 ? (
+        <View style={s.centerLoad}>
+          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <Text style={s.loadText}>Finding people nearby...</Text>
+        </View>
+      ) : loadError && users.length === 0 ? (
+        <View style={s.errorBox}>
+          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+          <Text style={s.errorText}>{loadError}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }}>
+            <Text style={s.retryBtnText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
       <FlatList
         data={sortedUsers}
         keyExtractor={i => i.userId}
@@ -210,12 +244,13 @@ export default function DiscoverScreen() {
           </View>
         }
       />
+      )}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   filterBar: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, paddingBottom: spacing.xs, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.06)' },
   radiusRow: { flexDirection: 'row', gap: 6 },
   radiusChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: borderRadius.full, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
@@ -251,6 +286,12 @@ const s = StyleSheet.create({
   whisperInput: { flex: 1, color: '#fff', fontSize: 14 },
   whisperSend: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   whisperClose: { padding: 4 },
+  centerLoad: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  loadText: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.md },
+  errorBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 80 },
+  errorText: { color: colors.text, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.md },
+  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
+  retryBtnText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
   empty: { alignItems: 'center', paddingTop: 160 },
   emptyGlow: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(147,51,234,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },

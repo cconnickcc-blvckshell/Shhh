@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { messagingApi } from '../../src/api/client';
@@ -27,11 +27,48 @@ function timeAgo(d: string | null | undefined): string {
 
 export default function MessagesScreen() {
   const [convos, setConvos] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => { try { const r = await messagingApi.getConversations(); setConvos(r.data); } catch {} }, []);
+  const load = useCallback(async () => {
+    setLoadError(null);
+    try {
+      const r = await messagingApi.getConversations();
+      setConvos(r.data);
+    } catch (err: any) {
+      setLoadError(err?.message || 'Something went wrong. Pull down to try again.');
+      setConvos([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   useEffect(() => { load(); }, [load]);
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+  const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); setRefreshing(false); };
+
+  if (loading && convos.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centerLoad}>
+          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <Text style={styles.loadText}>Loading conversations...</Text>
+        </View>
+      </View>
+    );
+  }
+  if (loadError && convos.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorBox}>
+          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+          <Text style={styles.errorText}>{loadError}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }}>
+            <Text style={styles.retryBtnText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -78,7 +115,13 @@ export default function MessagesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  centerLoad: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  loadText: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.md },
+  errorBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 80 },
+  errorText: { color: colors.text, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.md },
+  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
+  retryBtnText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: 14 },
   avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md, position: 'relative' },
   onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.online, borderWidth: 2, borderColor: colors.background },

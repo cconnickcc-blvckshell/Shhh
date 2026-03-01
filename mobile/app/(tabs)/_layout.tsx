@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet } from 'react-native';
 import { colors, fontSize } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/stores/auth';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
 
 export default function TabLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -19,17 +20,24 @@ export default function TabLayout() {
   }
 
   return (
+    <PremiumDarkBackground style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: '#050508', elevation: 0, shadowOpacity: 0, borderBottomWidth: 0.5, borderBottomColor: 'rgba(147,51,234,0.1)' },
+        sceneStyle: { backgroundColor: 'transparent' },
+        contentStyle: { backgroundColor: 'transparent' },
+        headerStyle: { backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0, borderBottomWidth: 0.5, borderBottomColor: 'rgba(147,51,234,0.15)' },
         headerTitleStyle: { color: colors.text, fontWeight: '700', fontSize: fontSize.lg },
         tabBarStyle: {
-          backgroundColor: '#050508',
+          backgroundColor: 'transparent',
           borderTopWidth: 0.5,
-          borderTopColor: 'rgba(147,51,234,0.15)',
+          borderTopColor: 'rgba(147,51,234,0.2)',
           height: 64,
           paddingBottom: 8,
           paddingTop: 8,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
         },
         tabBarActiveTintColor: colors.primaryLight,
         tabBarInactiveTintColor: 'rgba(255,255,255,0.3)',
@@ -87,6 +95,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </PremiumDarkBackground>
   );
 }
 

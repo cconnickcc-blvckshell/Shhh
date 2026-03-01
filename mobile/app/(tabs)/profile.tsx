@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/auth';
@@ -40,10 +41,37 @@ const mStyles = StyleSheet.create({
 });
 
 export default function ProfileScreen() {
-  const { profile, logout } = useAuthStore();
-  const handlePanic = () => Alert.alert('Emergency Alert', 'Send panic alert to emergency contacts with your location?', [
+  const { profile, logout, loadProfile, isAuthenticated } = useAuthStore();
+  useEffect(() => {
+    if (isAuthenticated && !profile) loadProfile();
+  }, [isAuthenticated, profile, loadProfile]);
+
+  if (!profile) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.profileLoad}>
+          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <Text style={styles.profileLoadText}>Loading profile...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const handlePanic = () => Alert.alert('Emergency Alert', 'Record a panic alert with your location? (Emergency contact notification is not yet active.)', [
     { text: 'Cancel', style: 'cancel' },
-    { text: 'SEND ALERT', style: 'destructive', onPress: () => safetyApi.panic(40.7128, -74.006) },
+    {
+      text: 'SEND ALERT',
+      style: 'destructive',
+      onPress: async () => {
+        try {
+          const res = await safetyApi.panic(40.7128, -74.006) as { data?: { message?: string; contactsNotified?: number } };
+          const msg = res?.data?.message || (res?.data?.contactsNotified ? 'Alert sent. Your emergency contacts have been notified.' : 'Alert recorded. Emergency contact notification is not yet active.');
+          Alert.alert('Alert Recorded', msg);
+        } catch {
+          Alert.alert('Error', 'Could not send alert. Try again.');
+        }
+      },
+    },
   ]);
 
   return (
@@ -78,6 +106,18 @@ export default function ProfileScreen() {
         <MenuItem icon="radio-outline" label="Your Status" onPress={() => router.push('/profile/status')} badge="Live" accent />
         <View style={styles.div} />
         <MenuItem icon="create-outline" label="Edit Profile" onPress={() => router.push('/profile/edit')} />
+        {profile?.isHost && (
+          <>
+            <View style={styles.div} />
+            <MenuItem icon="home" label="Hosting" onPress={() => router.push('/profile/hosting')} accent />
+          </>
+        )}
+        {(profile?.verificationTier ?? 0) >= 2 && (
+          <>
+            <View style={styles.div} />
+            <MenuItem icon="business" label="Venues" onPress={() => router.push('/profile/venues')} accent />
+          </>
+        )}
         <View style={styles.div} />
         <MenuItem icon="images-outline" label="My Albums" onPress={() => router.push('/album')} />
         <View style={styles.div} />
@@ -110,8 +150,10 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  hero: { alignItems: 'center', paddingTop: 30, paddingBottom: 24, backgroundColor: colors.surface },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  profileLoad: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  profileLoadText: { color: colors.textMuted, fontSize: 14, marginTop: spacing.md },
+  hero: { alignItems: 'center', paddingTop: 30, paddingBottom: 24, backgroundColor: 'rgba(14,11,22,0.85)', marginHorizontal: 16, marginTop: 8, borderRadius: 16, overflow: 'hidden' },
   name: { color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 16, letterSpacing: -0.5 },
   bio: { color: 'rgba(255,255,255,0.55)', fontSize: 14, marginTop: 6, textAlign: 'center', maxWidth: 260, lineHeight: 20 },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 18 },
@@ -119,7 +161,7 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: { backgroundColor: 'rgba(147,51,234,0.12)', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 0.5, borderColor: 'rgba(147,51,234,0.25)' },
   tagText: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
-  menuCard: { backgroundColor: colors.surface, marginHorizontal: 16, borderRadius: 16, overflow: 'hidden', marginBottom: 16 },
+  menuCard: { backgroundColor: 'rgba(14,11,22,0.9)', marginHorizontal: 16, borderRadius: 16, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(147,51,234,0.12)' },
   div: { height: 0.5, backgroundColor: 'rgba(255,255,255,0.06)', marginLeft: 64 },
   panicBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#DC2626', marginHorizontal: 16, padding: 16, borderRadius: 14, marginBottom: 10 },
   panicText: { color: '#fff', fontSize: 15, fontWeight: '700' },

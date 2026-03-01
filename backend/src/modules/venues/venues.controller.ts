@@ -4,6 +4,13 @@ import { VenuesService } from './venues.service';
 const svc = new VenuesService();
 
 export class VenuesController {
+  async getMy(req: Request, res: Response, next: NextFunction) {
+    try {
+      const venues = await svc.getMyVenues(req.user!.userId);
+      res.json({ data: venues, count: venues.length });
+    } catch (err) { next(err); }
+  }
+
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const venue = await svc.createVenue(req.user!.userId, req.body);
