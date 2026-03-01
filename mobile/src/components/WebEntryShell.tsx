@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../constants/theme';
 import { BrandMark } from './BrandMark';
+import { SurfaceCard, PrimaryCTA, SecondaryAction } from './ui';
 
 const MAX_WIDTH = 1100;
 const HERO_FEATURES = [
@@ -62,17 +63,16 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
           {/* Grid: hero (left) + side card (right) */}
           <View style={[styles.grid, isNarrow && styles.gridStack]}>
             {/* Hero card */}
-            <View style={styles.hero}>
+            <SurfaceCard style={styles.hero}>
               <View style={styles.heroGlow} />
               <View style={styles.kicker}>
                 <View style={styles.spark} />
                 <Text style={styles.kickerText}>Where consent meets curiosity</Text>
               </View>
-              <Text style={styles.h1}>
-                A lifestyle community for{' '}
-                <Text style={styles.h1Plum}>couples</Text>, <Text style={styles.h1Gold}>singles</Text>, and{' '}
-                <Text style={styles.h1Plum}>explorers</Text>.
-              </Text>
+              <View style={styles.h1Wrap}>
+                <Text style={styles.h1}>A lifestyle community for</Text>
+                <Text style={styles.h1Accent}>couples, singles, and explorers.</Text>
+              </View>
               <Text style={styles.sub}>
                 Built for real connections — discreet discovery, consent-first interactions, and events & venues that pull the community together.
               </Text>
@@ -88,38 +88,18 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
               <Text style={styles.fineprint}>
                 Launching first in Ontario. Join the list to get early access, venue drops, and beta invites.
               </Text>
-            </View>
+            </SurfaceCard>
 
             {/* Side card: Enter + Learn */}
-            <View style={styles.card}>
+            <SurfaceCard style={styles.card}>
               <View style={styles.cardInner}>
                 <Text style={styles.cardTitle}>Get early access</Text>
                 <Text style={styles.cardP}>
                   Enter to sign in with your phone and join the community. Discreet. Verified. Consent-first.
                 </Text>
                 <View style={styles.ctaCol}>
-                  <Pressable
-                    style={({ pressed }) => [styles.enterBtn, pressed && styles.enterBtnPressed]}
-                    onPress={onEnter}
-                    accessibilityRole="button"
-                    accessibilityLabel="Enter Shhh"
-                  >
-                    <LinearGradient
-                      colors={['rgba(124,43,255,0.95)', 'rgba(179,92,255,0.65)']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFill}
-                    />
-                    <Text style={styles.enterBtnText}>Enter</Text>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [styles.learnBtn, pressed && styles.learnBtnPressed]}
-                    onPress={() => setLearnOpen(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Learn how it works"
-                  >
-                    <Text style={styles.learnBtnText}>Learn how it works</Text>
-                  </Pressable>
+                  <PrimaryCTA label="Enter" onPress={onEnter} accessibilityLabel="Enter Shhh" />
+                  <SecondaryAction label="Learn how it works" onPress={() => setLearnOpen(true)} accessibilityLabel="Learn how it works" />
                 </View>
                 <Text style={styles.fineprintCard}>
                   By joining, you agree to our terms. <Text style={styles.fineprintBold}>18+ only.</Text>
@@ -128,7 +108,7 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
                   <Text style={styles.linksLabel}>Consent-first. No harassment. No minors.</Text>
                 </View>
               </View>
-            </View>
+            </SurfaceCard>
           </View>
         </View>
       </ScrollView>
@@ -174,8 +154,8 @@ const styles = StyleSheet.create({
     width: 400,
     height: 400,
     borderRadius: 200,
-    backgroundColor: 'rgba(124,43,255,0.18)',
-    opacity: 0.9,
+    backgroundColor: 'rgba(124,43,255,0.08)',
+    opacity: 0.6,
   },
   glowPlum2: {
     position: 'absolute',
@@ -184,8 +164,8 @@ const styles = StyleSheet.create({
     width: 350,
     height: 350,
     borderRadius: 175,
-    backgroundColor: 'rgba(179,92,255,0.12)',
-    opacity: 0.9,
+    backgroundColor: 'rgba(179,92,255,0.06)',
+    opacity: 0.5,
   },
   glowGold: {
     position: 'absolute',
@@ -194,8 +174,8 @@ const styles = StyleSheet.create({
     width: 400,
     height: 400,
     borderRadius: 200,
-    backgroundColor: 'rgba(212,175,55,0.08)',
-    opacity: 0.9,
+    backgroundColor: 'rgba(212,175,55,0.04)',
+    opacity: 0.5,
   },
   wrap: {
     marginHorizontal: 'auto',
@@ -268,16 +248,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentGold,
   },
   kickerText: { fontSize: 12, color: colors.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
+  h1Wrap: { marginTop: 16, marginBottom: 10 },
   h1: {
-    marginTop: 16,
-    marginBottom: 10,
     fontSize: 32,
-    lineHeight: 1.2,
+    lineHeight: 1.3,
     color: colors.text,
     fontWeight: '700',
   },
-  h1Plum: { color: 'rgba(179,92,255,0.95)' },
-  h1Gold: { color: 'rgba(212,175,55,0.9)' },
+  h1Accent: {
+    fontSize: 32,
+    lineHeight: 1.3,
+    fontWeight: '800',
+    color: colors.text,
+    marginTop: 4,
+  },
   sub: {
     fontSize: 16,
     lineHeight: 1.55,

@@ -1,16 +1,43 @@
-import { useEffect, useMemo } from 'react';
-import { Tabs, router, usePathname } from 'expo-router';
+import { useEffect } from 'react';
+import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { colors, fontSize, layout, spacing } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/stores/auth';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
+import { AppShell } from '../../src/components/AppShell';
 import { WebSidebar } from '../../src/components/WebSidebar';
+import { DesktopTabProvider, useDesktopTab, type DesktopTabId } from '../../src/contexts/DesktopTabContext';
 import DiscoverScreen from './index';
 import MessagesScreen from './messages';
 import EventsScreen from './events';
 import ProfileScreen from './profile';
+
+const TAB_SCREENS: Record<DesktopTabId, React.ComponentType> = {
+  explore: DiscoverScreen,
+  messages: MessagesScreen,
+  events: EventsScreen,
+  profile: ProfileScreen,
+};
+
+const TAB_TITLES: Record<DesktopTabId, string> = {
+  explore: 'Explore',
+  messages: 'Chat',
+  events: 'Events',
+  profile: 'Me',
+};
+
+function DesktopShellWithTabs() {
+  const { activeTab, setActiveTab } = useDesktopTab()!;
+  return (
+    <AppShell sidebar={<WebSidebar activeTab={activeTab} onSelectTab={setActiveTab} />}>
+      <View style={styles.tabsWrap}>
+        <DesktopTabContent />
+      </View>
+    </AppShell>
+  );
+}
 
 const TAB_OPTIONS = {
   sceneStyle: { backgroundColor: 'transparent', flex: 1 },
@@ -35,15 +62,10 @@ const TAB_OPTIONS = {
 };
 
 function DesktopTabContent() {
-  const pathname = usePathname();
-  const { Screen, title } = useMemo(() => {
-    if (pathname === '/(tabs)' || pathname === '/(tabs)/') return { Screen: DiscoverScreen, title: 'Explore' };
-    if (pathname?.startsWith('/(tabs)/messages')) return { Screen: MessagesScreen, title: 'Chat' };
-    if (pathname?.startsWith('/(tabs)/events')) return { Screen: EventsScreen, title: 'Events' };
-    if (pathname?.startsWith('/(tabs)/profile')) return { Screen: ProfileScreen, title: 'Me' };
-    return { Screen: DiscoverScreen, title: 'Explore' };
-  }, [pathname]);
-  const showHeader = title !== 'Explore';
+  const { activeTab } = useDesktopTab()!;
+  const Screen = TAB_SCREENS[activeTab];
+  const title = TAB_TITLES[activeTab];
+  const showHeader = activeTab !== 'explore';
   return (
     <>
       {showHeader && (
@@ -134,21 +156,12 @@ export default function TabLayout() {
     </Tabs>
   );
 
-  // Desktop: render one tab at a time by pathname so nothing stacks.
+  // Desktop: state-driven tab (Phase 3). AppShell enforces premium frame (Phase 1).
   if (showSidebar) {
     return (
-      <PremiumDarkBackground style={styles.flex1}>
-        <View style={styles.webRow}>
-          <WebSidebar />
-          <View style={styles.contentWrap}>
-            <View style={styles.contentInner}>
-              <View style={styles.tabsWrap}>
-                <DesktopTabContent />
-              </View>
-            </View>
-          </View>
-        </View>
-      </PremiumDarkBackground>
+      <DesktopTabProvider>
+        <DesktopShellWithTabs />
+      </DesktopTabProvider>
     );
   }
 

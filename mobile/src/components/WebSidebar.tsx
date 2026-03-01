@@ -1,46 +1,35 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
-import { usePathname, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, layout } from '../constants/theme';
 import { BrandMark } from './BrandMark';
+import type { DesktopTabId } from '../contexts/DesktopTabContext';
 
-const NAV_ITEMS: { route: string; label: string; icon: keyof typeof Ionicons.glyphMap; iconOutline: keyof typeof Ionicons.glyphMap }[] = [
-  { route: '/(tabs)', label: 'Explore', icon: 'grid', iconOutline: 'grid-outline' },
-  { route: '/(tabs)/messages', label: 'Chat', icon: 'chatbubble-ellipses', iconOutline: 'chatbubble-ellipses-outline' },
-  { route: '/(tabs)/events', label: 'Events', icon: 'flame', iconOutline: 'flame-outline' },
-  { route: '/(tabs)/profile', label: 'Me', icon: 'person-circle', iconOutline: 'person-circle-outline' },
+const NAV_ITEMS: { tab: DesktopTabId; label: string; icon: keyof typeof Ionicons.glyphMap; iconOutline: keyof typeof Ionicons.glyphMap }[] = [
+  { tab: 'explore', label: 'Explore', icon: 'grid', iconOutline: 'grid-outline' },
+  { tab: 'messages', label: 'Chat', icon: 'chatbubble-ellipses', iconOutline: 'chatbubble-ellipses-outline' },
+  { tab: 'events', label: 'Events', icon: 'flame', iconOutline: 'flame-outline' },
+  { tab: 'profile', label: 'Me', icon: 'person-circle', iconOutline: 'person-circle-outline' },
 ];
 
 /**
- * Desktop web sidebar navigation. Shown only when useBreakpoint().showSidebar is true.
- * Single source of truth for active tab: pathname. Keyboard-accessible.
- * @see docs/SOFT_LAUNCH_WEB_PLAN.md §4.1
+ * Desktop web sidebar. Active tab is state-driven (DesktopTabContext), not pathname.
+ * @see FRONTEND_STYLING_AND_ISSUES_HANDOVER.md Phase 3
  */
-export function WebSidebar() {
-  const pathname = usePathname();
-
-  const isActive = (item: (typeof NAV_ITEMS)[number]) => {
-    if (item.route === '/(tabs)') return pathname === '/(tabs)' || pathname === '/(tabs)/';
-    return pathname === item.route || pathname.startsWith(item.route + '/');
-  };
-
+export function WebSidebar({ activeTab, onSelectTab }: { activeTab: DesktopTabId; onSelectTab: (tab: DesktopTabId) => void }) {
   return (
     <View style={styles.sidebar} role="navigation" aria-label="Main navigation">
       <View style={styles.brandWrap}>
         <BrandMark compact />
       </View>
-      {NAV_ITEMS.map((item) => {
-        const active = isActive(item);
-        return (
-          <SidebarItem
-            key={item.route}
-            item={item}
-            active={active}
-            onPress={() => router.replace(item.route as any)}
-          />
-        );
-      })}
+      {NAV_ITEMS.map((item) => (
+        <SidebarItem
+          key={item.tab}
+          item={item}
+          active={activeTab === item.tab}
+          onPress={() => onSelectTab(item.tab)}
+        />
+      ))}
       <View style={styles.trustWrap}>
         <Text style={styles.trustText}>Private · Verified · Safe</Text>
       </View>
