@@ -9,9 +9,13 @@ import { useLocation } from '../../src/hooks/useLocation';
 import { colors, fontSize, spacing, borderRadius, shadows, layout } from '../../src/constants/theme';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { useHover } from '../../src/hooks/useHover';
+import { BrandMark } from '../../src/components/BrandMark';
 
 /** Max width per discover tile on desktop so photos don't blow up. */
 const MAX_TILE_WIDTH_DESKTOP = 300;
+/** Grid gap on desktop for breathing room; mobile stays compact. */
+const GAP_MOBILE = 6;
+const GAP_DESKTOP = 16;
 
 interface NearbyUser {
   userId: string; displayName: string; bio: string; distance: number;
@@ -19,8 +23,6 @@ interface NearbyUser {
   gender: string | null; photosJson: string[];
   presenceState: string | null; activeIntents: string[];
 }
-
-const GAP = 1.5;
 
 function formatDist(m: number): string { return m < 1000 ? `${Math.abs(m)}m` : `${(Math.abs(m) / 1000).toFixed(1)}km`; }
 
@@ -147,10 +149,11 @@ export default function DiscoverScreen() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('nearest');
   const { width } = useWindowDimensions();
-  const { isDesktop } = useBreakpoint();
+  const { isDesktop, showSidebar } = useBreakpoint();
+  const gap = isDesktop ? GAP_DESKTOP : GAP_MOBILE;
   const cols = isDesktop ? 3 : width > 500 ? 3 : 2;
   const contentWidth = isDesktop ? Math.min(width, layout.contentMaxWidth) : width;
-  const rawTileW = (contentWidth - GAP * (cols + 1)) / cols;
+  const rawTileW = (contentWidth - gap * (cols + 1)) / cols;
   const tileW = isDesktop ? Math.min(rawTileW, MAX_TILE_WIDTH_DESKTOP) : rawTileW;
   const tileH = tileW * 1.45;
 
@@ -214,7 +217,7 @@ export default function DiscoverScreen() {
       tileH={tileH}
       onPress={() => router.push(`/user/${item.userId}`)}
       onLongPress={() => handleLongPress(item)}
-      tileStyle={s.tile}
+      tileStyle={[s.tile, { marginBottom: gap }, isDesktop && { borderRadius: borderRadius.xl }]}
       presenceBar={s.presenceBar}
       topRow={s.topRow}
       hostBadge={s.hostBadge}
@@ -247,6 +250,14 @@ export default function DiscoverScreen() {
               <Ionicons name="close" size={16} color="rgba(255,255,255,0.4)" />
             </TouchableOpacity>
           </View>
+        </View>
+      )}
+
+      {/* Desktop hero: brand + tagline (coming-soon style) */}
+      {showSidebar && (
+        <View style={s.hero}>
+          <BrandMark />
+          <Text style={s.heroTagline}>Where consent meets curiosity.</Text>
         </View>
       )}
 
@@ -300,8 +311,8 @@ export default function DiscoverScreen() {
         renderItem={renderTile}
         numColumns={cols}
         key={`g${cols}`}
-        columnWrapperStyle={{ gap: GAP }}
-        contentContainerStyle={{ paddingHorizontal: GAP / 2, paddingTop: GAP / 2 }}
+        columnWrapperStyle={{ gap }}
+        contentContainerStyle={{ paddingHorizontal: gap, paddingTop: gap, paddingBottom: gap }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primaryLight} />}
         ListEmptyComponent={
           <View style={s.empty}>
@@ -318,6 +329,20 @@ export default function DiscoverScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  heroTagline: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    letterSpacing: 0.5,
+  },
   filterBar: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, paddingBottom: spacing.xs, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.06)' },
   radiusRow: { flexDirection: 'row', gap: 6 },
   radiusChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: borderRadius.full, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
@@ -333,7 +358,7 @@ const s = StyleSheet.create({
   sortChipActive: { backgroundColor: colors.primaryLight, borderColor: colors.primaryLight },
   sortChipText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: '600' },
   sortChipTextActive: { color: colors.background },
-  tile: { marginBottom: GAP, overflow: 'hidden', position: 'relative', backgroundColor: '#0A0A12' },
+  tile: { marginBottom: 0, overflow: 'hidden', position: 'relative', backgroundColor: '#0A0A12' },
   presenceBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, zIndex: 5 },
   topRow: { position: 'absolute', top: 6, left: 8, flexDirection: 'row', gap: 4, zIndex: 5 },
   hostBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#FBBF24', paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },

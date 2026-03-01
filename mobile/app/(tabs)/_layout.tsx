@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { colors, fontSize, layout } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/stores/auth';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
@@ -9,7 +9,7 @@ import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { WebSidebar } from '../../src/components/WebSidebar';
 
 const TAB_OPTIONS = {
-  sceneStyle: { backgroundColor: 'transparent' },
+  sceneStyle: { backgroundColor: 'transparent', flex: 1 },
   contentStyle: { backgroundColor: 'transparent' },
   headerStyle: { backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0, borderBottomWidth: 0.5, borderBottomColor: 'rgba(147,51,234,0.15)' },
   headerTitleStyle: { color: colors.text, fontWeight: '700', fontSize: fontSize.lg },
@@ -113,7 +113,7 @@ export default function TabLayout() {
           <WebSidebar />
           <View style={styles.contentWrap}>
             <View style={styles.contentInner}>
-              {tabs}
+              <View style={styles.tabsWrap}>{tabs}</View>
             </View>
           </View>
         </View>
@@ -148,10 +148,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     minWidth: 0,
+    minHeight: 0,
+    ...(Platform.OS === 'web' && { overflow: 'hidden' as const }),
   },
   contentInner: {
     width: '100%',
     maxWidth: layout.contentMaxWidth,
     flex: 1,
+    minHeight: 0,
+    ...(Platform.OS === 'web' && { overflow: 'hidden' as const }),
   },
+  tabsWrap: { flex: 1, minHeight: 0 },
 });

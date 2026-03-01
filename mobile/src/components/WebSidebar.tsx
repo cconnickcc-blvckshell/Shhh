@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { usePathname, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, layout } from '../constants/theme';
+import { BrandMark } from './BrandMark';
 
 const NAV_ITEMS: { route: string; label: string; icon: keyof typeof Ionicons.glyphMap; iconOutline: keyof typeof Ionicons.glyphMap }[] = [
   { route: '/(tabs)', label: 'Explore', icon: 'grid', iconOutline: 'grid-outline' },
@@ -26,6 +27,9 @@ export function WebSidebar() {
 
   return (
     <View style={styles.sidebar} role="navigation" aria-label="Main navigation">
+      <View style={styles.brandWrap}>
+        <BrandMark compact />
+      </View>
       {NAV_ITEMS.map((item) => {
         const active = isActive(item);
         return (
@@ -88,6 +92,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.sm,
   },
+  brandWrap: { paddingHorizontal: spacing.sm, marginBottom: spacing.md },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
