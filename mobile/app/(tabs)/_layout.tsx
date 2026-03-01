@@ -74,7 +74,7 @@ function DesktopTabContent() {
         </View>
       )}
       <View style={desktopStyles.screenWrap}>
-        <Screen />
+        <Screen key={activeTab} />
       </View>
     </>
   );
