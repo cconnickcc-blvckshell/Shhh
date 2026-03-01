@@ -237,7 +237,30 @@ This separates “premium, consent-first” from “sleazy hookup” perception.
 - **Hero:** `shhh.hero.png` — hero image (purple glow, intimate scene). Same location; use as main visual on the Entry Shell.
 - If assets are provided elsewhere (e.g. workspace `assets/` with names like `c__Projects_Shhh_images_Shh.logo.on.black.png`), copy them into `mobile/assets/images/` with simpler names (e.g. `logo-wordmark.png`, `hero.png`) for easier imports and document the mapping here.
 
-## 10. Next steps after review
+## 10. Deploying to Vercel (why you saw 404)
+
+Vercel shows **“Ready”** when the deploy step runs, but **“No framework detected”** means it didn’t build your app — it deployed the repo root (or a default), so you get **404** when opening the URL.
+
+**Fix: point Vercel at the Expo web app and use a static export.**
+
+1. **In Vercel → Project → Settings → General**
+   - Set **Root Directory** to **`mobile`** (so the app that gets built is the Expo app).
+   - Save.
+
+2. **Build settings** (Vercel can read these from `mobile/vercel.json` if root is `mobile`):
+   - **Build Command:** `npm run build` (runs `expo export --platform web`).
+   - **Output Directory:** `dist`.
+
+3. **In the repo** (already done):
+   - `mobile/app.json`: `expo.web.output` = `"static"`.
+   - `mobile/package.json`: script `"build": "expo export --platform web"`.
+   - `mobile/vercel.json`: `buildCommand`, `outputDirectory`, and SPA rewrites so routes serve `index.html`.
+
+4. **Redeploy:** Push a commit or trigger a redeploy. Vercel will build from `mobile/`, run `npm run build`, and serve the contents of `mobile/dist/`. The preview URL should then render the app instead of 404.
+
+5. **Production API:** Set env var **`EXPO_PUBLIC_API_URL`** in Vercel to your backend URL (e.g. `https://api.yourdomain.com`) so the web app talks to your API.
+
+## 11. Next steps after review
 
 1. **Stakeholder sign-off** on: one codebase, sidebar on web, **mandatory Entry Shell**, layout lock, one signature interaction, trust signals.
 2. **Implement Phase 1** (layout + sidebar + signature layout constraint); validate in browser.
