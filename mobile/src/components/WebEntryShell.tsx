@@ -69,10 +69,9 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
                 <View style={styles.spark} />
                 <Text style={styles.kickerText}>Where consent meets curiosity</Text>
               </View>
-              <View style={styles.h1Wrap}>
-                <Text style={styles.h1}>A lifestyle community for</Text>
-                <Text style={styles.h1Accent}>couples, singles, and explorers.</Text>
-              </View>
+              <Text style={styles.h1} numberOfLines={3}>
+                A lifestyle community for couples, singles, and explorers.
+              </Text>
               <Text style={styles.sub}>
                 Built for real connections — discreet discovery, consent-first interactions, and events & venues that pull the community together.
               </Text>
@@ -101,9 +100,10 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
                   <PrimaryCTA label="Enter" onPress={onEnter} accessibilityLabel="Enter Shhh" />
                   <SecondaryAction label="Learn how it works" onPress={() => setLearnOpen(true)} accessibilityLabel="Learn how it works" />
                 </View>
-                <Text style={styles.fineprintCard}>
-                  By joining, you agree to our terms. <Text style={styles.fineprintBold}>18+ only.</Text>
-                </Text>
+                <View style={styles.fineprintRow}>
+                  <Text style={styles.fineprintCard}>By joining, you agree to our terms. </Text>
+                  <Text style={styles.fineprintBold}>18+ only.</Text>
+                </View>
                 <View style={styles.links}>
                   <Text style={styles.linksLabel}>Consent-first. No harassment. No minors.</Text>
                 </View>
@@ -248,19 +248,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentGold,
   },
   kickerText: { fontSize: 12, color: colors.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
-  h1Wrap: { marginTop: 16, marginBottom: 10 },
   h1: {
-    fontSize: 32,
-    lineHeight: 1.3,
+    marginTop: 16,
+    marginBottom: 14,
+    fontSize: 28,
+    lineHeight: 36,
     color: colors.text,
     fontWeight: '700',
-  },
-  h1Accent: {
-    fontSize: 32,
-    lineHeight: 1.3,
-    fontWeight: '800',
-    color: colors.text,
-    marginTop: 4,
   },
   sub: {
     fontSize: 16,
@@ -332,8 +326,9 @@ const styles = StyleSheet.create({
   },
   learnBtnPressed: { opacity: 0.85 },
   learnBtnText: { color: colors.primaryLight, fontSize: fontSize.md, fontWeight: '600' },
-  fineprintCard: { fontSize: 12, color: colors.textMuted, lineHeight: 1.45, marginTop: 12 },
-  fineprintBold: { color: colors.text, fontWeight: '700' },
+  fineprintRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 },
+  fineprintCard: { fontSize: 12, color: colors.textMuted, lineHeight: 18 },
+  fineprintBold: { fontSize: 12, color: colors.text, fontWeight: '700', lineHeight: 18 },
   links: { marginTop: 14 },
   linksLabel: { fontSize: 11, color: colors.textMuted },
   modalBackdrop: {
