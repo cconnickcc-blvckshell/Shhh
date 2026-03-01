@@ -71,12 +71,12 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 
 ---
 
-### 3.1 (auth)/index — Login
+### 3.1 (auth)/index — Login (and Web Entry Shell)
 
 | Field | Description |
 |-------|-------------|
-| **Intent** | Authenticate existing user by phone; lead into OTP or (dev) direct login. |
-| **Entry points** | App cold start when not authenticated; link from Register "Already a member? Log in". |
+| **Intent** | On web: first show Entry Shell (tone, “Enter”, “Learn how it works”); then login. On native: authenticate by phone; lead into OTP or (dev) direct login. |
+| **Entry points** | App cold start when not authenticated; link from Register "Already a member? Log in". On web, Entry Shell is the first view; “Enter” reveals login form. |
 | **Exit paths** | Success: navigate to `/(auth)/verify-code` (params: phone, mode: 'login') or, in dev with devCode, alert then same; or direct to `/(tabs)` if login(phone) succeeds. Link to `/(auth)/register`. |
 | **Data dependencies (API)** | POST `/v1/auth/login` (optional, tried first); POST `/v1/auth/phone/send-code` (body: phone). |
 | **Store state** | `useAuthStore`: sendOTP, login, isLoading, error, clearError. |

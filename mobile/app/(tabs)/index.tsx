@@ -6,7 +6,9 @@ import { discoverApi, api } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { useAuthStore } from '../../src/stores/auth';
 import { useLocation } from '../../src/hooks/useLocation';
-import { colors, fontSize, spacing, borderRadius } from '../../src/constants/theme';
+import { colors, fontSize, spacing, borderRadius, shadows } from '../../src/constants/theme';
+import { useBreakpoint } from '../../src/hooks/useBreakpoint';
+import { useHover } from '../../src/hooks/useHover';
 
 interface NearbyUser {
   userId: string; displayName: string; bio: string; distance: number;
@@ -38,6 +40,95 @@ type SortMode = 'nearest' | 'active';
 const FALLBACK_LAT = 40.7128;
 const FALLBACK_LNG = -74.006;
 
+/** Discover tile with signature hover: glow + depth (SOFT_LAUNCH_WEB_PLAN §4.5). */
+function DiscoverTile({
+  item,
+  tileW,
+  tileH,
+  onPress,
+  onLongPress,
+  tileStyle,
+  presenceBar,
+  topRow,
+  hostBadge,
+  hostText,
+  shieldBadge,
+  intentBadge,
+  intentText,
+  presenceDot,
+  bottomInfo,
+  tileName,
+  metaRow,
+  tileDist,
+  dot,
+  tileGender,
+}: {
+  item: NearbyUser;
+  tileW: number;
+  tileH: number;
+  onPress: () => void;
+  onLongPress: () => void;
+  tileStyle: any;
+  presenceBar: any;
+  topRow: any;
+  hostBadge: any;
+  hostText: any;
+  shieldBadge: any;
+  intentBadge: any;
+  intentText: any;
+  presenceDot: any;
+  bottomInfo: any;
+  tileName: any;
+  metaRow: any;
+  tileDist: any;
+  dot: any;
+  tileGender: any;
+}) {
+  const { isHovered, hoverProps } = useHover();
+  const presenceColor = item.presenceState ? PRESENCE_COLORS[item.presenceState] : null;
+  const topIntent = item.activeIntents?.[0] ? INTENT_ICONS[item.activeIntents[0]] : null;
+  return (
+    <TouchableOpacity
+      style={[
+        tileStyle,
+        { width: tileW, height: tileH },
+        isHovered && { ...shadows.glow, transform: [{ scale: 1.03 }], zIndex: 1 },
+      ]}
+      activeOpacity={0.92}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={400}
+      {...hoverProps}
+    >
+      <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} />
+      {presenceColor && <View style={[presenceBar, { backgroundColor: presenceColor }]} />}
+      <View style={topRow}>
+        {item.isHost && <View style={hostBadge}><Ionicons name="home" size={8} color="#000" /><Text style={hostText}>HOST</Text></View>}
+        {item.verificationStatus !== 'unverified' && (
+          <View style={[shieldBadge, { backgroundColor: (item.verificationStatus === 'reference_verified' ? '#34D399' : item.verificationStatus === 'id_verified' ? '#A855F7' : '#60A5FA') + '30' }]}>
+            <Ionicons name={item.verificationStatus === 'reference_verified' ? 'shield-checkmark' : 'shield-half'} size={11} color={item.verificationStatus === 'reference_verified' ? '#34D399' : item.verificationStatus === 'id_verified' ? '#A855F7' : '#60A5FA'} />
+          </View>
+        )}
+      </View>
+      {topIntent && (
+        <View style={intentBadge}>
+          <Ionicons name={topIntent.icon as any} size={9} color="#fff" />
+          <Text style={intentText}>{topIntent.label}</Text>
+        </View>
+      )}
+      {presenceColor && <View style={[presenceDot, { backgroundColor: presenceColor }]} />}
+      <View style={bottomInfo}>
+        <Text style={tileName} numberOfLines={1}>{item.displayName}</Text>
+        <View style={metaRow}>
+          <Ionicons name="navigate" size={9} color={presenceColor || 'rgba(255,255,255,0.5)'} />
+          <Text style={tileDist}>{formatDist(item.distance)}</Text>
+          {item.gender && <><View style={dot} /><Text style={tileGender}>{item.gender}</Text></>}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 export default function DiscoverScreen() {
   const profile = useAuthStore((s) => s.profile);
   const location = useLocation();
@@ -53,7 +144,8 @@ export default function DiscoverScreen() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('nearest');
   const { width } = useWindowDimensions();
-  const cols = width > 500 ? 3 : 2;
+  const { isDesktop } = useBreakpoint();
+  const cols = isDesktop ? 5 : width > 500 ? 3 : 2;
   const tileW = (width - GAP * (cols + 1)) / cols;
   const tileH = tileW * 1.45;
 
@@ -110,60 +202,30 @@ export default function DiscoverScreen() {
     } catch (err: any) { Alert.alert('', err.message); }
   };
 
-  const renderTile = ({ item }: { item: NearbyUser }) => {
-    const presenceColor = item.presenceState ? PRESENCE_COLORS[item.presenceState] : null;
-    const topIntent = item.activeIntents?.[0] ? INTENT_ICONS[item.activeIntents[0]] : null;
-
-    return (
-      <TouchableOpacity
-        style={[s.tile, { width: tileW, height: tileH }]}
-        activeOpacity={0.92}
-        onPress={() => router.push(`/user/${item.userId}`)}
-        onLongPress={() => handleLongPress(item)}
-        delayLongPress={400}
-      >
-        <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} />
-
-        {/* Presence ring (left edge glow) */}
-        {presenceColor && <View style={[s.presenceBar, { backgroundColor: presenceColor }]} />}
-
-        {/* Top badges */}
-        <View style={s.topRow}>
-          {item.isHost && (
-            <View style={s.hostBadge}><Ionicons name="home" size={8} color="#000" /><Text style={s.hostText}>HOST</Text></View>
-          )}
-          {item.verificationStatus !== 'unverified' && (
-            <View style={[s.shieldBadge, { backgroundColor: (item.verificationStatus === 'reference_verified' ? '#34D399' : item.verificationStatus === 'id_verified' ? '#A855F7' : '#60A5FA') + '30' }]}>
-              <Ionicons name={item.verificationStatus === 'reference_verified' ? 'shield-checkmark' : 'shield-half'} size={11} color={item.verificationStatus === 'reference_verified' ? '#34D399' : item.verificationStatus === 'id_verified' ? '#A855F7' : '#60A5FA'} />
-            </View>
-          )}
-        </View>
-
-        {/* Intent badge (top right) */}
-        {topIntent && (
-          <View style={s.intentBadge}>
-            <Ionicons name={topIntent.icon as any} size={9} color="#fff" />
-            <Text style={s.intentText}>{topIntent.label}</Text>
-          </View>
-        )}
-
-        {/* Online dot with presence color */}
-        {presenceColor && (
-          <View style={[s.presenceDot, { backgroundColor: presenceColor }]} />
-        )}
-
-        {/* Bottom info */}
-        <View style={s.bottomInfo}>
-          <Text style={s.tileName} numberOfLines={1}>{item.displayName}</Text>
-          <View style={s.metaRow}>
-            <Ionicons name="navigate" size={9} color={presenceColor || 'rgba(255,255,255,0.5)'} />
-            <Text style={s.tileDist}>{formatDist(item.distance)}</Text>
-            {item.gender && <><View style={s.dot} /><Text style={s.tileGender}>{item.gender}</Text></>}
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const renderTile = ({ item }: { item: NearbyUser }) => (
+    <DiscoverTile
+      item={item}
+      tileW={tileW}
+      tileH={tileH}
+      onPress={() => router.push(`/user/${item.userId}`)}
+      onLongPress={() => handleLongPress(item)}
+      tileStyle={s.tile}
+      presenceBar={s.presenceBar}
+      topRow={s.topRow}
+      hostBadge={s.hostBadge}
+      hostText={s.hostText}
+      shieldBadge={s.shieldBadge}
+      intentBadge={s.intentBadge}
+      intentText={s.intentText}
+      presenceDot={s.presenceDot}
+      bottomInfo={s.bottomInfo}
+      tileName={s.tileName}
+      metaRow={s.metaRow}
+      tileDist={s.tileDist}
+      dot={s.dot}
+      tileGender={s.tileGender}
+    />
+  );
 
   return (
     <View style={s.container}>

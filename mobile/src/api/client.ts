@@ -1,8 +1,11 @@
 import { Platform } from 'react-native';
 
-const API_BASE = Platform.OS === 'web'
-  ? 'http://localhost:3000'
-  : 'http://10.0.2.2:3000';
+const envApiUrl = typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL;
+const API_BASE = envApiUrl
+  ? (process.env.EXPO_PUBLIC_API_URL as string).replace(/\/$/, '')
+  : Platform.OS === 'web'
+    ? 'http://localhost:3000'
+    : 'http://10.0.2.2:3000';
 
 let authToken = '';
 

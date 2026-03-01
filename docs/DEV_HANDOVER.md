@@ -1466,6 +1466,16 @@ albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare}
 
 **Auth guard:** Root `app/_layout.tsx` wraps the app in `AuthGuard` (`src/components/AuthGuard.tsx`): unauthenticated users are redirected to `/(auth)`; 401 responses trigger `onUnauthorized` (clear session, redirect to login).
 
+### 6.5 Web layout (soft launch)
+
+When `Platform.OS === 'web'` and viewport width ≥ 1024px (`useBreakpoint().showSidebar`):
+
+- **Sidebar:** `WebSidebar` (`src/components/WebSidebar.tsx`) shows Explore, Chat, Events, Me; drives navigation via `router.replace`; pathname drives active state. Trust line “Private · Verified · Safe” in footer.
+- **Content:** Tabs render with tab bar hidden; content area wrapped in `maxWidth: theme.layout.contentMaxWidth` (1280px), centered.
+- **Entry:** Unauthenticated web users see `WebEntryShell` first from `(auth)/index` (hero line, “Enter”, “Learn how it works” modal); “Enter” reveals login form. See **docs/SOFT_LAUNCH_WEB_PLAN.md**.
+- **Breakpoints:** `src/constants/breakpoints.ts`; `useBreakpoint()` for isDesktop, isWeb, contentMaxWidth. Discover 5 cols, Events 2 cols, Albums 4 cols on desktop.
+- **Signature interaction:** Discover cards use `useHover()` for glow + scale on hover. Sidebar items have focus ring for keyboard nav.
+
 ### 6.5 Theme System
 
 `src/constants/theme.ts` exports design tokens:

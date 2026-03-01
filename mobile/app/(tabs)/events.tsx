@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { eventsApi } from '../../src/api/client';
 import { useLocation } from '../../src/hooks/useLocation';
 import { colors, fontSize, borderRadius, spacing } from '../../src/constants/theme';
+import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { BannerImage } from '../../src/components/Backgrounds';
 
 const FALLBACK_LAT = 40.7128;
@@ -19,6 +20,8 @@ export default function EventsScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [attending, setAttending] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+  const { isDesktop } = useBreakpoint();
+  const numColumns = isDesktop ? 2 : 1;
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -116,7 +119,14 @@ export default function EventsScreen() {
 
   return (
     <View style={s.container}>
-      <FlatList data={events} keyExtractor={i => i.id} renderItem={renderEvent} contentContainerStyle={{ padding: 12 }}
+      <FlatList
+        data={events}
+        keyExtractor={(i) => i.id}
+        renderItem={renderEvent}
+        numColumns={numColumns}
+        key={numColumns}
+        contentContainerStyle={{ padding: 12 }}
+        columnWrapperStyle={numColumns > 1 ? s.columnWrap : undefined}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primaryLight} />}
         ListEmptyComponent={
@@ -135,7 +145,7 @@ const s = StyleSheet.create({
   errorText: { color: colors.text, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.md },
   retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
   retryBtnText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
-  card: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 14, overflow: 'hidden', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.06)' },
+  card: { flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 14, overflow: 'hidden', borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.06)', minWidth: 0 },
   banner: { height: 50, alignItems: 'center', justifyContent: 'center' },
   cardBody: { flexDirection: 'row', alignItems: 'center', padding: 14 },
   dateBox: { width: 42, alignItems: 'center', marginRight: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8, paddingVertical: 6 },
@@ -151,4 +161,5 @@ const s = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 120 },
   emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(147,51,234,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  columnWrap: { gap: 12, marginBottom: 8 },
 });

@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { albumsApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
+import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 
 export default function AlbumsScreen() {
   const [myAlbums, setMyAlbums] = useState<any[]>([]);
@@ -13,6 +14,8 @@ export default function AlbumsScreen() {
   const [tab, setTab] = useState<'mine' | 'shared'>('mine');
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
+  const { isDesktop } = useBreakpoint();
+  const numColumns = isDesktop ? 4 : 2;
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -130,9 +133,10 @@ export default function AlbumsScreen() {
 
       <FlatList
         data={albums}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={renderAlbum}
-        numColumns={2}
+        numColumns={numColumns}
+        key={numColumns}
         columnWrapperStyle={styles.gridRow}
         contentContainerStyle={styles.grid}
         ListEmptyComponent={

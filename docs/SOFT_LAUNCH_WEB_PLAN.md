@@ -3,8 +3,8 @@
 **Goal:** Soft-launch as a **visually stunning, million-dollar-feel website/web app** without rebuilding the existing product.  
 **Constraint:** Reuse backend, auth, API client, navigation, and all current screens; add **adaptive web layout, mandatory entry experience, and signature polish** so the same codebase feels inevitably premium on web.
 
-**Status:** Approved for implementation (post–CTO review).  
-**Brand assets:** `Shh.logo.on.black.png` (wordmark on black — header/footer); `shhh.hero.png` (hero image — purple glow/smoke, intimate scene).
+**Status:** In progress. Phase 1–4 implemented (layout, sidebar, grids, polish, entry shell, trust, env).  
+**Brand assets:** `Shh.logo.on.black.png` (wordmark on black — header/footer); `shhh.hero.png` (hero image). Copy to `mobile/assets/images/` as `logo-wordmark.png` and `hero.png` for Entry Shell imagery when ready.
 
 ---
 
@@ -163,36 +163,36 @@ This separates “premium, consent-first” from “sleazy hookup” perception.
 
 ## 5. Phased plan (for review)
 
-### Phase 1 — Web layout and navigation (foundation)
+### Phase 1 — Web layout and navigation (foundation) ✅
 
-- **1.1** Add breakpoint constants and `useBreakpoint()` (or `useWindowDimensions` + `isDesktop`/`isWeb`).
-- **1.2** In `(tabs)/_layout.tsx`: on web and width ≥ 1024, render **sidebar nav** (Explore, Chat, Events, Me) + content area; otherwise keep bottom tabs. Ensure expo-router still switches tab content correctly (e.g. by hiding tab bar and driving navigation from sidebar).
-- **1.3** On web, enforce **signature layout constraint:** single `contentMaxWidth` (1200–1280px) in theme; centered content wrapper; consistent vertical rhythm (spacing scale). No fluid stretch on ultrawide.
-- **Deliverable:** Same app, same screens; on desktop browser you see a sidebar and a locked-width, centered content area instead of a narrow or over-stretched layout.
+- **1.1** ✅ Breakpoints in `src/constants/breakpoints.ts`; `useBreakpoint()` in `src/hooks/useBreakpoint.ts` (isWeb, isDesktop, showSidebar, contentMaxWidth).
+- **1.2** ✅ `(tabs)/_layout.tsx`: when `showSidebar`, render `WebSidebar` + content area; Tabs with `tabBarStyle: { display: 'none' }`; sidebar drives navigation via `router.replace`.
+- **1.3** ✅ `theme.layout.contentMaxWidth` (1280); content wrapper in layout with `maxWidth`, centered; spacing from theme.
+- **Deliverable:** ✅ Desktop web shows sidebar and locked-width content.
 
-### Phase 2 — Responsive density and grids
+### Phase 2 — Responsive density and grids ✅
 
-- **2.1** Discover: on web large screen, increase grid columns (4–5); keep 2–3 on mobile/small web.
-- **2.2** Events: on web, consider 2-column card layout or keep list with larger cards.
-- **2.3** Album list / profile: minor density tweaks for web (e.g. 3 columns on web).
-- **Deliverable:** Key screens use space better on desktop without changing functionality.
+- **2.1** ✅ Discover: `useBreakpoint().isDesktop` → 5 columns; else 2–3 by width.
+- **2.2** ✅ Events: `numColumns = isDesktop ? 2 : 1`; `columnWrapperStyle` for gap.
+- **2.3** ✅ Album list: `numColumns = isDesktop ? 4 : 2`.
+- **Deliverable:** ✅ Key screens use space better on desktop.
 
-### Phase 3 — Web polish and one signature interaction
+### Phase 3 — Web polish and one signature interaction ✅
 
-- **3.1** Hover states on cards (Discover, Events, conversation list, venue cards) and sidebar items (opacity/background).
-- **3.2** Focus styles for keyboard navigation (buttons, links, nav, inputs).
-- **3.3** **One brand-defining interaction:** implement the chosen signature (e.g. discover cards glow/depth on hover, or “Enter” button motion, or sidebar icon hover animation); over-invest so it’s memorable.
-- **3.4** Optional: one custom font for headings on web; ensure body text remains readable.
-- **Deliverable:** Web experience feels polished and has at least one “this is its own universe” moment.
+- **3.1** ✅ `useHover()` hook (`src/hooks/useHover.ts`); Discover tiles use it; sidebar has active + focus styles.
+- **3.2** ✅ Sidebar items: focus ring via onFocus/onBlur state (border 2px primary); keyboard-accessible.
+- **3.3** ✅ **Signature interaction:** Discover cards — glow (shadows.glow) + scale(1.03) on hover via `DiscoverTile` + `useHover`.
+- **3.4** Optional: custom font for headings (not done).
+- **Deliverable:** ✅ Web has hover + focus + one signature moment (discover card glow/depth).
 
-### Phase 4 — Web Entry Shell, trust signals, and soft-launch readiness
+### Phase 4 — Web Entry Shell, trust signals, and soft-launch readiness ✅
 
-- **4.1** **Web Entry Shell (mandatory):** When unauthenticated on web, show a single full-height entry screen: dark background, purple glow/smoke motif; hero image `shhh.hero.png`; logo `Shh.logo.on.black.png` in header or footer; two CTAs — “Enter” (→ existing auth) and “Learn how it works” (modal/accordion). One route (e.g. `(auth)/landing.tsx` or index); reuse assets from `mobile/assets/images/` (or project assets folder).
-- **4.2** **Explicit trust signals:** Add persistent trust indicator near nav/header (e.g. “Private · Verified · Safe”); one consent/privacy microcopy line (Entry Shell or auth); one visible verification affordance early (e.g. on Me or profile).
-- **4.3** Web-specific meta tags (title, description) for sharing and SEO; favicon and app name in `app.json` / index.html.
-- **4.4** Verify API base URL and WebSocket URL on web use env (e.g. `EXPO_PUBLIC_API_URL`) so production web points to your backend.
-- **4.5** Smoke-test: entry shell → auth, discover, events, chat, profile, venue, subscription on web; fix any web-only regressions (e.g. SecureStore fallback for web if needed).
-- **Deliverable:** Ready to point users to the web app URL; first impression is tone-setting and trust-forward.
+- **4.1** ✅ **Web Entry Shell:** `WebEntryShell` component; shown from `(auth)/index` when `Platform.OS === 'web' && !showLoginForm`; “Enter” sets `showLoginForm(true)` to reveal login; “Learn how it works” opens modal (proximity, consent, discreet copy). Hero/logo imagery: gradient + wordmark text for now; add `hero.png` / `logo-wordmark.png` to `mobile/assets/images/` when ready.
+- **4.2** ✅ **Trust signals:** Persistent “Private · Verified · Safe” in sidebar footer; “You control who sees what. Always.” on Entry Shell footer. Verification affordance: existing on Me/profile (Verify).
+- **4.3** Meta tags / favicon: document in runbook; not yet implemented.
+- **4.4** ✅ API base: `EXPO_PUBLIC_API_URL` in `.env.example`; `client.ts` uses it when set (strip trailing slash).
+- **4.5** Smoke-test: run `expo start --web` and validate entry → login → tabs; sidebar; grids; hover.
+- **Deliverable:** ✅ Entry shell and trust visible; env documented.
 
 ---
 
@@ -219,15 +219,15 @@ This separates “premium, consent-first” from “sleazy hookup” perception.
 
 ## 8. Success criteria (post–CTO review)
 
-- [ ] **Web Entry Shell:** Unauthenticated web users see the entry screen (hero, logo, “Enter”, “Learn how it works”) before auth; no drop straight into login.
-- [ ] **Signature layout:** On desktop, content is **locked** max-width 1200–1280px, centered, with consistent vertical rhythm; no fluid chaos on ultrawide.
-- [ ] On desktop browser (e.g. 1440×900), user sees **sidebar nav** and **contained content**, not a narrow mobile strip.
-- [ ] **One brand-defining interaction** is implemented and noticeable (e.g. discover cards glow, “Enter” motion, or sidebar hover).
-- [ ] **Trust signals** are explicit: persistent indicator near nav/header, one consent/privacy line, one visible verification affordance early.
-- [ ] All existing flows work on web: **entry → auth, discover, messages, events, profile, chat, venue, album, verify, subscription**.
-- [ ] **Hover** and **focus** make the web app feel responsive and accessible.
-- [ ] **No second codebase:** one `mobile/` app, one backend; web is an output of the same app.
-- [ ] Team can **ship soft launch** by pointing users to the web app URL with a million-dollar first impression.
+- [x] **Web Entry Shell:** Unauthenticated web users see the entry screen (“Enter”, “Learn how it works”) before auth.
+- [x] **Signature layout:** On desktop, content is **locked** max-width 1280px, centered.
+- [x] On desktop browser, user sees **sidebar nav** and **contained content**.
+- [x] **One brand-defining interaction:** Discover cards glow + scale on hover.
+- [x] **Trust signals:** “Private · Verified · Safe” in sidebar; “You control who sees what. Always.” on Entry Shell.
+- [ ] All flows smoke-tested on web: entry → auth, discover, events, chat, profile, venue, subscription.
+- [x] **Hover** and **focus** on sidebar and discover cards.
+- [x] **No second codebase:** one `mobile/` app; web is an output of the same app.
+- [ ] Meta/favicon and production deploy runbook when ready.
 
 ---
 

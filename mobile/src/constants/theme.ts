@@ -96,3 +96,13 @@ export const shadows = {
     elevation: 4,
   },
 };
+
+/**
+ * Layout constants for web soft launch (signature layout constraint).
+ * contentMaxWidth: locked 1200–1280px, centered; no fluid stretch on ultrawide.
+ * @see docs/SOFT_LAUNCH_WEB_PLAN.md §4.3
+ */
+export const layout = {
+  contentMaxWidth: 1280,
+  sidebarWidth: 240,
+} as const;

@@ -124,10 +124,15 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │       ├── venue-staff/[id].tsx
 │   │       └── venue-invite-staff/[id].tsx
 │   ├── src/
-│   │   ├── api/client.ts             # Full API client
+│   │   ├── api/client.ts             # Full API client (EXPO_PUBLIC_API_URL when set)
 │   │   ├── stores/auth.ts            # Zustand auth store
-│   │   ├── constants/theme.ts        # Design tokens
-│   │   └── hooks/useSocket.ts        # Socket.io hook
+│   │   ├── constants/theme.ts        # Design tokens + layout.contentMaxWidth
+│   │   ├── constants/breakpoints.ts  # Breakpoints + CONTENT_MAX_WIDTH
+│   │   ├── hooks/useSocket.ts        # Socket.io hook
+│   │   ├── hooks/useBreakpoint.ts    # isWeb, isDesktop, showSidebar
+│   │   ├── hooks/useHover.ts         # Web hover state for polish
+│   │   ├── components/WebSidebar.tsx # Desktop web sidebar nav
+│   │   └── components/WebEntryShell.tsx # Web-only unauthenticated entry
 │   └── package.json
 ├── backend/                          # Node.js + Express 4 + TypeScript (port 3000)
 │   ├── src/

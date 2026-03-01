@@ -5,11 +5,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 import { AuthScreenBackground, AppIconImage } from '../../src/components/Backgrounds';
+import { WebEntryShell } from '../../src/components/WebEntryShell';
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState('');
+  const [showLoginForm, setShowLoginForm] = useState(Platform.OS !== 'web');
   const { sendOTP, login, isLoading, error, clearError } = useAuthStore();
   const canSubmit = phone.length >= 10;
+
+  if (Platform.OS === 'web' && !showLoginForm) {
+    return <WebEntryShell onEnter={() => setShowLoginForm(true)} />;
+  }
 
   const handleContinue = async () => {
     if (!canSubmit) return;
