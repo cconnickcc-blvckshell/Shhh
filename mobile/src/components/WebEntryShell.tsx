@@ -1,15 +1,35 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, ScrollView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Modal,
+  ScrollView,
+  Platform,
+  useWindowDimensions,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../constants/theme';
+import { BrandMark } from './BrandMark';
+
+const MAX_WIDTH = 1100;
+const HERO_FEATURES = [
+  'Proximity grid',
+  'Discreet + verified',
+  'Events & venues',
+  'Privacy controls',
+];
 
 /**
- * Web-only entry screen when unauthenticated: tone-setting first impression before auth.
- * Full-height dark, purple motif; "Enter" → login; "Learn how it works" → modal.
+ * Web front page (unauthenticated): coming-soon layout with hero, logo, side card.
+ * Top bar: BrandMark + Coming Soon pill. Grid: hero card (left) + side card (Enter form, links).
  * @see docs/SOFT_LAUNCH_WEB_PLAN.md §4.6
  */
 export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
   const [learnOpen, setLearnOpen] = useState(false);
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 960;
 
   return (
     <LinearGradient
@@ -17,43 +37,101 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
       locations={[0, 0.25, 0.6, 1]}
       style={styles.full}
     >
-      <View style={styles.glow} />
-      <View style={styles.content}>
-        <View style={styles.heroArea}>
-          <Text style={styles.heroLine}>Your secret is safe.</Text>
-          <Text style={styles.heroSub}>Discreet. Verified. Consent-first.</Text>
-        </View>
+      {/* Ambient glows */}
+      <View style={styles.glowPlum} />
+      <View style={styles.glowPlum2} />
+      <View style={styles.glowGold} />
 
-        <View style={styles.ctaRow}>
-          <Pressable
-            style={({ pressed }) => [styles.enterBtn, pressed && styles.enterBtnPressed]}
-            onPress={onEnter}
-            accessibilityRole="button"
-            accessibilityLabel="Enter Shhh"
-          >
-            <LinearGradient
-              colors={['rgba(124,43,255,0.95)', 'rgba(179,92,255,0.65)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <Text style={styles.enterBtnText}>Enter</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.learnBtn, pressed && styles.learnBtnPressed]}
-            onPress={() => setLearnOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Learn how it works"
-          >
-            <Text style={styles.learnBtnText}>Learn how it works</Text>
-          </Pressable>
-        </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.wrap, { maxWidth: MAX_WIDTH }]}>
+          {/* Top bar: logo + Coming Soon pill */}
+          <View style={styles.top}>
+            <Pressable style={styles.brandTouch} onPress={() => {}} accessibilityLabel="Shhh Social">
+              <BrandMark />
+            </Pressable>
+            <View style={styles.pill}>
+              <View style={styles.dot} />
+              <Text style={styles.pillText}>Coming Soon</Text>
+            </View>
+          </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.wordmark}>Shhh</Text>
-          <Text style={styles.trustLine}>You control who sees what. Always.</Text>
+          {/* Grid: hero (left) + side card (right) */}
+          <View style={[styles.grid, isNarrow && styles.gridStack]}>
+            {/* Hero card */}
+            <View style={styles.hero}>
+              <View style={styles.heroGlow} />
+              <View style={styles.kicker}>
+                <View style={styles.spark} />
+                <Text style={styles.kickerText}>Where consent meets curiosity</Text>
+              </View>
+              <Text style={styles.h1}>
+                A lifestyle community for{' '}
+                <Text style={styles.h1Plum}>couples</Text>, <Text style={styles.h1Gold}>singles</Text>, and{' '}
+                <Text style={styles.h1Plum}>explorers</Text>.
+              </Text>
+              <Text style={styles.sub}>
+                Built for real connections — discreet discovery, consent-first interactions, and events & venues that pull the community together.
+              </Text>
+              <View style={styles.features}>
+                {HERO_FEATURES.map((label) => (
+                  <View key={label} style={styles.chip}>
+                    <View style={styles.chipDot} />
+                    <Text style={styles.chipText}>{label}</Text>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.glowline} />
+              <Text style={styles.fineprint}>
+                Launching first in Ontario. Join the list to get early access, venue drops, and beta invites.
+              </Text>
+            </View>
+
+            {/* Side card: Enter + Learn */}
+            <View style={styles.card}>
+              <View style={styles.cardInner}>
+                <Text style={styles.cardTitle}>Get early access</Text>
+                <Text style={styles.cardP}>
+                  Enter to sign in with your phone and join the community. Discreet. Verified. Consent-first.
+                </Text>
+                <View style={styles.ctaCol}>
+                  <Pressable
+                    style={({ pressed }) => [styles.enterBtn, pressed && styles.enterBtnPressed]}
+                    onPress={onEnter}
+                    accessibilityRole="button"
+                    accessibilityLabel="Enter Shhh"
+                  >
+                    <LinearGradient
+                      colors={['rgba(124,43,255,0.95)', 'rgba(179,92,255,0.65)']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <Text style={styles.enterBtnText}>Enter</Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [styles.learnBtn, pressed && styles.learnBtnPressed]}
+                    onPress={() => setLearnOpen(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Learn how it works"
+                  >
+                    <Text style={styles.learnBtnText}>Learn how it works</Text>
+                  </Pressable>
+                </View>
+                <Text style={styles.fineprintCard}>
+                  By joining, you agree to our terms. <Text style={styles.fineprintBold}>18+ only.</Text>
+                </Text>
+                <View style={styles.links}>
+                  <Text style={styles.linksLabel}>Consent-first. No harassment. No minors.</Text>
+                </View>
+              </View>
+            </View>
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       <Modal visible={learnOpen} transparent animationType="fade">
         <Pressable style={styles.modalBackdrop} onPress={() => setLearnOpen(false)}>
@@ -66,15 +144,17 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
             </View>
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <Text style={styles.modalP}>
-                <Text style={styles.modalBold}>Proximity-first.</Text> See who’s actually nearby — at venues, events, or out in the world. No algorithm guessing.
+                <Text style={styles.modalBold}>Proximity-first.</Text> See who's actually nearby — at venues, events, or out in the world.
               </Text>
               <Text style={styles.modalP}>
-                <Text style={styles.modalBold}>Consent-first.</Text> You choose who sees your profile. Blur and reveal on your terms. Messaging is opt-in.
+                <Text style={styles.modalBold}>Consent-first.</Text> You choose who sees your profile. Blur and reveal on your terms.
               </Text>
               <Text style={styles.modalP}>
-                <Text style={styles.modalBold}>Discreet by design.</Text> Private · Verified · Safe. We never sell your data. Your identity stays in your control.
+                <Text style={styles.modalBold}>Discreet by design.</Text> Private · Verified · Safe. We never sell your data.
               </Text>
-              <Text style={styles.modalP}>Tap <Text style={styles.modalBold}>Enter</Text> to sign in with your phone and join.</Text>
+              <Text style={styles.modalP}>
+                Tap <Text style={styles.modalBold}>Enter</Text> to sign in with your phone and join.
+              </Text>
             </ScrollView>
           </Pressable>
         </Pressable>
@@ -85,63 +165,193 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
 
 const styles = StyleSheet.create({
   full: { flex: 1, minHeight: Platform.OS === 'web' ? '100vh' : undefined },
-  glow: {
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingBottom: 40, alignItems: 'center' },
+  glowPlum: {
     position: 'absolute',
-    top: -80,
-    left: '50%',
-    marginLeft: -200,
+    top: '-10%',
+    left: '5%',
     width: 400,
     height: 400,
     borderRadius: 200,
-    backgroundColor: 'rgba(124,43,255,0.22)',
-    opacity: 0.85,
+    backgroundColor: 'rgba(124,43,255,0.18)',
+    opacity: 0.9,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
+  glowPlum2: {
+    position: 'absolute',
+    top: '20%',
+    right: '-5%',
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+    backgroundColor: 'rgba(179,92,255,0.12)',
+    opacity: 0.9,
+  },
+  glowGold: {
+    position: 'absolute',
+    bottom: '-15%',
+    left: '30%',
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(212,175,55,0.08)',
+    opacity: 0.9,
+  },
+  wrap: {
+    marginHorizontal: 'auto',
+    paddingHorizontal: 18,
+    paddingTop: 34,
+    paddingBottom: 28,
+    width: '100%',
+  },
+  top: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    justifyContent: 'space-between',
+    marginBottom: 18,
   },
-  heroArea: { alignItems: 'center', marginBottom: spacing.xxl },
-  heroLine: {
-    fontSize: 36,
-    fontWeight: '800',
+  brandTouch: { flexDirection: 'row', alignItems: 'center' },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  pillText: { fontSize: 12, color: colors.textMuted, letterSpacing: 1.2, textTransform: 'uppercase' },
+  dot: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: colors.primaryLight,
+  },
+  grid: {
+    flexDirection: 'row',
+    gap: 18,
+    marginTop: 14,
+  },
+  gridStack: { flexDirection: 'column' },
+  hero: {
+    flex: 1.1,
+    minHeight: 380,
+    borderRadius: borderRadius.xxl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    padding: 30,
+    ...shadows.card,
+  },
+  heroGlow: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
+  kicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignSelf: 'flex-start',
+  },
+  spark: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.accentGold,
+  },
+  kickerText: { fontSize: 12, color: colors.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
+  h1: {
+    marginTop: 16,
+    marginBottom: 10,
+    fontSize: 32,
+    lineHeight: 1.2,
     color: colors.text,
-    letterSpacing: -1,
-    textAlign: 'center',
+    fontWeight: '700',
   },
-  heroSub: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-    letterSpacing: 0.5,
+  h1Plum: { color: 'rgba(179,92,255,0.95)' },
+  h1Gold: { color: 'rgba(212,175,55,0.9)' },
+  sub: {
+    fontSize: 16,
+    lineHeight: 1.55,
+    color: colors.textMuted,
+    maxWidth: 480,
   },
-  ctaRow: { flexDirection: 'row', gap: spacing.lg, alignItems: 'center', marginBottom: spacing.xxl },
+  features: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 18 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  chipDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primaryLight,
+  },
+  chipText: { fontSize: 13, color: colors.text },
+  glowline: {
+    height: 1,
+    backgroundColor: colors.primaryLight,
+    opacity: 0.4,
+    marginTop: 18,
+    marginBottom: 4,
+  },
+  fineprint: { fontSize: 12, color: colors.textMuted, lineHeight: 1.45, marginTop: 16, maxWidth: 520 },
+  card: {
+    flex: 0.9,
+    borderRadius: borderRadius.xxl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    ...shadows.card,
+  },
+  cardInner: { padding: 22 },
+  cardTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 8 },
+  cardP: { fontSize: 14, color: colors.textMuted, lineHeight: 1.5, marginBottom: 14 },
+  ctaCol: { gap: 10 },
   enterBtn: {
-    paddingVertical: 16,
-    paddingHorizontal: 40,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.16)',
     overflow: 'hidden',
     position: 'relative',
+    alignItems: 'center',
     ...shadows.glow,
   },
-  enterBtnPressed: { opacity: 0.98 },
-  enterBtnText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '700', letterSpacing: 0.5 },
+  enterBtnPressed: { opacity: 0.95 },
+  enterBtnText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '700' },
   learnBtn: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: 'rgba(255,255,255,0.04)',
+    alignItems: 'center',
   },
   learnBtnPressed: { opacity: 0.85 },
   learnBtnText: { color: colors.primaryLight, fontSize: fontSize.md, fontWeight: '600' },
-  footer: { position: 'absolute', bottom: spacing.xxl, alignItems: 'center' },
-  wordmark: { fontSize: 28, fontWeight: '900', color: colors.primaryLight, letterSpacing: -1 },
-  trustLine: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: spacing.xs },
+  fineprintCard: { fontSize: 12, color: colors.textMuted, lineHeight: 1.45, marginTop: 12 },
+  fineprintBold: { color: colors.text, fontWeight: '700' },
+  links: { marginTop: 14 },
+  linksLabel: { fontSize: 11, color: colors.textMuted },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -159,7 +369,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...shadows.card,
   },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
   modalTitle: { fontSize: fontSize.xl, fontWeight: '700', color: colors.text },
   modalClose: { fontSize: 28, color: colors.textMuted, lineHeight: 28 },
   modalBody: { padding: spacing.lg, maxHeight: 360 },

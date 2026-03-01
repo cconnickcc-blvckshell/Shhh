@@ -1,12 +1,16 @@
-import { useEffect } from 'react';
-import { Tabs, router } from 'expo-router';
+import { useEffect, useMemo } from 'react';
+import { Tabs, router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet, Platform } from 'react-native';
-import { colors, fontSize, layout } from '../../src/constants/theme';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { colors, fontSize, layout, spacing } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/stores/auth';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { WebSidebar } from '../../src/components/WebSidebar';
+import DiscoverScreen from './index';
+import MessagesScreen from './messages';
+import EventsScreen from './events';
+import ProfileScreen from './profile';
 
 const TAB_OPTIONS = {
   sceneStyle: { backgroundColor: 'transparent', flex: 1 },
@@ -29,6 +33,30 @@ const TAB_OPTIONS = {
   tabBarInactiveTintColor: 'rgba(255,255,255,0.3)',
   tabBarLabelStyle: { fontSize: 10, fontWeight: '700', letterSpacing: 0.3 },
 };
+
+function DesktopTabContent() {
+  const pathname = usePathname();
+  const { Screen, title } = useMemo(() => {
+    if (pathname === '/(tabs)' || pathname === '/(tabs)/') return { Screen: DiscoverScreen, title: 'Explore' };
+    if (pathname?.startsWith('/(tabs)/messages')) return { Screen: MessagesScreen, title: 'Chat' };
+    if (pathname?.startsWith('/(tabs)/events')) return { Screen: EventsScreen, title: 'Events' };
+    if (pathname?.startsWith('/(tabs)/profile')) return { Screen: ProfileScreen, title: 'Me' };
+    return { Screen: DiscoverScreen, title: 'Explore' };
+  }, [pathname]);
+  const showHeader = title !== 'Explore';
+  return (
+    <>
+      {showHeader && (
+        <View style={desktopStyles.desktopHeader}>
+          <Text style={desktopStyles.desktopHeaderTitle}>{title}</Text>
+        </View>
+      )}
+      <View style={desktopStyles.screenWrap}>
+        <Screen />
+      </View>
+    </>
+  );
+}
 
 export default function TabLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -106,6 +134,7 @@ export default function TabLayout() {
     </Tabs>
   );
 
+  // Desktop: render one tab at a time by pathname so nothing stacks.
   if (showSidebar) {
     return (
       <PremiumDarkBackground style={styles.flex1}>
@@ -113,7 +142,9 @@ export default function TabLayout() {
           <WebSidebar />
           <View style={styles.contentWrap}>
             <View style={styles.contentInner}>
-              <View style={styles.tabsWrap}>{tabs}</View>
+              <View style={styles.tabsWrap}>
+                <DesktopTabContent />
+              </View>
             </View>
           </View>
         </View>
@@ -159,4 +190,19 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' && { overflow: 'hidden' as const }),
   },
   tabsWrap: { flex: 1, minHeight: 0 },
+});
+
+const desktopStyles = StyleSheet.create({
+  desktopHeader: {
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  desktopHeaderTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  screenWrap: { flex: 1, minHeight: 0 },
 });
