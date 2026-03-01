@@ -64,7 +64,6 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
           <View style={[styles.grid, isNarrow && styles.gridStack]}>
             {/* Hero card */}
             <SurfaceCard style={styles.hero}>
-              <View style={styles.heroGlow} />
               <View style={styles.kicker}>
                 <View style={styles.spark} />
                 <Text style={styles.kickerText}>Where consent meets curiosity</Text>
@@ -72,9 +71,11 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
               <Text style={styles.h1} numberOfLines={3}>
                 A lifestyle community for couples, singles, and explorers.
               </Text>
-              <Text style={styles.sub}>
-                Built for real connections — discreet discovery, consent-first interactions, and events & venues that pull the community together.
-              </Text>
+              <View style={styles.subWrap}>
+                <Text style={styles.sub}>
+                  Built for real connections — discreet discovery, consent-first interactions, and events & venues that pull the community together.
+                </Text>
+              </View>
               <View style={styles.features}>
                 {HERO_FEATURES.map((label) => (
                   <View key={label} style={styles.chip}>
@@ -93,9 +94,11 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
             <SurfaceCard style={styles.card}>
               <View style={styles.cardInner}>
                 <Text style={styles.cardTitle}>Get early access</Text>
-                <Text style={styles.cardP}>
-                  Enter to sign in with your phone and join the community. Discreet. Verified. Consent-first.
-                </Text>
+                <View style={styles.cardPWrap}>
+                  <Text style={styles.cardP}>
+                    Enter to sign in with your phone and join the community. Discreet. Verified. Consent-first.
+                  </Text>
+                </View>
                 <View style={styles.ctaCol}>
                   <PrimaryCTA label="Enter" onPress={onEnter} accessibilityLabel="Enter Shhh" />
                   <SecondaryAction label="Learn how it works" onPress={() => setLearnOpen(true)} accessibilityLabel="Learn how it works" />
@@ -225,10 +228,6 @@ const styles = StyleSheet.create({
     padding: 30,
     ...shadows.card,
   },
-  heroGlow: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'transparent',
-  },
   kicker: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -256,9 +255,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '700',
   },
+  subWrap: { marginTop: 4, marginBottom: 4 },
   sub: {
     fontSize: 16,
-    lineHeight: 1.55,
+    lineHeight: 24,
     color: colors.textMuted,
     maxWidth: 480,
   },
@@ -300,7 +300,8 @@ const styles = StyleSheet.create({
   },
   cardInner: { padding: 22 },
   cardTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 8 },
-  cardP: { fontSize: 14, color: colors.textMuted, lineHeight: 1.5, marginBottom: 14 },
+  cardPWrap: { marginBottom: 14 },
+  cardP: { fontSize: 14, color: colors.textMuted, lineHeight: 21 },
   ctaCol: { gap: 10 },
   enterBtn: {
     paddingVertical: 14,
