@@ -74,7 +74,7 @@ export default function EmergencyContactsScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={s.title}>Emergency Contacts</Text>
-        <Text style={s.subtitle}>These contacts can be notified when you use Panic Alert.</Text>
+        <Text style={s.subtitle}>These contacts will be notified when you use Panic Alert (notification feature coming soon).</Text>
       </View>
 
       {loading ? (
@@ -135,7 +135,7 @@ export default function EmergencyContactsScreen() {
             <View style={s.empty}>
               <Ionicons name="call-outline" size={40} color={colors.textMuted} />
               <Text style={s.emptyText}>No emergency contacts yet.</Text>
-              <Text style={s.emptySub}>Add at least one so we can notify them if you use Panic Alert.</Text>
+              <Text style={s.emptySub}>Add at least one for when emergency notification is available.</Text>
               <TouchableOpacity style={s.emptyBtn} onPress={() => setShowAdd(true)}>
                 <Text style={s.emptyBtnText}>Add your first contact</Text>
               </TouchableOpacity>

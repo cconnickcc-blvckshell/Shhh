@@ -48,6 +48,12 @@
 - **Biggest risks:** Weak prod secrets; no observability; E2EE expectation mismatch.
 - **Revenue path:** Subscription checkout fixed; ads in Discover (backend ready, mobile gap).
 
+### Formal Go/No-Go Rule
+
+**Any D in Security/Compliance OR F in Observability → No public launch regardless of weighted score.**
+
+Current: Security D+, Compliance D, Observability F → **No launch.**
+
 ---
 
 ## 1. Backend
@@ -554,6 +560,7 @@ From `docs/GAME_CHANGER_ROADMAP.md`, `docs/ENHANCEMENT_ROADMAP.md`, `docs/MASTER
 | `docs/GAME_CHANGER_ROADMAP.md` | Future product ideas; backend-ready features |
 | `docs/policies/POLICY_SYSTEM_PARITY_MATRIX.md` | Policy vs system capability mapping |
 | `docs/OPS_RUNBOOK.md` | Incident response, debugging, migrations |
+| `docs/CONSOLIDATED_CTO_REVIEW.md` | Single source of truth; P0/P1 gates; contradictions resolved |
 
 ---
 

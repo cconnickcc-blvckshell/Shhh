@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/api/client';
@@ -26,25 +26,8 @@ export default function VerificationScreen() {
 
   useEffect(() => { load(); }, []);
 
-  const submitPhoto = async () => {
-    try {
-      const res = await api<{ data: any }>('/v1/verification/photo', {
-        method: 'POST', body: JSON.stringify({ selfieUrl: 'https://placeholder.com/selfie.jpg' }),
-      });
-      Alert.alert('Submitted', `Photo verification submitted. Pose challenge: ${res.data.poseChallenge}`);
-      load();
-    } catch (err: any) { Alert.alert('Error', err.message); }
-  };
-
-  const submitId = async () => {
-    try {
-      await api('/v1/verification/id', {
-        method: 'POST', body: JSON.stringify({ documentHash: 'demo_document_hash_12345' }),
-      });
-      Alert.alert('Submitted', 'ID verification submitted for review');
-      load();
-    } catch (err: any) { Alert.alert('Error', err.message); }
-  };
+  // Photo and ID verification: real camera/picker + upload flow not yet implemented.
+  // Placeholder submissions removed per P0 — show "Coming soon" until implemented.
 
   const currentTier = status?.currentTier || 0;
 
@@ -81,14 +64,10 @@ export default function VerificationScreen() {
             </View>
             {isComplete ? (
               <Ionicons name="checkmark-circle" size={24} color={t.color} />
-            ) : isCurrent && t.tier === 1 ? (
-              <TouchableOpacity style={styles.actionBtn} onPress={submitPhoto}>
-                <Text style={styles.actionBtnText}>Verify</Text>
-              </TouchableOpacity>
-            ) : isCurrent && t.tier === 2 ? (
-              <TouchableOpacity style={styles.actionBtn} onPress={submitId}>
-                <Text style={styles.actionBtnText}>Submit ID</Text>
-              </TouchableOpacity>
+            ) : isCurrent && (t.tier === 1 || t.tier === 2) ? (
+              <View style={[styles.actionBtn, { opacity: 0.7 }]}>
+                <Text style={styles.actionBtnText}>Coming soon</Text>
+              </View>
             ) : (
               <Ionicons name="lock-closed" size={20} color={colors.textMuted} />
             )}

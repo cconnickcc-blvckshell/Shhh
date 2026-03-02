@@ -69,7 +69,7 @@ export default function ChatScreen() {
   function showSafetyInfo() {
     Alert.alert(
       'Safety',
-      'Block and Report are in this menu. For emergency help, go to Me → Panic Alert to notify your emergency contacts. You can also leave this conversation by going back.'
+      'Block and Report are in this menu. For emergency help, go to Me → Panic Alert to record an emergency alert. You can also leave this conversation by going back.'
     );
   }
 
@@ -88,16 +88,22 @@ export default function ChatScreen() {
 
   useEffect(() => {
     if (!convId) return;
-    socket.joinConversation(convId);
-    const unsub = socket.onNewMessage((data: any) => {
+    const joinAndSub = () => {
+      socket.joinConversation(convId);
+      load(); // Refetch on reconnect to recover any missed messages
+    };
+    joinAndSub();
+    const unsubMsg = socket.onNewMessage((data: any) => {
       const msg = data?.message ?? data;
       if (msg && msg._id) setMsgs(prev => [msg, ...prev]);
     });
+    const unsubReconnect = socket.onReconnect?.(joinAndSub);
     return () => {
       socket.leaveConversation(convId);
-      unsub?.();
+      unsubMsg?.();
+      unsubReconnect?.();
     };
-  }, [convId]);
+  }, [convId, load]);
 
   const send = async () => {
     if (!input.trim() || !convId) return;

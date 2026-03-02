@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, TextInput, useWindowDimensions } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, TextInput, useWindowDimensions, Image } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { albumsApi } from '../../src/api/client';
+import { albumsApi, getMediaUrl } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 export default function AlbumDetailScreen() {
@@ -87,11 +87,18 @@ export default function AlbumDetailScreen() {
         numColumns={cols}
         columnWrapperStyle={{ gap: 4 }}
         contentContainerStyle={styles.grid}
-        renderItem={({ item }) => (
-          <View style={[styles.photoTile, { width: tileSize, height: tileSize }]}>
-            <Ionicons name="image" size={24} color={colors.textMuted} />
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const url = item.storage_path ? getMediaUrl(item.storage_path) : null;
+          return (
+            <View style={[styles.photoTile, { width: tileSize, height: tileSize }]}>
+              {url ? (
+                <Image source={{ uri: url }} style={[styles.photoImage, { width: tileSize, height: tileSize }]} resizeMode="cover" />
+              ) : (
+                <Ionicons name="image" size={24} color={colors.textMuted} />
+              )}
+            </View>
+          );
+        }}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="camera-outline" size={48} color={colors.textMuted} />
@@ -122,7 +129,8 @@ const styles = StyleSheet.create({
   shareName: { color: colors.text, fontSize: fontSize.sm },
   revokeText: { color: colors.danger, fontSize: fontSize.sm, fontWeight: '600' },
   grid: { padding: spacing.md },
-  photoTile: { backgroundColor: colors.surfaceElevated, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  photoTile: { backgroundColor: colors.surfaceElevated, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center', marginBottom: 4, overflow: 'hidden' },
+  photoImage: { borderRadius: borderRadius.sm },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { color: colors.textMuted, fontSize: fontSize.md, marginTop: spacing.md },
 });

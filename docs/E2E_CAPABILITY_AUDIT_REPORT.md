@@ -15,9 +15,9 @@
 | **Mobile UX/UI** | Navigation, forms, lists, basic states; location/WebSocket/checkout per checklist | Error UI, loading UX, offline, a11y, analytics | Global blur/reveal, central error mapping |
 | **Admin Dashboard** | 11 pages, real API calls | Admin token in localStorage (XSS risk) | Per-screen spec and a11y not documented |
 | **Backend → frontend** | Most consumed routes; deletion worker; screenshot route; subscription/entitlements | Panic does not notify contacts; MongoDB purge gap for deleted users | Prod secret validation; OTP not enforced at API |
-| **Security & compliance** | Deletion worker, retention policy, incident plan, feature gating | — | OTP bypass; CORS wide open; prod secrets |
+| **Security & compliance** | Deletion worker, retention policy, incident plan, feature gating; OTP enforced; prod secret validation; CORS restricted | — | — |
 
-**Bottom line:** Core flows (auth, discover, chat, events, profile, venues, whispers, couple, albums, verify, subscription) are **present and wired to APIs**. Quality and completeness vary. Per MASTER_IMPLEMENTATION_CHECKLIST: location, WebSocket chat, checkout URL, venue tap, verify-code guard, loading/error UI on many screens are **done**. Remaining gaps: **OTP not enforced** (API allows /register and /login without OTP), **CORS wide open**, **admin localStorage**, **no prod secret validation**, **blur/reveal**, **placeholder verification**, **stories/tonight/groups** (no mobile UI).
+**Bottom line:** Core flows (auth, discover, chat, events, profile, venues, whispers, couple, albums, verify, subscription) are **present and wired to APIs**. **P0/P1 gates implemented:** OTP enforced, prod secret validation, CORS restricted, panic copy truthful, verification hidden, upload magic bytes, Mongo purge, metrics, chat idempotency/reconnect, album images, admin sessionStorage. Remaining gaps: **blur/reveal**, **stories/tonight/groups** (no mobile UI).
 
 ---
 
@@ -209,10 +209,10 @@ Findings verified against codebase. Evidence: file paths below.
 
 | Finding | Evidence | Risk |
 |---------|----------|------|
-| **OTP not enforced at API** | `auth.routes.ts` exposes `POST /register` and `POST /login` with no OTP. Anyone can auth with phone only. `auth.controller.ts` calls `registerWithPhone`, `loginWithPhone`. | High — account takeover if phone known |
-| **CORS wide open** | `app.ts` L47: `app.use(cors())` with no options. | Medium |
-| **Admin token in localStorage** | `admin-dashboard/src/api/client.ts`: `localStorage.setItem('admin_token', ...)`. XSS could exfiltrate. | Medium |
-| **No prod secret validation** | `config/index.ts` L24–26: JWT defaults to `dev-jwt-secret`; `utils/hash.ts` L3: PHONE_HASH_PEPPER defaults to `shhh-dev-pepper-change-in-production`. No startup check for `NODE_ENV=production`. | High |
+| **OTP enforced** | **DONE.** sessionToken from verify required for register/login; test env bypass for backward compat. | — |
+| **CORS restricted** | **DONE.** Explicit allowlist from CORS_ORIGINS; required in prod. | — |
+| **Admin token** | **DONE.** sessionStorage (cleared on tab close); httpOnly cookies recommended for prod. | — |
+| **Prod secret validation** | **DONE.** validateProductionSecrets at startup; exits if defaults. | — |
 | **Subscription / entitlements** | **Exist.** `subscription.service.ts` (TIERS, checkout, webhook, hasFeature, isPremium); `ad.service.ts` checks premium; `persona.service.ts` uses persona_slots; discovery cap from subscription. | — |
 | **Compliance docs** | **Exist.** `DATA_RETENTION_POLICY.md`, `SECURITY_INCIDENT_RESPONSE_PLAN.md`, `DATA_BREACH_NOTIFICATION.md`. Deletion worker runs every 5m. | — |
 

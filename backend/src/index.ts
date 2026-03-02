@@ -8,7 +8,34 @@ import { connectMongoDB } from './config/mongodb';
 import { setupWebSocket } from './websocket';
 import { startWorkers } from './workers';
 
+const UNSAFE_DEFAULTS = [
+  'dev-jwt-secret',
+  'dev-refresh-secret',
+  'shhh-dev-pepper-change-in-production',
+];
+
+function validateProductionSecrets() {
+  if (config.nodeEnv !== 'production') return;
+
+  const jwtSecret = process.env.JWT_SECRET || 'dev-jwt-secret';
+  const jwtRefresh = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret';
+  const pepper = process.env.PHONE_HASH_PEPPER || 'shhh-dev-pepper-change-in-production';
+  const corsOrigins = process.env.CORS_ORIGINS;
+
+  const bad: string[] = [];
+  if (UNSAFE_DEFAULTS.includes(jwtSecret)) bad.push('JWT_SECRET');
+  if (UNSAFE_DEFAULTS.includes(jwtRefresh)) bad.push('JWT_REFRESH_SECRET');
+  if (UNSAFE_DEFAULTS.includes(pepper)) bad.push('PHONE_HASH_PEPPER');
+  if (!corsOrigins || corsOrigins.trim() === '') bad.push('CORS_ORIGINS');
+
+  if (bad.length > 0) {
+    logger.error({ missing: bad }, 'Production requires: JWT_SECRET, JWT_REFRESH_SECRET, PHONE_HASH_PEPPER, CORS_ORIGINS (comma-separated).');
+    process.exit(1);
+  }
+}
+
 async function main() {
+  validateProductionSecrets();
   logger.info({ env: config.nodeEnv }, 'Starting Shhh API server...');
 
   try {

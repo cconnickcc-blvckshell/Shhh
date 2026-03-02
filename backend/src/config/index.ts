@@ -38,4 +38,10 @@ export const config = {
     discoveryCapFree: parseInt(process.env.DISCOVERY_CAP_FREE || '30', 10),
     discoveryCapPremium: parseInt(process.env.DISCOVERY_CAP_PREMIUM || '50', 10),
   },
+
+  cors: {
+    origins: process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+      : (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://127.0.0.1:3000']),
+  },
 } as const;

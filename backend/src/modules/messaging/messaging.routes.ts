@@ -16,6 +16,7 @@ const sendMessageSchema = z.object({
   content: z.string().min(1).max(5000),
   contentType: z.enum(['text', 'image', 'location']).optional(),
   ttlSeconds: z.number().positive().optional(),
+  clientMessageId: z.string().uuid().optional(), // Idempotency: same key within 5min returns existing message
 });
 
 const retentionSchema = z.object({

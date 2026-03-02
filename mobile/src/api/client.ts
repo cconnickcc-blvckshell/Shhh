@@ -28,6 +28,11 @@ export function getAuthToken(): string {
   return authToken;
 }
 
+export function getMediaUrl(storagePath: string): string {
+  const path = storagePath?.startsWith('/') ? storagePath : `/${storagePath}`;
+  return `${API_BASE}/uploads${path}`;
+}
+
 export async function api<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -51,13 +56,13 @@ export async function api<T = any>(path: string, options: RequestInit = {}): Pro
 }
 
 export const authApi = {
-  register: (phone: string, displayName: string) =>
+  register: (phone: string, displayName: string, sessionToken?: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/register', {
-      method: 'POST', body: JSON.stringify({ phone, displayName }),
+      method: 'POST', body: JSON.stringify({ phone, displayName, ...(sessionToken && { sessionToken }) }),
     }),
-  login: (phone: string) =>
+  login: (phone: string, sessionToken?: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/login', {
-      method: 'POST', body: JSON.stringify({ phone }),
+      method: 'POST', body: JSON.stringify({ phone, ...(sessionToken && { sessionToken }) }),
     }),
   refresh: (refreshToken: string) =>
     api<{ data: { accessToken: string; refreshToken: string } }>('/v1/auth/refresh', {

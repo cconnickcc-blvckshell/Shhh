@@ -13,7 +13,10 @@ export function getIO(): SocketServer | null {
 
 export function setupWebSocket(httpServer: HttpServer): SocketServer {
   io = new SocketServer(httpServer, {
-    cors: { origin: '*', methods: ['GET', 'POST'] },
+    cors: {
+      origin: config.cors.origins.length > 0 ? config.cors.origins : false,
+      methods: ['GET', 'POST'],
+    },
     pingTimeout: 60000,
     pingInterval: 25000,
   });

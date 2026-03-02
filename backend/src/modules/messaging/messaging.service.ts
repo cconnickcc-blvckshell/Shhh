@@ -1,7 +1,10 @@
 import { query } from '../../config/database';
+import { getRedis } from '../../config/redis';
 import { Message } from './message.model';
 import { v4 as uuidv4 } from 'uuid';
 import { emitNewMessage, emitToUser } from '../../websocket';
+
+const IDEMPOTENCY_TTL = 300; // 5 min
 
 export class MessagingService {
   async createConversation(participantIds: string[], type: 'direct' | 'group' | 'event' = 'direct') {
@@ -70,8 +73,19 @@ export class MessagingService {
     senderId: string,
     content: string,
     contentType: string = 'text',
-    ttlSeconds?: number
+    ttlSeconds?: number,
+    clientMessageId?: string
   ) {
+    if (clientMessageId) {
+      const redis = getRedis();
+      const key = `msg_idem:${conversationId}:${senderId}:${clientMessageId}`;
+      const existing = await redis.get(key);
+      if (existing) {
+        const msg = await Message.findById(existing).lean();
+        if (msg) return msg;
+      }
+    }
+
     const participant = await query(
       `SELECT 1 FROM conversation_participants
        WHERE conversation_id = $1 AND user_id = $2 AND left_at IS NULL`,
@@ -101,6 +115,12 @@ export class MessagingService {
     });
 
     await message.save();
+
+    if (clientMessageId) {
+      const redis = getRedis();
+      const key = `msg_idem:${conversationId}:${senderId}:${clientMessageId}`;
+      await redis.set(key, message._id.toString(), 'EX', IDEMPOTENCY_TTL);
+    }
 
     await query(
       `UPDATE conversations SET last_message_at = NOW() WHERE id = $1`,

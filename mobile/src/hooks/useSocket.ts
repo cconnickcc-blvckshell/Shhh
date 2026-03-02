@@ -66,10 +66,16 @@ export function useSocket() {
     return () => { socketRef.current?.off('album_shared', handler); };
   }, []);
 
+  const onReconnect = useCallback((handler: () => void) => {
+    socketRef.current?.on('connect', handler);
+    return () => { socketRef.current?.off('connect', handler); };
+  }, []);
+
   return {
     socket: socketRef.current,
     joinConversation, leaveConversation,
     sendTyping, stopTyping,
     onNewMessage, onNotification, onTyping, onAlbumShared,
+    onReconnect,
   };
 }

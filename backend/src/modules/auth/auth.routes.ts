@@ -15,10 +15,12 @@ const pushService = new PushService();
 const registerSchema = z.object({
   phone: z.string().min(10).max(15),
   displayName: z.string().min(2).max(50),
+  sessionToken: z.string().uuid().optional(), // Required in prod; optional in test for backward compat
 });
 
 const loginSchema = z.object({
   phone: z.string().min(10).max(15),
+  sessionToken: z.string().uuid().optional(), // Required in prod; optional in test for backward compat
 });
 
 const refreshSchema = z.object({
@@ -44,7 +46,8 @@ router.post('/phone/send-code', authRateLimiter, validate(sendCodeSchema), async
 router.post('/phone/verify', authRateLimiter, validate(verifyCodeSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     await otpService.verifyOTP(req.body.phone, req.body.code);
-    res.json({ data: { verified: true } });
+    const sessionToken = await otpService.createOTPSession(req.body.phone);
+    res.json({ data: { verified: true, sessionToken } });
   } catch (err) { next(err); }
 });
 

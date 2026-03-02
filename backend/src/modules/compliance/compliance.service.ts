@@ -90,6 +90,15 @@ export class ComplianceService {
       try {
         await query(`UPDATE data_deletion_requests SET status = 'processing' WHERE id = $1`, [requestId]);
 
+        // Purge MongoDB messages (deletion parity across stores)
+        const mongoResult = await Message.deleteMany({ senderId: userId });
+        if (mongoResult.deletedCount > 0) {
+          await query(
+            `INSERT INTO audit_logs (user_id, action, gdpr_category, metadata_json) VALUES ($1, 'compliance.mongo_messages_purged', 'data_rights', $2)`,
+            [userId, JSON.stringify({ deletedCount: mongoResult.deletedCount })]
+          );
+        }
+
         // Anonymize: overwrite PII so user is no longer identifiable
         await query(
           `UPDATE users SET phone_hash = 'deleted_' || id::text, email_hash = NULL, password_hash = NULL, is_active = false, updated_at = NOW(), deleted_at = NOW() WHERE id = $1`,

@@ -22,6 +22,8 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 
 | Document | Purpose | When to read/update |
 |----------|---------|---------------------|
+| **CONSOLIDATED_CTO_REVIEW.md** | **Single source of truth** merging all audits; P0/P1 gates; contradictions resolved; actionable release plan. | When making go/no-go decisions or planning gates. |
+| **PRODUCTION_READINESS_GRADE_REPORT.md** | Executive-grade assessment with proof, suggestions, future roadmap, decision framework for CEO/CTO/COO. | When assessing production readiness or presenting to leadership. |
 | **E2E_CAPABILITY_AUDIT_REPORT.md** | **E2E audit** of what exists vs partial vs missing (mobile, admin, backend). No optimistic gloss. | When assessing ship-readiness or planning fixes. |
 | **MASTER_IMPLEMENTATION_CHECKLIST.md** | **Single checklist** for E2E audit items and discussed-but-not-implemented features. Tiers 0–8, status ✅/⬜. | When planning sprints or prioritizing; use with E2E audit. |
 | **SCOPE_PIVOT_TODO.md** | **Scope when pivoting:** done vs remaining by tier; full remaining list with ID, action, where. | When switching tasks or returning to implementation. |
@@ -54,4 +56,4 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 | **policies/POLICY_DOCUMENTATION_INDEX.md** | Master index of all policy documents (Terms, Privacy, AUP, Security, Modern Slavery, etc.) |
 | **policies/** | Terms of Service, Privacy Policy, Acceptable Use, Community Guidelines, Refund, Payment Terms, Content Moderation, Appeal, DMCA, Location/Messaging/Media policies, Security, Vulnerability Disclosure, Incident Response, Data Breach, Data Retention, Data Subject Rights, Children's Privacy, DPA, Code of Conduct, Whistleblower, Conflict of Interest, Modern Slavery Statement, Human Trafficking Policy, Supply Chain Due Diligence, Supplier Code of Conduct, Cookie Policy, SLA/SLO, Support, Disaster Recovery, Business Continuity, Software License |
 
-**Working from this codebase:** Use **ARCHITECTURE.md**, **DEV_HANDOVER.md**, and **UX_UI_SPEC.md** as the source of truth for what exists. Use **E2E_CAPABILITY_AUDIT_REPORT.md** and **MASTER_IMPLEMENTATION_CHECKLIST.md** to drive what to build next; **SCOPE_PIVOT_TODO.md** to avoid losing scope when pivoting. Use **OPS_RUNBOOK.md** and **DEPLOYMENT_GUIDE.md** for operations.
+**Working from this codebase:** Use **ARCHITECTURE.md**, **DEV_HANDOVER.md**, and **UX_UI_SPEC.md** as the source of truth for what exists. Use **CONSOLIDATED_CTO_REVIEW.md** for go/no-go gates and release planning; **E2E_CAPABILITY_AUDIT_REPORT.md** and **MASTER_IMPLEMENTATION_CHECKLIST.md** to drive what to build next; **SCOPE_PIVOT_TODO.md** to avoid losing scope when pivoting. Use **OPS_RUNBOOK.md** and **DEPLOYMENT_GUIDE.md** for operations.

@@ -41,13 +41,14 @@ export class MessagingController {
 
   async sendMessage(req: Request, res: Response, next: NextFunction) {
     try {
-      const { content, contentType, ttlSeconds } = req.body;
+      const { content, contentType, ttlSeconds, clientMessageId } = req.body;
       const message = await messagingService.sendMessage(
         req.params.id as string,
         req.user!.userId,
         content,
         contentType,
-        ttlSeconds
+        ttlSeconds,
+        clientMessageId
       );
       res.status(201).json({ data: message });
     } catch (err) {

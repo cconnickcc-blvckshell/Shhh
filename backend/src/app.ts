@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { config } from './config';
+import { metricsMiddleware, metricsHandler } from './middleware/metrics';
 import compression from 'compression';
 import { globalRateLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
@@ -44,9 +46,15 @@ export function createApp() {
   const app = express();
 
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  app.use(cors());
+  app.use(cors({
+    origin: config.cors.origins.length > 0
+      ? config.cors.origins
+      : false, // production with no CORS_ORIGINS: reject all (fail-safe)
+    credentials: true,
+  }));
   app.use(compression());
   app.use(express.json({ limit: '10mb' }));
+  app.use(metricsMiddleware);
   app.use(globalRateLimiter);
 
   // Root: redirect to API docs
@@ -59,6 +67,7 @@ export function createApp() {
   }));
   app.get('/docs.json', (_req, res) => res.json(swaggerSpec));
 
+  app.get('/metrics', metricsHandler);
   app.get('/health', (_req, res) => {
     res.json({
       status: 'ok',

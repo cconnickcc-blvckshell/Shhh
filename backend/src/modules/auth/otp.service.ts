@@ -1,9 +1,11 @@
 import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import { getRedis } from '../../config/redis';
 import { logger } from '../../config/logger';
 import { config } from '../../config';
 
 const OTP_TTL = 300;
+const OTP_SESSION_TTL = 300; // 5 min to complete register/login after verify
 const MAX_ATTEMPTS = 5;
 
 function generateOTP(): string {
@@ -80,5 +82,25 @@ export class OTPService {
 
     await redis.del(key);
     return true;
+  }
+
+  /** Create OTP session after successful verify. Required for register/login. Consumed on first use. */
+  async createOTPSession(phone: string): Promise<string> {
+    const redis = getRedis();
+    const sessionToken = uuidv4();
+    await redis.set(`otp_session:${sessionToken}`, phone, 'EX', OTP_SESSION_TTL);
+    return sessionToken;
+  }
+
+  /** Consume OTP session; returns phone if valid. Throws if invalid/expired. */
+  async consumeOTPSession(sessionToken: string): Promise<string> {
+    const redis = getRedis();
+    const key = `otp_session:${sessionToken}`;
+    const phone = await redis.get(key);
+    if (!phone) {
+      throw Object.assign(new Error('Session expired or invalid. Please verify your phone again.'), { statusCode: 401 });
+    }
+    await redis.del(key);
+    return phone;
   }
 }

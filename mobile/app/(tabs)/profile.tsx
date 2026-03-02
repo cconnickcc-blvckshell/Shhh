@@ -64,7 +64,7 @@ export default function ProfileScreen() {
       onPress: async () => {
         try {
           const res = await safetyApi.panic(40.7128, -74.006) as { data?: { message?: string; contactsNotified?: number } };
-          const msg = res?.data?.message || (res?.data?.contactsNotified ? 'Alert sent. Your emergency contacts have been notified.' : 'Alert recorded. Emergency contact notification is not yet active.');
+          const msg = res?.data?.message || 'Alert recorded. Emergency contact notification is not yet active.';
           Alert.alert('Alert Recorded', msg);
         } catch {
           Alert.alert('Error', 'Could not send alert. Try again.');

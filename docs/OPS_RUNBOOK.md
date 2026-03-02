@@ -33,8 +33,9 @@ Returns: `status`, `version`, `modules` (list of loaded modules). If any core mo
 | `DATABASE_URL` | PostgreSQL connection | API down |
 | `REDIS_URL` | Redis connection | OTP, cache, rate limits fail |
 | `MONGODB_URL` | Message storage | Messaging fails |
+| `CORS_ORIGINS` | Allowed origins (comma-separated) | Required in prod; app exits if missing |
 
-**Note:** No startup validation exists. If `NODE_ENV=production` and secrets are default, the app will run with weak security. Manually verify before deploy.
+**Note:** Production startup validates JWT_SECRET, JWT_REFRESH_SECRET, PHONE_HASH_PEPPER, CORS_ORIGINS; app exits if defaults or missing.
 
 ---
 

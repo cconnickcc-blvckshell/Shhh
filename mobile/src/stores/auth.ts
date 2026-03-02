@@ -71,8 +71,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   verifyAndLogin: async (phone, code) => {
     set({ isLoading: true, error: null });
     try {
-      await api('/v1/auth/phone/verify', { method: 'POST', body: JSON.stringify({ phone, code }) });
-      const res = await authApi.login(phone);
+      const verifyRes = await api<{ data: { verified: boolean; sessionToken?: string } }>('/v1/auth/phone/verify', {
+        method: 'POST', body: JSON.stringify({ phone, code }),
+      });
+      const sessionToken = verifyRes.data?.sessionToken;
+      const res = await authApi.login(phone, sessionToken);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(tabs)');
@@ -85,8 +88,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   verifyAndRegister: async (phone, code, displayName) => {
     set({ isLoading: true, error: null });
     try {
-      await api('/v1/auth/phone/verify', { method: 'POST', body: JSON.stringify({ phone, code }) });
-      const res = await authApi.register(phone, displayName);
+      const verifyRes = await api<{ data: { verified: boolean; sessionToken?: string } }>('/v1/auth/phone/verify', {
+        method: 'POST', body: JSON.stringify({ phone, code }),
+      });
+      const sessionToken = verifyRes.data?.sessionToken;
+      const res = await authApi.register(phone, displayName, sessionToken);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(auth)/onboarding');

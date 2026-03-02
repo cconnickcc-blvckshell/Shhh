@@ -2,16 +2,31 @@ const API_BASE = 'http://localhost:3000';
 
 let authToken = '';
 
+const TOKEN_KEY = 'admin_token';
+
+function getStorage(): Storage | null {
+  try {
+    return typeof sessionStorage !== 'undefined' ? sessionStorage : null;
+  } catch {
+    return null;
+  }
+}
+
 export function setToken(token: string) {
   authToken = token;
-  localStorage.setItem('admin_token', token);
+  getStorage()?.setItem(TOKEN_KEY, token);
 }
 
 export function getToken(): string {
   if (!authToken) {
-    authToken = localStorage.getItem('admin_token') || '';
+    authToken = getStorage()?.getItem(TOKEN_KEY) || '';
   }
   return authToken;
+}
+
+export function clearToken() {
+  authToken = '';
+  getStorage()?.removeItem(TOKEN_KEY);
 }
 
 export async function api<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
@@ -34,7 +49,9 @@ export async function api<T = unknown>(path: string, options: RequestInit = {}):
 }
 
 export const adminApi = {
-  login: (phone: string) => api<{ data: { accessToken: string; userId: string } }>('/v1/auth/login', { method: 'POST', body: JSON.stringify({ phone }) }),
+  sendCode: (phone: string) => api<{ data: { sent: boolean; devCode?: string } }>('/v1/auth/phone/send-code', { method: 'POST', body: JSON.stringify({ phone }) }),
+  verify: (phone: string, code: string) => api<{ data: { verified: boolean; sessionToken?: string } }>('/v1/auth/phone/verify', { method: 'POST', body: JSON.stringify({ phone, code }) }),
+  login: (phone: string, sessionToken?: string) => api<{ data: { accessToken: string; userId: string } }>('/v1/auth/login', { method: 'POST', body: JSON.stringify({ phone, ...(sessionToken && { sessionToken }) }) }),
   getHealth: () => api<{ status: string; version: string; modules: string[] }>('/health'),
 
   // Dashboard

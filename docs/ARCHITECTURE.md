@@ -2,7 +2,7 @@
 
 > Last updated: March 2026 (aligned with current codebase; API ledger §4 Presence/Personas/Intents/Preferences/Ads corrected)  
 > **When changing the system:** Update this doc’s §2 (file tree), §4 (API ledger), §6 (schema) when adding modules, routes, or tables.  
-> **Implementation status:** See **docs/E2E_CAPABILITY_AUDIT_REPORT.md**, **docs/MASTER_IMPLEMENTATION_CHECKLIST.md**, **docs/SCOPE_PIVOT_TODO.md**. **docs/SOFT_LAUNCH_WEB_PLAN.md** for web-first soft launch.
+> **Implementation status:** See **docs/E2E_CAPABILITY_AUDIT_REPORT.md**, **docs/MASTER_IMPLEMENTATION_CHECKLIST.md**, **docs/CONSOLIDATED_CTO_REVIEW.md**, **docs/SCOPE_PIVOT_TODO.md**, **docs/SOFT_LAUNCH_WEB_PLAN.md** for web-first soft launch.
 
 ---
 
@@ -886,6 +886,7 @@ GitHub Actions (.github/workflows/ci.yml)
 | JWT_ACCESS_EXPIRY | 15m | Access token lifetime |
 | JWT_REFRESH_EXPIRY | 7d | Refresh token lifetime |
 | PHONE_HASH_PEPPER | (required for hashing) | Pepper for HMAC-SHA256 phone/email hashing |
+| CORS_ORIGINS | (required in prod) | Comma-separated allowed origins (e.g. https://app.example.com) |
 | PORT | 3000 | API server port |
 | NODE_ENV | development | Environment mode |
 | LOG_LEVEL | debug | Pino log level |
@@ -898,9 +899,41 @@ GitHub Actions (.github/workflows/ci.yml)
 
 ---
 
-## 12. Current Notes / Gaps
+## 12. System Invariants
 
-- **Trust score route:** Fixed on `shh-enhancement-trial`: handler uses `req.params.userId` only.
+Non-negotiable rules the system must always obey (prevents drift and regressions):
+
+- **No token minting without OTP verification** — Tokens can only be minted via verified OTP (or equivalent enforced factor). No bypass path.
+- **Production boot fails on default secrets** — `JWT_SECRET`, `PHONE_HASH_PEPPER`, etc. must not be default in `NODE_ENV=production`.
+- **Deleted user is not discoverable/messageable** — Cross-store deletion executed (Postgres + Mongo + Redis).
+- **Privacy flags enforced server-side everywhere** — Blur/reveal, consent, visibility rules enforced by backend.
+- **Media access controlled by one central policy** — No ad-hoc media URLs; access via central policy.
+
+---
+
+## 13. Data Lifecycle Contract
+
+Deletion, retention, anonymization, and TTL behavior across stores:
+
+| Data | Store | Lifecycle |
+|------|-------|-----------|
+| **messages** | MongoDB | TTL index (`expiresAt`); deletion worker does not purge per-user; **gap:** Mongo purge for deleted users. |
+| **media** | Postgres + filesystem | Self-destruct TTL; cleanup worker. |
+| **audit logs** | Postgres | 7 years retention (policy); no auto-purge. |
+| **presence keys** | Redis | 60s expiry; decay worker. |
+| **refresh tokens** | Postgres | Until revocation or 7d expiry; logout revokes. |
+| **push tokens** | Postgres | Until unregister; deletion should revoke. |
+| **OTP codes** | Redis | 5 min TTL. |
+| **user PII** | Postgres | Deletion worker anonymizes (phone_hash, profile); sets `deleted_at`. |
+
+**Gap:** MongoDB messages for deleted users are not purged. Deletion worker only handles Postgres.
+
+---
+
+## 14. Current Notes / Gaps
+
+- **Trust score route:** Fixed: handler uses `req.params.userId` only.
+- **P0/P1 gates:** Implemented (OTP enforced, prod secrets, CORS, panic copy, verification hidden, upload magic bytes, Mongo purge, metrics, chat idempotency/reconnect, album images, admin sessionStorage).
 - **Screenshot:** `POST /v1/safety/screenshot` implemented; records to `screenshot_events` (optional targetUserId, conversationId).
 - **Account deletion:** Worker `process-deletions` runs every 5m; anonymizes user + profile, then marks request completed (anonymize first, hard delete later).
 - **Panic alerts:** Emergency contacts are not yet notified via SMS/push; response returns `contactsNotified: 0`, `emergencyContactsOnFile`; feature deferred.
