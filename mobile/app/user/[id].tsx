@@ -133,7 +133,7 @@ export default function UserDetailScreen() {
         {/* Intent flags */}
         {profile.activeIntents?.length > 0 && (
           <View style={s.intentRow}>
-            {[...new Set(profile.activeIntents)].map((f: string) => (
+            {([...new Set(profile.activeIntents)] as string[]).map((f: string) => (
               <View key={f} style={s.intentChip}>
                 <Ionicons name={(INTENT_ICONS[f] || 'flag') as any} size={11} color={colors.primaryLight} />
                 <Text style={s.intentText}>{f.replace(/_/g, ' ')}</Text>

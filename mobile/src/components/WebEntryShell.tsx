@@ -147,7 +147,7 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  full: { flex: 1, minHeight: Platform.OS === 'web' ? '100vh' : undefined },
+  full: { flex: 1, minHeight: Platform.OS === 'web' ? ('100vh' as any) : undefined },
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingBottom: 40, alignItems: 'center' },
   glowPlum: {

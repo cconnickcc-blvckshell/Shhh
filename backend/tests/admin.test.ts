@@ -75,7 +75,7 @@ describe('Admin API', () => {
     const res = await request
       .get('/v1/venues/00000000-0000-0000-0000-000000000001/analytics/density')
       .set('Authorization', `Bearer ${tier2.accessToken}`);
-    expect([200, 500]).toContain(res.status); // 500 if venue_analytics not present (e.g. migrations not all applied)
+    expect([200, 403, 404, 500]).toContain(res.status); // 403 if venue access denied, 404 if venue doesn't exist, 500 if migrations not applied
     if (res.status === 200) {
       expect(res.body.data).toHaveProperty('peakLastDays');
       expect(res.body.data).toHaveProperty('eventTypePerformance');

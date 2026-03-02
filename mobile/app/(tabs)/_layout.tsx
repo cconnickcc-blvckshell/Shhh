@@ -15,7 +15,7 @@ const TAB_OPTIONS = {
   sceneStyle: { backgroundColor: 'transparent', flex: 1 },
   contentStyle: { backgroundColor: 'transparent' },
   headerStyle: { backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0, borderBottomWidth: 0.5, borderBottomColor: 'rgba(147,51,234,0.15)' },
-  headerTitleStyle: { color: colors.text, fontWeight: '700', fontSize: fontSize.lg },
+  headerTitleStyle: { color: colors.text, fontWeight: '700' as const, fontSize: fontSize.lg },
   tabBarStyle: {
     backgroundColor: 'transparent',
     borderTopWidth: 0.5,
@@ -23,14 +23,14 @@ const TAB_OPTIONS = {
     height: 64,
     paddingBottom: 8,
     paddingTop: 8,
-    position: 'absolute',
+    position: 'absolute' as const,
     left: 0,
     right: 0,
     bottom: 0,
   },
   tabBarActiveTintColor: colors.primaryLight,
   tabBarInactiveTintColor: 'rgba(255,255,255,0.3)',
-  tabBarLabelStyle: { fontSize: 10, fontWeight: '700', letterSpacing: 0.3 },
+  tabBarLabelStyle: { fontSize: 10, fontWeight: '700' as const, letterSpacing: 0.3 },
 };
 
 export default function TabLayout() {
@@ -59,8 +59,6 @@ export default function TabLayout() {
       screenOptions={{
         ...TAB_OPTIONS,
         tabBarStyle,
-        // Detach inactive screens so only the active tab's tree is rendered into view.
-        detachInactiveScreens: true,
       }}
     >
       <Tabs.Screen
