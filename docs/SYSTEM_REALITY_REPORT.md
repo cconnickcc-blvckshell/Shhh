@@ -43,33 +43,31 @@
 ## What the system cannot do (evidence-led)
 
 - **Account deletion execution:** `requestAccountDeletion` only inserts into `data_deletion_requests`; no worker or cron sets `users.deleted_at` or purges data. Evidence: `backend/src/modules/compliance/compliance.service.ts` (lines 41–54); grep shows no consumer of `data_deletion_requests`.
-- **Screenshot reporting API:** Mobile calls `POST /v1/safety/screenshot` but that route does not exist. Evidence: `backend/src/modules/safety/safety.routes.ts` (only contacts, checkin, panic); `mobile/src/hooks/useScreenshotDetection.ts` (line 21).
+- **Screenshot reporting API:** Implemented. `POST /v1/safety/screenshot` exists in `safety.routes.ts` and inserts into `screenshot_events`. Optional push to target user not implemented.
 - **Panic → notify contacts:** `panic()` writes to `safety_checkins` and `audit_logs` and returns `contactsNotified`; no Twilio/push to emergency contacts. Evidence: `backend/src/modules/safety/safety.service.ts` (lines 51–73).
 - **Missed check-in alerts:** `getMissedCheckins()` exists but no worker calls it or sends alerts. Evidence: `backend/src/modules/safety/safety.service.ts` (lines 75–90); `backend/src/workers/index.ts` (no safety job).
 - **E2EE on wire:** Messages stored plaintext in MongoDB; `isEncrypted: true` is schema default only. Evidence: `backend/src/modules/messaging/message.model.ts`; no encrypt/decrypt in `mobile/src` for send/receive.
-- **Trust-score route param bug:** Route is `GET /v1/users/:userId/trust-score` but handler uses `req.params.id || req.params.userId`; Express 4/5 `params.id` is undefined for this route. Evidence: `backend/src/app.ts` (lines 119–122).
+- **Trust-score route param:** Fixed. Handler uses `req.params.userId` correctly. Evidence: `backend/src/app.ts` (lines 133–139).
 - **Idempotency keys:** No `Idempotency-Key` handling on any route; duplicate submissions (e.g. double-tap create conversation) can create duplicates. Evidence: grep for idempotency/key across `backend/src` returns nothing.
 - **Distributed tracing / metrics:** No OpenTelemetry or Prometheus; only Pino logs. Evidence: `backend/src/config/logger.ts`; no metrics/tracing in `backend/src`.
 - **Production env validation:** No startup check that required secrets (e.g. `PHONE_HASH_PEPPER`, `JWT_SECRET`) are set and non-default in prod. Evidence: `backend/src/config/index.ts` (reads env with defaults).
 
-## Top 10 risks (ranked by severity)
+## Top 8 risks (ranked by severity)
 
 | # | Risk | Category | Evidence / impact |
 |---|------|----------|--------------------|
 | 1 | GDPR deletion not executed | Data / Compliance | `data_deletion_requests` never processed; users cannot be fully deleted as promised. |
-| 2 | Screenshot endpoint 404 | UX / Trust | Mobile screenshot flow fails silently; user told “other person notified” but backend does nothing. `mobile/src/hooks/useScreenshotDetection.ts` → `POST /v1/safety/screenshot`. |
-| 3 | Panic “contacts notified” is false | Safety | `safety.service.ts` returns `contactsNotified` but no SMS/push sent; legal/safety exposure. |
-| 4 | Messages not E2EE | Security | `message.model.ts` stores plaintext; handover states E2EE infra only; client not wired. |
-| 5 | Trust-score route bug | Correctness | `app.ts` line 121: `req.params.id` undefined for `/v1/users/:userId/trust-score`; 500 or wrong user. |
-| 6 | No production secret validation | Ops / Security | Weak or default JWT/pepper in prod if env misconfigured. |
-| 7 | No deletion/processing worker | Ops | Backlog of `data_deletion_requests` and no automated cleanup. |
-| 8 | Redis eviction policy | Data | Worker startup logs “Eviction policy is allkeys-lru. It should be noeviction”; OTP/cooldown keys could be evicted. `docker-compose.yml`: `maxmemory-policy allkeys-lru`. |
-| 9 | Admin escalation / appeal | Trust | No quorum for destructive actions; no appeal flow for bans (documented in handover as needed). |
-| 10 | Observability gap | Ops | No SLOs, no metrics, no alerting; 100k-user target unverifiable. |
+| 2 | Panic "contacts notified" is false | Safety | `safety.service.ts` returns `contactsNotified` but no SMS/push sent; legal/safety exposure. |
+| 3 | Messages not E2EE | Security | `message.model.ts` stores plaintext; handover states E2EE infra only; client not wired. |
+| 4 | No production secret validation | Ops / Security | Weak or default JWT/pepper in prod if env misconfigured. |
+| 5 | No deletion/processing worker | Ops | Backlog of `data_deletion_requests` and no automated cleanup. |
+| 6 | Redis eviction policy | Data | Worker startup logs "Eviction policy is allkeys-lru. It should be noeviction"; OTP/cooldown keys could be evicted. `docker-compose.yml`: `maxmemory-policy allkeys-lru`. |
+| 7 | Admin escalation / appeal | Trust | No quorum for destructive actions; no appeal flow for bans (documented in handover as needed). |
+| 8 | Observability gap | Ops | No SLOs, no metrics, no alerting; 100k-user target unverifiable. |
 
 ## Ship-readiness score: **52/100**
 
-- **Justification:** Core flows (auth, discover, chat, presence, venues, events, ads, admin moderation, compliance export) exist and are testable. Critical gaps: GDPR deletion not executed; safety screenshot and panic-notify are incomplete or misleading; E2EE is server-only; trust-score bug; no production hardening (secret checks, eviction policy, observability). Score reflects “feature-complete in many areas but material compliance/safety/correctness gaps and missing production safeguards.”
+- **Justification:** Core flows (auth, discover, chat, presence, venues, events, ads, admin moderation, compliance export) exist and are testable. Critical gaps: GDPR deletion not executed; panic-notify is misleading; E2EE is server-only; no production hardening (secret checks, eviction policy, observability). Score reflects “feature-complete in many areas but material compliance/safety/correctness gaps and missing production safeguards.”
 
 ---
 
@@ -109,7 +107,7 @@
 | Privacy | Account deletion | Stub | Request only; no processor | High | |
 | Privacy | Consent | Working | recordConsent, withdrawConsent | Low | |
 | Privacy | Location fuzzing | Working | `config.geo.defaultFuzzMeters`, discovery.service | Low | |
-| Privacy | Screenshot handling | Missing | Route missing; mobile calls non-existent endpoint | High | |
+| Privacy | Screenshot handling | Working | POST /v1/safety/screenshot inserts into screenshot_events | Low | |
 | Mobile | Routing | Working | expo-router; (auth), (tabs), chat, venue, etc. | Low | |
 | Mobile | State | Working | Zustand in `stores/auth.ts` | Low | |
 | Mobile | API client | Working | `api/client.ts`; auth header; domain APIs | Low | Android 10.0.2.2 |
@@ -146,9 +144,9 @@
 ## B) API correctness
 
 - **Implemented:** Auth: `authenticate` and `requireTier`/`requireRole` on protected routes. Validation: Zod in `middleware/validation.ts`; 400 with `error.details[]`. Error handler in `errorHandler.ts`; 5xx message hidden in prod. Global rate limit (config) and auth-specific (5/50 per 15m). Pagination in admin-extended and messaging (`before`, `limit`).
-- **Missing:** Trust-score handler uses `req.params.id` which is undefined for `GET /v1/users/:userId/trust-score` — should use `req.params.userId` only (`backend/src/app.ts` line 121). No idempotency keys. Auth rate limiter is per-IP; no per-user or per-phone cap on sensitive actions beyond OTP. No standard pagination (cursor vs offset) across all list APIs.
-- **Failure modes:** Trust-score returns 500 or wrong user when called as `/v1/users/<uuid>/trust-score`. Double POST (e.g. create conversation) creates two resources. Rate limit bypass by IP rotation.
-- **Improvements:** (1) Fix trust-score: `const userId = req.params.userId as string`. (2) Add optional `Idempotency-Key` for POST/PUT on conversation create, message send, billing checkout. (3) Document pagination contract (offset/limit vs cursor) and apply consistently.
+- **Missing:** No idempotency keys. (Trust-score fixed: uses `req.params.userId` in `app.ts`.) Auth rate limiter is per-IP; no per-user or per-phone cap on sensitive actions beyond OTP. No standard pagination (cursor vs offset) across all list APIs.
+- **Failure modes:** Double POST (e.g. create conversation) creates two resources. Rate limit bypass by IP rotation.
+- **Improvements:** (1) Add optional `Idempotency-Key` for POST/PUT on conversation create, message send, billing checkout. (2) Document pagination contract (offset/limit vs cursor) and apply consistently.
 
 ## C) Data integrity
 
@@ -181,16 +179,16 @@
 ## G) Privacy/compliance
 
 - **Implemented:** Data export in `compliance.service.ts` (requestDataExport) aggregates user, profile, interactions, conversations, messages, audit_logs, consents; logs export to audit. Account deletion request: insert into `data_deletion_requests` and audit. Consent: recordConsent, withdrawConsent with version. Location fuzzing in discovery. Screenshot: table `screenshot_events` in migration 005; mobile hook calls API.
-- **Missing:** No worker processes `data_deletion_requests` (see C). Screenshot API route does not exist: mobile calls `POST /v1/safety/screenshot` but `safety.routes.ts` has no such route — 404. Panic returns “contactsNotified” but no code sends SMS/push to emergency contacts. No retention policy (e.g. audit_logs, messages) documented or enforced in code.
-- **Failure modes:** Deletion requests never fulfilled; GDPR Art. 17 not satisfied. Screenshot feature appears to work but fails silently. Panic gives false assurance. Long-term retention of PII in logs/messages.
-- **Improvements:** (1) Implement deletion worker (see C). (2) Add `POST /v1/safety/screenshot` in `safety.routes.ts` and controller that inserts into `screenshot_events` (reporter, target_user_id, conversation_id, etc.) and optionally notifies other party via push. (3) Either implement panic notification (Twilio/push) or change copy to “Alert recorded; contacts will not be notified until this is implemented.” (4) Document retention (audit, messages, safety_checkins) and add cleanup jobs if needed.
+- **Missing:** No worker processes `data_deletion_requests` (see C). Screenshot route implemented: POST /v1/safety/screenshot inserts into screenshot_events; optional push to target not implemented. Panic returns “contactsNotified” but no code sends SMS/push to emergency contacts. No retention policy (e.g. audit_logs, messages) documented or enforced in code.
+- **Failure modes:** Deletion requests never fulfilled; GDPR Art. 17 not satisfied. Panic gives false assurance. Long-term retention of PII in logs/messages.
+- **Improvements:** (1) Implement deletion worker (see C). (2) Either implement panic notification (Twilio/push) or change copy to “Alert recorded; contacts will not be notified until this is implemented.” (3) Document retention (audit, messages, safety_checkins) and add cleanup jobs if needed.
 
 ## H) Mobile app
 
 - **Implemented:** Expo 55; expo-router: (auth)/index, register, verify-code, onboarding; (tabs)/index (discover), messages, events, profile; chat/[id], user/[id], venue/[id], album, couple, verify, subscription, whispers; profile/edit, profile/status. Auth: `stores/auth.ts` with sendOTP, verifyAndLogin, verifyAndRegister, login/register fallback, loadProfile, logout; token in localStorage (web). API client in `api/client.ts` with auth header; discoverApi, messagingApi, eventsApi, safetyApi, albumsApi, etc. useSocket for conversations. usePhotoUpload, useLocation, useDistressGesture, useScreenshotDetection, usePushNotifications. Theme in `constants/theme.ts`.
-- **Missing:** E2EE: no encrypt before send or decrypt after receive in `api/client.ts` or chat screen. Screenshot hook calls non-existent endpoint. Android base URL hardcoded to 10.0.2.2 (emulator); no env for API URL. Some screens may be thin (e.g. subscription, verify). No offline queue or sync.
-- **Failure modes:** Screenshot flow 404. Real device on different network needs configurable API URL. Message content not protected end-to-end. Offline sends fail without retry.
-- **Improvements:** (1) Add `POST /v1/safety/screenshot` and wire response handling. (2) API_BASE from env (e.g. EXPO_PUBLIC_API_URL) with fallback. (3) Plan and implement E2EE in send/receive path. (4) Add simple offline detection and retry or queue for critical mutations.
+- **Missing:** E2EE: no encrypt before send or decrypt after receive in `api/client.ts` or chat screen. Screenshot hook calls POST /v1/safety/screenshot (implemented). Android base URL hardcoded to 10.0.2.2 (emulator); no env for API URL. Some screens may be thin (e.g. subscription, verify). No offline queue or sync.
+- **Failure modes:** Real device on different network needs configurable API URL. Message content not protected end-to-end. Offline sends fail without retry.
+- **Improvements:** (1) API_BASE from env (e.g. EXPO_PUBLIC_API_URL) with fallback. (2) Plan and implement E2EE in send/receive path. (3) Add simple offline detection and retry or queue for critical mutations.
 
 ## I) Admin dashboard
 
@@ -244,8 +242,6 @@
 | Item | Outcome | Code areas | Effort | Test |
 |------|---------|------------|--------|------|
 | Process account deletion | GDPR deletion executable | New worker or cron; `compliance.service` or new processor; set `users.deleted_at`, purge/anonymize per policy | M | Unit: processor; integration: request → verify deleted |
-| Add screenshot endpoint | Screenshot flow works | `safety.routes.ts`, `safety.controller.ts`, `safety.service.ts` (insert screenshot_events); optional push | S | E2E: trigger screenshot → DB + optional push |
-| Fix trust-score param | Correct user score | `app.ts` line 121: use `req.params.userId` only | S | Unit or integration: GET with :userId |
 | Panic copy or notify | No false “contacts notified” | Either implement notify (Twilio/push) in `safety.service.ts` or change response/copy in API and mobile | M | Integration: panic → verify message/notify |
 | Production secret check | Fail fast on weak secrets | `config/index.ts` or startup script; check JWT_SECRET, PHONE_HASH_PEPPER in prod | S | Start server with defaults in prod → must exit |
 
@@ -289,13 +285,11 @@
 ## Highest-value tests to add
 
 1. **Integration: Account deletion processor** — Request deletion → run processor → assert user soft-deleted and request status updated. Prevents regression on P0.
-2. **Integration: Screenshot endpoint** — POST /v1/safety/screenshot with auth → assert screenshot_events row and 200. Validates P0.
-3. **Integration: Trust-score route** — GET /v1/users/:userId/trust-score with valid token and userId → 200 and score shape. Validates P0.
-4. **Unit: AdService getEligibleAd** — Mock DB/Redis; assert null when premium, when kill switch off, when over cap; assert ad when eligible. Prevents 500 and logic bugs.
-5. **E2E (admin):** Login → open report → resolve with notes → verify audit. Covers critical moderator path.
-6. **E2E (mobile):** Login (with devCode) → open discover → open user → like. Covers happy path.
-7. **Load: Discovery** — k6 scenario: N users, each does discover with varying lat/lng/radius; threshold p95 < 500ms (relaxed from 200ms initially).
-8. **Load: WebSocket** — k6 WS or artillery: connect, join conversation, send messages; assert delivery and threshold.
+2. **Unit: AdService getEligibleAd** — Mock DB/Redis; assert null when premium, when kill switch off, when over cap; assert ad when eligible. Prevents 500 and logic bugs.
+3. **E2E (admin):** Login → open report → resolve with notes → verify audit. Covers critical moderator path.
+4. **E2E (mobile):** Login (with devCode) → open discover → open user → like. Covers happy path.
+5. **Load: Discovery** — k6 scenario: N users, each does discover with varying lat/lng/radius; threshold p95 < 500ms (relaxed from 200ms initially).
+6. **Load: WebSocket** — k6 WS or artillery: connect, join conversation, send messages; assert delivery and threshold.
 
 ## Load test plan (k6)
 
@@ -308,7 +302,7 @@
 
 For an exhaustive, CTO-grade reference, see **`docs/SYSTEM_REALITY_REPORT_APPENDICES.md`**, which adds:
 
-- **Appendix A: Complete API Route & Auth Matrix** — Every v1 route (method, path, auth, tier, role, source file) in one table; includes the single non-existent route (POST safety/screenshot).
+- **Appendix A: Complete API Route & Auth Matrix** — Every v1 route (method, path, auth, tier, role, source file) in one table.
 - **Appendix B: Schema & Migration Summary** — All 10 migrations with tables and critical schema notes (data_deletion_requests, screenshot_events, safety_checkins.alert_sent, MongoDB).
 - **Appendix C: Threat Model & Abuse Vectors** — Threat, mitigation in code, gap, and evidence path per vector.
 - **Appendix D: Evidence Appendix (Critical Bugs)** — File, line, code snippet, and exact seam for trust-score param, account deletion, screenshot endpoint, panic "contacts notified."

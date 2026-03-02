@@ -12,10 +12,10 @@ docker compose up -d
 cd backend && npm install
 
 # Run database migrations
-npm run migrate
+cd backend && npm run migrate
 
 # Start development server
-npm run dev
+cd backend && npm run dev
 ```
 
 The API will be available at `http://localhost:3000`.
@@ -34,9 +34,13 @@ The API will be available at `http://localhost:3000`.
 
 ## API Endpoints
 
+> **Note:** This table lists a subset of key endpoints. For the complete API ledger, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) §4 and Swagger at `http://localhost:3000/docs`.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Health check |
+| POST | `/v1/auth/phone/send-code` | Send OTP (rate limited; dev returns `devCode`) |
+| POST | `/v1/auth/phone/verify` | Verify OTP, returns tokens |
 | POST | `/v1/auth/register` | Register with phone |
 | POST | `/v1/auth/login` | Login with phone |
 | POST | `/v1/auth/refresh` | Refresh access token |
