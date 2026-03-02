@@ -1470,7 +1470,7 @@ albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare}
 
 ### 6.5 Web layout (soft launch)
 
-**Navigation authority:** URL is the single source of truth; `<Tabs>` always mounted; sidebar triggers `router.replace`; active tab derived from pathname via `src/lib/tabRoutes.ts`. **Layout spine:** Tab screens root with `PageShell`; optional `ContentColumn`/`Card` (`src/components/layout/`). **Screen states:** `SafeState` (loading, empty, error, offline). See **docs/FRONTEND_REFACTOR_STRATEGY.md**.
+**Navigation authority:** URL is the single source of truth; `<Tabs>` always mounted and uses `detachInactiveScreens` so only the active scene is attached; sidebar triggers `router.replace`; active tab derived from pathname via `src/lib/tabRoutes.ts`. **Layout spine:** Tab screens root with `PageShell`; optional `ContentColumn`/`Card` (`src/components/layout/`). **Screen states:** `SafeState` (loading, empty, error, offline). See **docs/FRONTEND_REFACTOR_STRATEGY.md**.
 
 When `Platform.OS === 'web'` and viewport width ≥ 1024px (`useBreakpoint().showSidebar`):
 

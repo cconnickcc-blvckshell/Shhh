@@ -11,6 +11,7 @@ import { WebSidebar } from '../../src/components/WebSidebar';
 import { pathnameToTab, TAB_TO_ROUTE, type DesktopTabId } from '../../src/lib/tabRoutes';
 
 const TAB_OPTIONS = {
+  // Scene containers must fully cover the viewport so inactive tabs are not visible.
   sceneStyle: { backgroundColor: 'transparent', flex: 1 },
   contentStyle: { backgroundColor: 'transparent' },
   headerStyle: { backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0, borderBottomWidth: 0.5, borderBottomColor: 'rgba(147,51,234,0.15)' },
@@ -58,6 +59,8 @@ export default function TabLayout() {
       screenOptions={{
         ...TAB_OPTIONS,
         tabBarStyle,
+        // Detach inactive screens so only the active tab's tree is rendered into view.
+        detachInactiveScreens: true,
       }}
     >
       <Tabs.Screen
