@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { messagingApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
+import { PageShell, ContentColumn } from '../../src/components/layout';
+import { SafeState } from '../../src/components/ui';
 
 interface Conversation {
   id: string;
@@ -48,30 +50,22 @@ export default function MessagesScreen() {
 
   if (loading && convos.length === 0) {
     return (
-      <View style={styles.container}>
-        <View style={styles.centerLoad}>
-          <ActivityIndicator size="large" color={colors.primaryLight} />
-          <Text style={styles.loadText}>Loading conversations...</Text>
-        </View>
-      </View>
+      <PageShell>
+        <SafeState variant="loading" message="Loading conversations..." />
+      </PageShell>
     );
   }
   if (loadError && convos.length === 0) {
     return (
-      <View style={styles.container}>
-        <View style={styles.errorBox}>
-          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
-          <Text style={styles.errorText}>{loadError}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }}>
-            <Text style={styles.retryBtnText}>Try again</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <PageShell>
+        <SafeState variant="error" message={loadError} onRetry={() => { setLoading(true); load(); }} />
+      </PageShell>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <PageShell>
+      <ContentColumn style={styles.column}>
       <FlatList
         data={convos}
         keyExtractor={i => i.id}
@@ -103,29 +97,23 @@ export default function MessagesScreen() {
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primaryLight} />}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <View style={styles.emptyIcon}><Ionicons name="chatbubble-ellipses-outline" size={40} color={colors.primaryLight} /></View>
-            <Text style={styles.emptyTitle}>No conversations</Text>
-            <Text style={styles.emptySub}>Match with someone to start chatting</Text>
+          <View style={styles.emptyWrap}>
+            <SafeState variant="empty" title="No conversations" message="Match with someone to start chatting" icon="chatbubble-ellipses-outline" />
           </View>
         }
       />
-    </View>
+      </ContentColumn>
+    </PageShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
-  centerLoad: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
-  loadText: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.md },
-  errorBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 80 },
-  errorText: { color: colors.text, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.md },
-  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
-  retryBtnText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
+  column: { flex: 1 },
+  emptyWrap: { flex: 1, paddingVertical: 80 },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: 14 },
   avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md, position: 'relative' },
   onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.online, borderWidth: 2, borderColor: colors.background },
-  mid: { flex: 1 },
+  mid: { flex: 1, minWidth: 0 },
   topLine: { flexDirection: 'row', justifyContent: 'space-between' },
   name: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
   time: { color: colors.textMuted, fontSize: fontSize.xs },
@@ -133,8 +121,4 @@ const styles = StyleSheet.create({
   badge: { backgroundColor: colors.primary, borderRadius: borderRadius.full, minWidth: 22, height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, marginLeft: spacing.sm },
   badgeText: { color: '#fff', fontSize: fontSize.xxs, fontWeight: '800' },
   sep: { height: 0.5, backgroundColor: colors.border, marginLeft: 82 },
-  empty: { alignItems: 'center', paddingTop: 140 },
-  emptyIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
-  emptyTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '600' },
-  emptySub: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.xs },
 });

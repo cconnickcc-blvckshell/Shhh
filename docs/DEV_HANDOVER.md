@@ -1,7 +1,7 @@
 # Shhh — Developer Handover Document
 
 > **Version**: 0.5.0 | **Last updated**: February 2026 | **Status**: Active development  
-> **Implementation status:** **docs/E2E_CAPABILITY_AUDIT_REPORT.md** (what's done vs partial vs missing), **docs/MASTER_IMPLEMENTATION_CHECKLIST.md** (single checklist), **docs/SCOPE_PIVOT_TODO.md** (scope when pivoting), **docs/SOFT_LAUNCH_WEB_PLAN.md** (web soft launch). Update the relevant §4.x and schema/API tables when adding or changing modules.
+> **Implementation status:** **docs/E2E_CAPABILITY_AUDIT_REPORT.md** (what's done vs partial vs missing), **docs/MASTER_IMPLEMENTATION_CHECKLIST.md** (single checklist), **docs/FRONTEND_REFACTOR_STRATEGY.md** (web authority, layout spine, SafeState, blur), **docs/SOFT_LAUNCH_WEB_PLAN.md** (web soft launch). Update the relevant §4.x and schema/API tables when adding or changing modules.
 
 ---
 
@@ -834,6 +834,8 @@ See [Section 11: Safety & Trust](#11-safety--trust) for full details.
 - Reveals can have an `expires_at` for time-limited reveals
 - The `getMutualReveals` query includes an `is_mutual` flag showing if the other person has also revealed to you
 
+**Frontend integration:** Mobile uses `GET /v1/photos/check/:userId` via `usersApi.canSeeUnblurred(targetUserId)` and hook `useCanSeeUnblurred`. ProfilePhoto receives `canSeeUnblurred`; discovery tiles and user profile hero use the hook. See **FRONTEND_REFACTOR_STRATEGY.md** §4 Blur invariant.
+
 ### 4.21 Compliance Module
 
 **What it does:** GDPR/CCPA compliance — data export, account deletion, consent tracking.
@@ -1468,6 +1470,8 @@ albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare}
 
 ### 6.5 Web layout (soft launch)
 
+**Navigation authority:** URL is the single source of truth; `<Tabs>` always mounted; sidebar triggers `router.replace`; active tab derived from pathname via `src/lib/tabRoutes.ts`. **Layout spine:** Tab screens root with `PageShell`; optional `ContentColumn`/`Card` (`src/components/layout/`). **Screen states:** `SafeState` (loading, empty, error, offline). See **docs/FRONTEND_REFACTOR_STRATEGY.md**.
+
 When `Platform.OS === 'web'` and viewport width ≥ 1024px (`useBreakpoint().showSidebar`):
 
 - **Sidebar:** `WebSidebar` (`src/components/WebSidebar.tsx`) shows Explore, Chat, Events, Me; drives navigation via `router.replace`; pathname drives active state. Trust line “Private · Verified · Safe” in footer.
@@ -1504,7 +1508,7 @@ Photos are rendered using standard React Native `<Image>` components. Key detail
 - Profile photos are stored as JSONB in `photos_json` — an array of URL strings
 - Photos served from `/uploads` path on the backend via `express.static`
 - CORS is configured to `origin: '*'` for cross-origin image loading
-- Blur effect is applied client-side when `blur_photos` is true and no reveal exists
+- **Blur:** Single authority via GET `/v1/photos/check/:userId`. `ProfilePhoto` receives `canSeeUnblurred` (from hook `useCanSeeUnblurred`); discovery tiles and user profile hero use it. When `canSeeUnblurred` is false or null, photo is blurred (opacity 0.3). See **docs/FRONTEND_REFACTOR_STRATEGY.md** §4 and **docs/UX_UI_SPEC.md** §5.1.
 - Thumbnails are generated server-side via Sharp
 
 ---

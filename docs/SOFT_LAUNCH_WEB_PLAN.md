@@ -4,6 +4,7 @@
 **Constraint:** Reuse backend, auth, API client, navigation, and all current screens; add **adaptive web layout, mandatory entry experience, and signature polish** so the same codebase feels inevitably premium on web.
 
 **Status:** In progress. Phase 1–4 implemented (layout, sidebar, grids, polish, entry shell, trust, env).  
+**Execution plan:** **[FRONTEND_REFACTOR_STRATEGY.md](./FRONTEND_REFACTOR_STRATEGY.md)** — web authority first, one navigation authority, layout spine, flex hardening, blur invariant, SafeState, visual discipline. Do in order; no skipping.  
 **Brand assets:** `Shh.logo.on.black.png` (wordmark on black — header/footer); `shhh.hero.png` (hero image). Copy to `mobile/assets/images/` as `logo-wordmark.png` and `hero.png` for Entry Shell imagery when ready.
 
 ---
@@ -237,7 +238,11 @@ This separates “premium, consent-first” from “sleazy hookup” perception.
 - **Hero:** `shhh.hero.png` — hero image (purple glow, intimate scene). Same location; use as main visual on the Entry Shell.
 - If assets are provided elsewhere (e.g. workspace `assets/` with names like `c__Projects_Shhh_images_Shh.logo.on.black.png`), copy them into `mobile/assets/images/` with simpler names (e.g. `logo-wordmark.png`, `hero.png`) for easier imports and document the mapping here.
 
-## 10. Deploying to Vercel (why you saw 404)
+## 10. Layout Contract Gate (required before deploy)
+
+Before web goes public, run the **Layout Contract Gate** — structural QA, not optional polish. See **[FRONTEND_REFACTOR_STRATEGY.md](./FRONTEND_REFACTOR_STRATEGY.md)** § Layout Contract Gate for the full checklist (PageShell on every screen, no raw root flex, ImageBackground explicit height, row children minWidth: 0, card minHeight, no arbitrary spacing, no blur bypass).
+
+## 11. Deploying to Vercel (why you saw 404)
 
 Vercel shows **“Ready”** when the deploy step runs, but **“No framework detected”** means it didn’t build your app — it deployed the repo root (or a default), so you get **404** when opening the URL.
 
@@ -260,7 +265,7 @@ Vercel shows **“Ready”** when the deploy step runs, but **“No framework de
 
 5. **Production API:** Set env var **`EXPO_PUBLIC_API_URL`** in Vercel to your backend URL (e.g. `https://api.yourdomain.com`) so the web app talks to your API.
 
-## 11. Next steps after review
+## 12. Next steps after review
 
 1. **Stakeholder sign-off** on: one codebase, sidebar on web, **mandatory Entry Shell**, layout lock, one signature interaction, trust signals.
 2. **Implement Phase 1** (layout + sidebar + signature layout constraint); validate in browser.

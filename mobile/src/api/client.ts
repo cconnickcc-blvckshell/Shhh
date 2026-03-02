@@ -73,6 +73,9 @@ export const usersApi = {
   pass: (id: string) => api(`/v1/users/${id}/pass`, { method: 'POST' }),
   block: (id: string) => api(`/v1/users/${id}/block`, { method: 'POST' }),
   report: (id: string, reason: string) => api(`/v1/users/${id}/report`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  /** Check if current user can see target user's unblurred photos. Single source for blur decision. */
+  canSeeUnblurred: (targetUserId: string) =>
+    api<{ data: { unblurred: boolean } }>(`/v1/photos/check/${targetUserId}`),
 };
 
 export const discoverApi = {

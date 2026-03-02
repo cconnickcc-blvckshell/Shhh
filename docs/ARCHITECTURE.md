@@ -85,7 +85,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │   ├── onboarding.tsx        # Post-registration onboarding
 │   │   │   └── onboarding-intent.tsx # Intent selection
 │   │   ├── (tabs)/
-│   │   │   ├── _layout.tsx           # Tab navigator (Explore, Chat, Events, Me)
+│   │   │   ├── _layout.tsx           # Tab navigator (Explore, Chat, Events, Me); Tabs always mounted; URL = authority; sidebar triggers router.replace
 │   │   │   ├── index.tsx             # Discover (nearby grid)
 │   │   │   ├── messages.tsx          # Conversations list
 │   │   │   ├── events.tsx            # Nearby events
@@ -128,10 +128,14 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   ├── stores/auth.ts            # Zustand auth store
 │   │   ├── constants/theme.ts        # Design tokens + layout.contentMaxWidth
 │   │   ├── constants/breakpoints.ts  # Breakpoints + CONTENT_MAX_WIDTH
-│   │   ├── hooks/useSocket.ts        # Socket.io hook
-│   │   ├── hooks/useBreakpoint.ts    # isWeb, isDesktop, showSidebar
-│   │   ├── hooks/useHover.ts         # Web hover state for polish
-│   │   ├── components/WebSidebar.tsx # Desktop web sidebar nav
+│   │   ├── lib/tabRoutes.ts         # pathnameToTab, TAB_TO_ROUTE (URL derivation only)
+│   │   ├── hooks/useSocket.ts       # Socket.io hook
+│   │   ├── hooks/useBreakpoint.ts   # isWeb, isDesktop, showSidebar
+│   │   ├── hooks/useHover.ts        # Web hover state for polish
+│   │   ├── hooks/useCanSeeUnblurred.ts # GET /v1/photos/check/:userId; single blur authority
+│   │   ├── components/layout/       # PageShell, ContentColumn, Card (layout spine)
+│   │   ├── components/ui/SafeState.tsx # loading, empty, error, offline screen states
+│   │   ├── components/WebSidebar.tsx # Desktop web sidebar nav (derives active from pathname)
 │   │   └── components/WebEntryShell.tsx # Web-only unauthenticated entry
 │   └── package.json
 ├── backend/                          # Node.js + Express 4 + TypeScript (port 3000)

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, layout } from '../constants/theme';
 import { BrandMark } from './BrandMark';
-import type { DesktopTabId } from '../contexts/DesktopTabContext';
+import type { DesktopTabId } from '../lib/tabRoutes';
 
 const NAV_ITEMS: { tab: DesktopTabId; label: string; icon: keyof typeof Ionicons.glyphMap; iconOutline: keyof typeof Ionicons.glyphMap }[] = [
   { tab: 'explore', label: 'Explore', icon: 'grid', iconOutline: 'grid-outline' },
@@ -13,8 +13,8 @@ const NAV_ITEMS: { tab: DesktopTabId; label: string; icon: keyof typeof Ionicons
 ];
 
 /**
- * Desktop web sidebar. Active tab is state-driven (DesktopTabContext), not pathname.
- * @see FRONTEND_STYLING_AND_ISSUES_HANDOVER.md Phase 3
+ * Desktop web sidebar. Active tab derived from pathname; onSelectTab triggers router.replace only.
+ * @see docs/FRONTEND_REFACTOR_STRATEGY.md §1 Navigation
  */
 export function WebSidebar({ activeTab, onSelectTab }: { activeTab: DesktopTabId; onSelectTab: (tab: DesktopTabId) => void }) {
   return (

@@ -41,8 +41,8 @@
 
 ### 1.3 Imagery & Media
 
-- Profile photos: JSONB array of paths; served from backend `/uploads`; client builds URL via `API_BASE + '/uploads' + path`. Blur applied client-side when `blur_photos` is true and no reveal. Placeholder: Ionicons `person`.
-- **NOT IMPLEMENTED**: No global blur/reveal check per viewer in ProfilePhoto; component accepts optional `blurred` prop but discovery/profile views do not pass reveal state. Required: pass `canSeeUnblurred` (from GET `/v1/photos/check/:userId` or equivalent) into ProfilePhoto.
+- Profile photos: JSONB array of paths; served from backend `/uploads`; client builds URL via `API_BASE + '/uploads' + path`. Blur applied client-side based on viewer context. Placeholder: Ionicons `person`.
+- **Implemented:** ProfilePhoto receives `canSeeUnblurred` (from GET `/v1/photos/check/:userId` via hook `useCanSeeUnblurred`). Discovery tiles, user profile hero, and own profile pass it; single authority for blur. Legacy `blurred` prop still supported for backward compatibility.
 
 ---
 
@@ -471,11 +471,12 @@ Reusable components referenced by mobile screens. All under `mobile/src/componen
 | storagePath | string \| null | Single image path (e.g. from album slot). |
 | photosJson | array (strings) | First element used as image path. |
 | size | number | Width/height when not fill. |
-| blurred | boolean | Applies opacity 0.3 (no blur kernel). |
+| blurred | boolean | (Legacy.) Applies opacity 0.3 when true. Prefer `canSeeUnblurred` for viewer-aware blur. |
+| canSeeUnblurred | boolean \| null | When true show photo; when false or null blur. From GET `/v1/photos/check/:userId` via `useCanSeeUnblurred`. Single authority for blur. |
 | borderRadius | number | Radius. |
 | fill | boolean | AbsoluteFillObject; used in tiles/hero. |
 
-**Behavior**: Builds URL as `API_BASE + '/uploads' + path`. If no photo, placeholder View with Ionicons person. **NOT IMPLEMENTED**: Blur by reveal state (needs canSeeUnblurred from `/v1/photos/check/:userId` or equivalent).
+**Behavior**: Builds URL as `API_BASE + '/uploads' + path`. If no photo, placeholder View with Ionicons person. Blur: when `canSeeUnblurred` is provided, show unblurred only when `true`; otherwise blur (or use legacy `blurred` if `canSeeUnblurred` not passed).
 
 **Used by**: Discover tile, Profile hero, User hero, Edit profile photo slots.
 

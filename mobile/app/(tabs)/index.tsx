@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Alert, TextInput, Vibration, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Alert, TextInput, Vibration, ActivityIndicator, Platform } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { discoverApi, api } from '../../src/api/client';
@@ -9,7 +10,13 @@ import { useLocation } from '../../src/hooks/useLocation';
 import { colors, fontSize, spacing, borderRadius, shadows, layout } from '../../src/constants/theme';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { useHover } from '../../src/hooks/useHover';
+import { useCanSeeUnblurred } from '../../src/hooks/useCanSeeUnblurred';
 import { BrandMark } from '../../src/components/BrandMark';
+import { PageShell } from '../../src/components/layout';
+import { SafeState } from '../../src/components/ui';
+
+const HOVER_DURATION_MS = 160;
+const HOVER_EASING = Easing.out(Easing.ease);
 
 /** Max width per discover tile on desktop so photos don't blow up. */
 const MAX_TILE_WIDTH_DESKTOP = 300;
@@ -90,22 +97,36 @@ function DiscoverTile({
   tileGender: any;
 }) {
   const { isHovered, hoverProps } = useHover();
+  const canSeeUnblurred = useCanSeeUnblurred(item.userId);
+  const hoverProgress = useSharedValue(0);
+  useEffect(() => {
+    hoverProgress.value = withTiming(isHovered ? 1 : 0, {
+      duration: HOVER_DURATION_MS,
+      easing: HOVER_EASING,
+    });
+  }, [isHovered, hoverProgress]);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + 0.02 * hoverProgress.value }],
+    shadowColor: '#7C2BFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4 * hoverProgress.value,
+    shadowRadius: 8 + 8 * hoverProgress.value,
+    zIndex: hoverProgress.value > 0 ? 1 : 0,
+  }));
   const presenceColor = item.presenceState ? PRESENCE_COLORS[item.presenceState] : null;
   const topIntent = item.activeIntents?.[0] ? INTENT_ICONS[item.activeIntents[0]] : null;
+  const isWeb = Platform.OS === 'web';
   return (
     <TouchableOpacity
-      style={[
-        tileStyle,
-        { width: tileW, height: tileH },
-        isHovered && { ...shadows.glow, transform: [{ scale: 1.03 }], zIndex: 1 },
-      ]}
+      style={[tileStyle, { width: tileW, height: tileH }]}
       activeOpacity={0.92}
       onPress={onPress}
       onLongPress={onLongPress}
       delayLongPress={400}
       {...hoverProps}
     >
-      <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} />
+      <Animated.View style={[isWeb ? animatedStyle : undefined, { flex: 1 }]}>
+      <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} canSeeUnblurred={canSeeUnblurred ?? undefined} />
       {presenceColor && <View style={[presenceBar, { backgroundColor: presenceColor }]} />}
       <View style={topRow}>
         {item.isHost && <View style={hostBadge}><Ionicons name="home" size={8} color="#000" /><Text style={hostText}>HOST</Text></View>}
@@ -130,6 +151,7 @@ function DiscoverTile({
           {item.gender && <><View style={dot} /><Text style={tileGender}>{item.gender}</Text></>}
         </View>
       </View>
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -236,7 +258,7 @@ export default function DiscoverScreen() {
   );
 
   return (
-    <View style={s.container}>
+    <PageShell>
       {/* Quick whisper overlay */}
       {whisperTarget && (
         <View style={s.whisperOverlay}>
@@ -292,18 +314,9 @@ export default function DiscoverScreen() {
       </View>
 
       {loading && users.length === 0 ? (
-        <View style={s.centerLoad}>
-          <ActivityIndicator size="large" color={colors.primaryLight} />
-          <Text style={s.loadText}>Finding people nearby...</Text>
-        </View>
+        <SafeState variant="loading" message="Finding people nearby..." />
       ) : loadError && users.length === 0 ? (
-        <View style={s.errorBox}>
-          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
-          <Text style={s.errorText}>{loadError}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setLoading(true); load(); }}>
-            <Text style={s.retryBtnText}>Try again</Text>
-          </TouchableOpacity>
-        </View>
+        <SafeState variant="error" message={loadError} onRetry={() => { setLoading(true); load(); }} />
       ) : (
       <FlatList
         data={sortedUsers}
@@ -315,20 +328,17 @@ export default function DiscoverScreen() {
         contentContainerStyle={{ paddingHorizontal: gap, paddingTop: gap, paddingBottom: gap }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primaryLight} />}
         ListEmptyComponent={
-          <View style={s.empty}>
-            <View style={s.emptyGlow}><Ionicons name="compass-outline" size={36} color={colors.primaryLight} /></View>
-            <Text style={s.emptyTitle}>No one nearby</Text>
-            <Text style={s.emptySub}>Pull down to refresh</Text>
+          <View style={s.emptyWrap}>
+            <SafeState variant="empty" title="No one nearby" message="Pull down to refresh" icon="compass-outline" />
           </View>
         }
       />
       )}
-    </View>
+    </PageShell>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
   hero: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -378,14 +388,5 @@ const s = StyleSheet.create({
   whisperInput: { flex: 1, color: '#fff', fontSize: 14 },
   whisperSend: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   whisperClose: { padding: 4 },
-  centerLoad: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
-  loadText: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.md },
-  errorBox: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 80 },
-  errorText: { color: colors.text, fontSize: fontSize.sm, textAlign: 'center', marginTop: spacing.md },
-  retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
-  retryBtnText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
-  empty: { alignItems: 'center', paddingTop: 160 },
-  emptyGlow: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(147,51,234,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  emptySub: { color: 'rgba(255,255,255,0.3)', fontSize: 13, marginTop: 4 },
+  emptyWrap: { flex: 1, paddingVertical: 80 },
 });

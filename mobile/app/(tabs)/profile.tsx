@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/auth';
 import { safetyApi } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
+import { PageShell, ContentColumn, Card } from '../../src/components/layout';
+import { SafeState } from '../../src/components/ui';
 
 function StatPill({ icon, value, color }: { icon: string; value: string; color: string }) {
   return (
@@ -48,12 +50,9 @@ export default function ProfileScreen() {
 
   if (!profile) {
     return (
-      <View style={styles.container}>
-        <View style={styles.profileLoad}>
-          <ActivityIndicator size="large" color={colors.primaryLight} />
-          <Text style={styles.profileLoadText}>Loading profile...</Text>
-        </View>
-      </View>
+      <PageShell>
+        <SafeState variant="loading" message="Loading profile..." />
+      </PageShell>
     );
   }
 
@@ -75,10 +74,12 @@ export default function ProfileScreen() {
   ]);
 
   return (
-    <ScrollView style={styles.container} bounces={false}>
+    <PageShell>
+      <ContentColumn>
+    <ScrollView style={styles.scroll} bounces={false}>
       {/* Hero section */}
-      <View style={styles.hero}>
-        <ProfilePhoto photosJson={profile?.photosJson} size={110} borderRadius={55} />
+      <Card style={styles.heroCard}>
+        <ProfilePhoto photosJson={profile?.photosJson} size={110} borderRadius={55} canSeeUnblurred={true} />
         <Text style={styles.name}>{profile?.displayName || 'User'}</Text>
         {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
 
@@ -88,21 +89,21 @@ export default function ProfileScreen() {
           <StatPill icon="star" value={profile?.experienceLevel || 'new'} color={colors.host} />
           {profile?.isHost && <StatPill icon="home" value="Host" color={colors.success} />}
         </View>
-      </View>
+      </Card>
 
       {/* Interests */}
       {profile?.kinks?.length > 0 && (
-        <View style={styles.section}>
+        <Card style={styles.section}>
           <View style={styles.tagRow}>
             {profile.kinks.map((k: string) => (
               <View key={k} style={styles.tag}><Text style={styles.tagText}>{k}</Text></View>
             ))}
           </View>
-        </View>
+        </Card>
       )}
 
       {/* Menu */}
-      <View style={styles.menuCard}>
+      <Card noPadding style={styles.menuCard}>
         <MenuItem icon="radio-outline" label="Your Status" onPress={() => router.push('/profile/status')} badge="Live" accent />
         <View style={styles.div} />
         <MenuItem icon="create-outline" label="Edit Profile" onPress={() => router.push('/profile/edit')} />
@@ -132,7 +133,7 @@ export default function ProfileScreen() {
         <MenuItem icon="diamond-outline" label="Premium" onPress={() => router.push('/subscription')} badge={undefined} />
         <View style={styles.div} />
         <MenuItem icon="lock-closed-outline" label="Privacy & Data" onPress={() => router.push('/profile/privacy')} />
-      </View>
+      </Card>
 
       {/* Safety */}
       <TouchableOpacity style={styles.panicBtn} onPress={handlePanic} activeOpacity={0.8}>
@@ -146,22 +147,22 @@ export default function ProfileScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+      </ContentColumn>
+    </PageShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
-  profileLoad: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
-  profileLoadText: { color: colors.textMuted, fontSize: 14, marginTop: spacing.md },
-  hero: { alignItems: 'center', paddingTop: 30, paddingBottom: 24, backgroundColor: 'rgba(14,11,22,0.85)', marginHorizontal: 16, marginTop: 8, borderRadius: 16, overflow: 'hidden' },
+  scroll: { flex: 1 },
+  heroCard: { alignItems: 'center', paddingTop: 30, paddingBottom: 24, marginTop: spacing.sm, marginBottom: spacing.md },
   name: { color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 16, letterSpacing: -0.5 },
   bio: { color: 'rgba(255,255,255,0.55)', fontSize: 14, marginTop: 6, textAlign: 'center', maxWidth: 260, lineHeight: 20 },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 18 },
-  section: { paddingHorizontal: 20, paddingVertical: 16 },
+  section: { paddingHorizontal: 20, paddingVertical: 16, marginBottom: spacing.md },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: { backgroundColor: 'rgba(147,51,234,0.12)', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 0.5, borderColor: 'rgba(147,51,234,0.25)' },
   tagText: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
-  menuCard: { backgroundColor: 'rgba(14,11,22,0.9)', marginHorizontal: 16, borderRadius: 16, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(147,51,234,0.12)' },
+  menuCard: { marginBottom: spacing.md },
   div: { height: 0.5, backgroundColor: 'rgba(255,255,255,0.06)', marginLeft: 64 },
   panicBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#DC2626', marginHorizontal: 16, padding: 16, borderRadius: 14, marginBottom: 10 },
   panicText: { color: '#fff', fontSize: 15, fontWeight: '700' },

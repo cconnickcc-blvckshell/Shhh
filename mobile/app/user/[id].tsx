@@ -6,6 +6,7 @@ import { api, usersApi, messagingApi } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { colors, spacing, fontSize, borderRadius, layout } from '../../src/constants/theme';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
+import { useCanSeeUnblurred } from '../../src/hooks/useCanSeeUnblurred';
 
 const PRESENCE_LABELS: Record<string, { label: string; color: string }> = {
   open_to_chat: { label: 'Open to chat', color: '#34D399' },
@@ -21,6 +22,7 @@ const INTENT_ICONS: Record<string, string> = {
 
 export default function UserDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const canSeeUnblurred = useCanSeeUnblurred(id ?? null);
   const [profile, setProfile] = useState<any>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,7 @@ export default function UserDetailScreen() {
       {/* Hero photo — capped on desktop so it doesn't blow up */}
       <View style={[s.heroWrap, isDesktop && s.heroWrapDesktop]}>
         <View style={[s.hero, { height: heroSize * 0.9, width: heroSize }]}>
-          <ProfilePhoto photosJson={profile.photosJson} fill borderRadius={0} size={heroSize} />
+          <ProfilePhoto photosJson={profile.photosJson} fill borderRadius={0} size={heroSize} canSeeUnblurred={canSeeUnblurred ?? undefined} />
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
