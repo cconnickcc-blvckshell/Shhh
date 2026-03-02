@@ -5,9 +5,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Use bundled assets so hero/logo display during build and in production without requiring the API
-const HERO_IMAGE = require('../../assets/images/hero.png');
-const LOGO_IMAGE = require('../../assets/images/logo.png');
+// Use public folder assets so hero/logo display on Vercel (expo export copies public/ to dist/)
+// require() assets are not reliably bundled for web static export; public/ is the standard fix
+const HERO_URI = '/hero.png';
+const LOGO_URI = '/logo.png';
 
 const FEATURES = [
   { icon: 'compass', title: 'Proximity Grid', desc: 'See who\'s nearby right now. No algorithms. Just proximity and intention.' },
@@ -34,9 +35,9 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
     <ScrollView style={s.container} contentContainerStyle={s.scrollContent}>
       {/* ====== HERO SECTION ====== */}
       <View style={s.heroSection}>
-        {/* Background image — bundled asset so it works during build and without API */}
+        {/* Background image — from public/ so it works on Vercel static export */}
         <Image
-          source={HERO_IMAGE}
+          source={{ uri: HERO_URI }}
           style={s.heroBgImage}
           resizeMode="cover"
         />
@@ -45,7 +46,7 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
         {/* Nav bar */}
         <View style={[s.nav, isDesktop && s.navDesktop]}>
           <Image
-            source={LOGO_IMAGE}
+            source={{ uri: LOGO_URI }}
             style={s.navLogo}
             resizeMode="contain"
           />
