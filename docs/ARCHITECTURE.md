@@ -1,6 +1,6 @@
 # Shhh — Architecture Document
 
-> Last updated: February 2026 (aligned with current codebase)  
+> Last updated: March 2026 (aligned with current codebase; API ledger §4 Presence/Personas/Intents/Preferences/Ads corrected)  
 > **When changing the system:** Update this doc’s §2 (file tree), §4 (API ledger), §6 (schema) when adding modules, routes, or tables.  
 > **Implementation status:** See **docs/E2E_CAPABILITY_AUDIT_REPORT.md**, **docs/MASTER_IMPLEMENTATION_CHECKLIST.md**, **docs/SCOPE_PIVOT_TODO.md**. **docs/SOFT_LAUNCH_WEB_PLAN.md** for web-first soft launch.
 
@@ -279,10 +279,10 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   ├── safety.test.ts
 │   │   ├── admin.test.ts
 │   │   └── media.test.ts
-│   ├── loadtest/                     # k6 load tests (optional)
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── jest.config.ts
+├── loadtest/                         # k6 load tests (smoke.js, stress.js)
 ├── docker-compose.yml                # PostgreSQL+PostGIS, Redis, MongoDB
 ├── .env.example                      # Environment template
 ├── AGENTS.md                         # Cloud agent instructions
@@ -468,13 +468,14 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | POST | `/v1/media/albums/:id/media` | Yes | 0 | Add media to album |
 | DELETE | `/v1/media/albums/:id/media/:mediaId` | Yes | 0 | Remove from album |
 | POST | `/v1/media/albums/:id/share` | Yes | 0 | Share album (userId or targetPersonaId or targetCoupleId; watermarkMode, notifyOnView) |
-| DELETE | `/v1/media/albums/:id/share/:userId` | Yes | 0 | Revoke album share |
+| DELETE | `/v1/media/albums/:id/share/:userId` | Yes | 0 | Revoke album share (by userId only; persona/couple revoke not supported) |
 
 ### Events
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
 | GET | `/v1/events/nearby?lat=&lng=&radius=&vibe=` | Yes | 0 | Find nearby events (optional vibe). Visibility-filtered by viewer; location redacted when location_revealed_after_rsvp until RSVP. |
 | GET | `/v1/events/this-week?lat=&lng=&radius=&vibe=` | Yes | 0 | Events in the next 7 days (GC-6.2 home screen); same params as nearby. |
+| GET | `/v1/events/my` | Yes | 0 | Get events hosted by current user |
 | POST | `/v1/events` | Yes | 2 | Create event (optional seriesId, vibeTag, locationRevealedAfterRsvp, visibilityRule, visibilityTierMin, visibilityRadiusKm) |
 | GET | `/v1/events/:id` | Yes | 0 | Get event details (visibility-checked; 403 if gated. Venue location redacted when location_revealed_after_rsvp until RSVP.) |
 | GET | `/v1/events/:id/attendees` | Yes | 0 | Privacy-safe attendee list (persona + badges) |
@@ -508,26 +509,34 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ### Presence
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/presence/status` | Yes | 0 | Get presence status (e.g. online/away) |
-| PUT | `/v1/presence` | Yes | 0 | Update presence (online/away) |
+| POST | `/v1/presence/state` | Yes | 0 | Set presence state (invisible, nearby, browsing, at_venue, at_event, open_to_chat, paused) |
+| GET | `/v1/presence/me` | Yes | 0 | Get own presence state |
+| POST | `/v1/presence/reaffirm` | Yes | 0 | Reaffirm presence (extends TTL) |
+| DELETE | `/v1/presence/me` | Yes | 0 | Clear presence |
+| GET | `/v1/presence/venue/:venueId` | Yes | 0 | Get presence at a venue |
 
 ### Personas
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/personas/me` | Yes | 0 | Get own personas (includes expiresAt, isBurn) |
-| PUT | `/v1/personas/me` | Yes | 0 | Update personas (create: optional expiresAt, isBurn; tonight-only = expires_at end of night) |
+| GET | `/v1/personas` | Yes | 0 | List own personas (includes expiresAt, isBurn) |
+| GET | `/v1/personas/active` | Yes | 0 | Get currently active persona |
+| POST | `/v1/personas` | Yes | 0 | Create persona (optional expiresAt, isBurn; tonight-only = expires_at end of night) |
+| POST | `/v1/personas/:id/activate` | Yes | 0 | Activate a persona |
+| PUT | `/v1/personas/:id` | Yes | 0 | Update persona |
+| DELETE | `/v1/personas/:id` | Yes | 0 | Delete persona |
 
 ### Intents
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/intents/me` | Yes | 0 | Get intent flags |
-| PUT | `/v1/intents/me` | Yes | 0 | Update intents |
+| GET | `/v1/intents` | Yes | 0 | Get intent flags |
+| POST | `/v1/intents` | Yes | 0 | Set intent flags |
+| DELETE | `/v1/intents/:flag` | Yes | 0 | Remove intent flag |
 
 ### Preferences
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/preferences/me` | Yes | 0 | Get preferences |
-| PUT | `/v1/preferences/me` | Yes | 0 | Update preferences (e.g. discovery radius) |
+| GET | `/v1/preferences` | Yes | 0 | Get preferences |
+| PUT | `/v1/preferences` | Yes | 0 | Update preferences (e.g. discovery radius) |
 
 ### Whispers
 | Method | Path | Auth | Tier | Description |
@@ -540,15 +549,21 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ### Ads
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/ads/placements` | Yes | 0 | Get ad placements (e.g. for feed) |
-| POST | `/v1/ads/impressions` | Yes | 0 | Record impression |
-| (other) | `/v1/ads/...` | Yes | 0 | Cadence, controls (as implemented) |
+| GET | `/v1/ads/feed` | Yes | 0 | Get eligible ad for discover feed |
+| GET | `/v1/ads/chat` | Yes | 0 | Get eligible ad for chat list |
+| GET | `/v1/ads/post-event` | Yes | 0 | Get eligible ad for post-event surface |
+| POST | `/v1/ads/:id/impression` | Yes | 0 | Record impression |
+| POST | `/v1/ads/:id/tap` | Yes | 0 | Record tap |
+| POST | `/v1/ads/:id/dismiss` | Yes | 0 | Record dismiss |
+| POST | `/v1/ads/placements` | Yes | 0 | Create placement (admin/venue) |
+| GET | `/v1/ads/placements/:id/stats` | Yes | 0 | Get placement stats |
 
 ### Venues
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
 | GET | `/v1/venues/nearby` | Yes | 0 | Find nearby venues (each includes verifiedSafe) |
 | GET | `/v1/venues/geofence-check` | Yes | 0 | Check geofence containment |
+| GET | `/v1/venues/my` | Yes | 2 | Get venues owned by current user |
 | POST | `/v1/venues` | Yes | 2 | Create venue |
 | GET | `/v1/venues/:id` | Yes | 0 | Get venue details (includes verifiedSafe) |
 | GET | `/v1/venues/:id/grid` | Yes | 0 | Privacy-safe grid (anonymous or persona + badges) |
@@ -573,9 +588,10 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ### Billing
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
+| GET | `/v1/billing/tiers` | No | — | Get subscription tiers (public) |
 | GET | `/v1/billing/subscription` | Yes | 0 | Get subscription status |
 | POST | `/v1/billing/checkout` | Yes | 0 | Create Stripe checkout session |
-| (other) | `/v1/billing/...` | Yes | 0 | Webhooks, portal (as implemented) |
+| POST | `/v1/billing/webhook` | No | — | Stripe webhook (raw body) |
 
 ### Photos (Blur / Reveal)
 | Method | Path | Auth | Tier | Description |

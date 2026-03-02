@@ -85,7 +85,7 @@
 | **Events** | List, RSVP, tap → event detail | **Location hardcoded.** No loading indicator. **No error UI.** Un-RSVP is implemented (not_going). |
 | **Me** | Menu, panic, logout | Emergency and Privacy routes **are** implemented (gap list was updated). No profile load spinner. |
 | **Venue [id]** | GET full, check-in, about, specials, reviews, upcoming events | **Share and Review buttons have no handlers.** **Bug:** Upcoming events tap does `router.push('/events')` instead of `router.push(\`/event/${ev.id}\`)`. Venue grid (GET /v1/venues/:id/grid) **not shown**. |
-| **Chat [id]** | Load messages, send, self-destruct toggle, block/report | **Camera button has no onPress.** **No WebSocket:** no joinConversation, onNewMessage, typing (only initial fetch + optimistic send). No loading spinner. **No error UI.** Screenshot detection calls POST /v1/safety/screenshot which **returns 404** (route missing on backend). |
+| **Chat [id]** | Load messages, send, self-destruct toggle, block/report | **Camera button has no onPress.** **No WebSocket:** no joinConversation, onNewMessage, typing (only initial fetch + optimistic send). No loading spinner. **No error UI.** Screenshot detection calls POST /v1/safety/screenshot (implemented; inserts into screenshot_events). |
 | **Album [id]** | Album meta, share/revoke by userId | **Media grid shows placeholder icon only;** no actual image/thumbnail URLs rendered. Share options (watermarkMode, notifyOnView, share_target_type) not in UI. |
 | **Verify** | Status and history from API, tier progress | **Photo verification:** sends fixed `selfieUrl: 'https://placeholder.com/selfie.jpg'` (no camera/picker, no upload). **ID verification:** sends fixed `documentHash: 'demo_document_hash_12345'`. |
 | **Subscription** | GET subscription, POST checkout | **Checkout:** shows Alert with URL or “Stripe not configured”; **does not open browser/external link**. No in-app refresh of tier after webhook. |
@@ -194,10 +194,10 @@ From SYSTEM_REALITY_REPORT_APPENDICES, DEV_HANDOVER, FEATURE_ADDITIONS_CRITIQUE:
 
 | Gap | Impact on frontend |
 |-----|---------------------|
-| **POST /v1/safety/screenshot missing** | Chat (and any screen using useScreenshotDetection) gets **404** when reporting screenshot. |
+| **POST /v1/safety/screenshot** | Implemented; inserts into screenshot_events. |
 | **Account deletion never runs** | Privacy “Request account deletion” creates a request; **no worker** processes it or sets users.deleted_at. User expectation of “account deleted” is not met. |
 | **Panic “contacts notified”** | Backend returns contactsNotified / “Panic alert sent” but **no Twilio/push**; copy is misleading. |
-| **Trust-score route param bug** | Backend uses wrong param (id vs userId); can affect any client calling trust-score. |
+| **Trust-score route** | Fixed; uses req.params.userId correctly. |
 
 ---
 
@@ -231,7 +231,7 @@ From SYSTEM_REALITY_REPORT_APPENDICES, DEV_HANDOVER, FEATURE_ADDITIONS_CRITIQUE:
 - at_event presence option.
 - This-week events filter.
 - Blur/reveal driven by photo check.
-- Screenshot reporting (404).
+- Screenshot reporting (implemented).
 - Account deletion execution (worker missing).
 
 ---

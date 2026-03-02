@@ -2,6 +2,7 @@
 
 This document extends `SYSTEM_REALITY_REPORT.md` with exhaustive reference material. Cite both when presenting to the CTO.
 
+> **Last updated:** March 2026 — Bugs 1 (trust-score) and 3 (screenshot) marked FIXED; Appendix B/C/G/I updated.
 > **Enhancement work:** When adding or changing routes, update **Appendix A** (route matrix). See **docs/ENHANCEMENT_ROADMAP.md** and **docs/README.md** for doc sync checklist.
 
 ---
@@ -204,7 +205,7 @@ Static: `GET /health`, `GET /docs`, `GET /docs.json`, `GET /uploads/*` (express.
 
 **Critical schema notes:**  
 - `data_deletion_requests`: no application code updates status or triggers user deletion.  
-- `screenshot_events`: table exists; no INSERT path in API (screenshot route missing).  
+- `screenshot_events`: table exists; INSERT via POST /v1/safety/screenshot.  
 - `safety_checkins.alert_sent`: set true only for panic; no worker sets it for missed check-ins.  
 - MongoDB: single collection `messages`; TTL index on `expiresAt`.
 
@@ -224,24 +225,25 @@ Static: `GET /health`, `GET /docs`, `GET /docs.json`, `GET /uploads/*` (express.
 | Admin abuse | logAdminAction | No quorum; no appeal | adminAuth.ts; admin.routes.ts |
 | GDPR | Export; deletion request | Deletion never executed | compliance.service.ts |
 | Panic false assurance | DB + audit | No SMS/push; misleading message | safety.service.ts panic() |
-| Screenshot trust | Table exists | 404; user told "notified" | useScreenshotDetection.ts |
+| Screenshot trust | Table exists; POST /v1/safety/screenshot inserts | Optional push to target not implemented | useScreenshotDetection.ts; safety.routes.ts |
 
 ---
 
 ## Appendix D: Evidence Appendix (Critical Bugs)
 
-**Bug 1: Trust-score route param**  
-- File: `backend/src/app.ts` lines 119–122  
-- Code: `trustSvc.getScore(req.params.id as string || req.params.userId as string)`  
-- Issue: Route is `GET /v1/users/:userId/trust-score`. Express gives `req.params.userId`, not `req.params.id`. Fix: use only `req.params.userId`.
+**Bug 1: Trust-score route param** — **FIXED**  
+- File: `backend/src/app.ts` lines 133–139  
+- Code: `const userId = req.params.userId as string` (correct param).  
+- Status: Resolved.
 
 **Bug 2: Account deletion never runs**  
 - File: `backend/src/modules/compliance/compliance.service.ts` lines 41–54  
 - Gap: No consumer of `data_deletion_requests`; no worker sets `users.deleted_at`. Seam: New worker that processes pending requests and performs purge.
 
-**Bug 3: Screenshot endpoint missing**  
+**Bug 3: Screenshot endpoint missing** — **FIXED**  
 - Mobile: `mobile/src/hooks/useScreenshotDetection.ts` line 21 calls `POST /v1/safety/screenshot`  
-- Backend: `backend/src/modules/safety/safety.routes.ts` has no such route. Seam: Add route and controller/service that insert into `screenshot_events`.
+- Backend: `backend/src/modules/safety/safety.routes.ts` has `router.post('/screenshot', ...)`; inserts into `screenshot_events`.  
+- Status: Implemented.
 
 **Bug 4: Panic "contacts notified"**  
 - File: `backend/src/modules/safety/safety.service.ts` lines 51–73  
@@ -294,7 +296,7 @@ Static: `GET /health`, `GET /docs`, `GET /docs.json`, `GET /uploads/*` (express.
 | Load smoke | `k6 run loadtest/smoke.js` | loadtest/smoke.js |
 | Process deletion | — | **NOT IMPLEMENTED** |
 | Panic notify | — | **NOT IMPLEMENTED** |
-| Screenshot report | — | **NOT IMPLEMENTED** (404) |
+| Screenshot report | POST /v1/safety/screenshot | Working |
 
 ---
 
@@ -315,8 +317,8 @@ Static: `GET /health`, `GET /docs`, `GET /docs.json`, `GET /uploads/*` (express.
 
 ## Appendix I: How to Reproduce Critical Failures
 
-1. **Trust-score:** GET /v1/users/<uuid>/trust-score with Bearer token; unit test with params.userId only.  
-2. **Screenshot 404:** curl POST /v1/safety/screenshot with auth → 404; or trigger screenshot in chat screen.  
-3. **Deletion:** DELETE /v1/compliance/account-deletion; query data_deletion_requests and users.deleted_at — no change.  
+1. **Trust-score:** GET /v1/users/<uuid>/trust-score with Bearer token — works (uses req.params.userId).  
+2. **Screenshot:** POST /v1/safety/screenshot with auth — inserts into screenshot_events (implemented).  
+3. **Deletion:** DELETE /v1/compliance/account-deletion; query data_deletion_requests and users.deleted_at — no change (worker missing).  
 4. **Panic:** POST /v1/safety/panic; response says contacts notified; no Twilio/push called.  
 5. **Redis eviction:** Fill Redis; send OTP; verify can fail if otp key evicted.
