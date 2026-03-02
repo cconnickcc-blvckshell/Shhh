@@ -2,8 +2,7 @@ import { ScrollViewStyleReset } from 'expo-router/html';
 import { type PropsWithChildren } from 'react';
 
 /**
- * Root HTML for web. Adds theme-color so mobile browser chrome (address bar, nav bar)
- * matches the app's dark background instead of defaulting to white.
+ * Root HTML for web. Adds theme-color, PWA manifest, and iOS "Add to Home Screen" meta.
  */
 export default function Root({ children }: PropsWithChildren) {
   return (
@@ -13,6 +12,11 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="theme-color" content="#06040A" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Shhh" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>
