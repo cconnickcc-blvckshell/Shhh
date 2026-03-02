@@ -126,6 +126,8 @@ export default function ProfileScreen() {
         <View style={styles.div} />
         <MenuItem icon="shield-checkmark-outline" label="Verification" onPress={() => router.push('/verify')} />
         <View style={styles.div} />
+        <MenuItem icon="business-outline" label="My Venues" onPress={() => router.push('/profile/venues')} />
+        <View style={styles.div} />
         <MenuItem icon="call-outline" label="Emergency Contacts" onPress={() => router.push('/profile/emergency')} />
         <View style={styles.div} />
         <MenuItem icon="ear-outline" label="Whispers" onPress={() => router.push('/whispers')} />

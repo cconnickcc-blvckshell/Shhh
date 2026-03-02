@@ -1,365 +1,248 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Modal,
-  ScrollView,
-  Platform,
-  useWindowDimensions,
+  View, Text, StyleSheet, Pressable, Image, ScrollView,
+  Platform, useWindowDimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, fontSize, borderRadius, shadows } from '../constants/theme';
-import { BrandMark } from './BrandMark';
-import { SurfaceCard, PrimaryCTA, SecondaryAction } from './ui';
+import { Ionicons } from '@expo/vector-icons';
 
-const MAX_WIDTH = 1100;
-const HERO_FEATURES = [
-  'Proximity grid',
-  'Discreet + verified',
-  'Events & venues',
-  'Privacy controls',
+const API_BASE = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+
+const FEATURES = [
+  { icon: 'compass', title: 'Proximity Grid', desc: 'See who\'s nearby right now. No algorithms. Just proximity and intention.' },
+  { icon: 'eye-off', title: 'Privacy First', desc: 'Blur your photos. Control who sees you. Everything expires.' },
+  { icon: 'shield-checkmark', title: 'Verified & Trusted', desc: 'Multi-tier verification. References from real people. Trust you can see.' },
+  { icon: 'timer', title: 'Ephemeral by Design', desc: 'Chats are sessions. Media self-destructs. Presence decays. Nothing lingers.' },
+  { icon: 'business', title: 'Venues & Events', desc: 'Discover lifestyle venues, themed nights, and private events near you.' },
+  { icon: 'ear', title: 'Whisper', desc: 'Send anonymous signals to people nearby. They see your distance, not your name.' },
 ];
 
-/**
- * Web front page (unauthenticated): coming-soon layout with hero, logo, side card.
- * Top bar: BrandMark + Coming Soon pill. Grid: hero card (left) + side card (Enter form, links).
- * @see docs/SOFT_LAUNCH_WEB_PLAN.md §4.6
- */
+const TRUST_POINTS = [
+  'End-to-end encryption infrastructure',
+  'No data sold. No targeted ads. Ever.',
+  'GDPR/CCPA compliant with 1-click data export',
+  'Panic wipe destroys all data instantly',
+  'Open safety reporting with 24hr SLA',
+];
+
 export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
-  const [learnOpen, setLearnOpen] = useState(false);
   const { width } = useWindowDimensions();
-  const isNarrow = width < 960;
+  const isDesktop = width > 768;
 
   return (
-    <LinearGradient
-      colors={['#06040A', '#0B0712', '#08050E', '#06040A']}
-      locations={[0, 0.25, 0.6, 1]}
-      style={styles.full}
-    >
-      {/* Ambient glows */}
-      <View style={styles.glowPlum} />
-      <View style={styles.glowPlum2} />
-      <View style={styles.glowGold} />
+    <ScrollView style={s.container} contentContainerStyle={s.scrollContent}>
+      {/* ====== HERO SECTION ====== */}
+      <View style={s.heroSection}>
+        {/* Background image */}
+        <Image
+          source={{ uri: `${API_BASE}/uploads/brand/hero.png` }}
+          style={s.heroBgImage}
+          resizeMode="cover"
+        />
+        <View style={s.heroOverlay} />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={[styles.wrap, { maxWidth: MAX_WIDTH }]}>
-          {/* Top bar: logo + Coming Soon pill */}
-          <View style={styles.top}>
-            <Pressable style={styles.brandTouch} onPress={() => {}} accessibilityLabel="Shhh Social">
-              <BrandMark />
+        {/* Nav bar */}
+        <View style={[s.nav, isDesktop && s.navDesktop]}>
+          <Image
+            source={{ uri: `${API_BASE}/uploads/brand/logo.png` }}
+            style={s.navLogo}
+            resizeMode="contain"
+          />
+          <View style={s.navRight}>
+            <Pressable onPress={onEnter} style={s.navLoginBtn}>
+              <Text style={s.navLoginText}>Log In</Text>
             </Pressable>
-            <View style={styles.pill}>
-              <View style={styles.dot} />
-              <Text style={styles.pillText}>Coming Soon</Text>
-            </View>
-          </View>
-
-          {/* Grid: hero (left) + side card (right) */}
-          <View style={[styles.grid, isNarrow && styles.gridStack]}>
-            {/* Hero card */}
-            <SurfaceCard style={styles.hero}>
-              <View style={styles.kicker}>
-                <View style={styles.spark} />
-                <Text style={styles.kickerText}>Where consent meets curiosity</Text>
-              </View>
-              <Text style={styles.h1} numberOfLines={3}>
-                A lifestyle community for couples, singles, and explorers.
-              </Text>
-              <View style={styles.subWrap}>
-                <Text style={styles.sub}>
-                  Built for real connections — discreet discovery, consent-first interactions, and events & venues that pull the community together.
-                </Text>
-              </View>
-              <View style={styles.features}>
-                {HERO_FEATURES.map((label) => (
-                  <View key={label} style={styles.chip}>
-                    <View style={styles.chipDot} />
-                    <Text style={styles.chipText}>{label}</Text>
-                  </View>
-                ))}
-              </View>
-              <View style={styles.glowline} />
-              <Text style={styles.fineprint}>
-                Launching first in Ontario. Join the list to get early access, venue drops, and beta invites.
-              </Text>
-            </SurfaceCard>
-
-            {/* Side card: Enter + Learn */}
-            <SurfaceCard style={styles.card}>
-              <View style={styles.cardInner}>
-                <Text style={styles.cardTitle}>Get early access</Text>
-                <View style={styles.cardPWrap}>
-                  <Text style={styles.cardP}>
-                    Enter to sign in with your phone and join the community. Discreet. Verified. Consent-first.
-                  </Text>
-                </View>
-                <View style={styles.ctaCol}>
-                  <PrimaryCTA label="Enter" onPress={onEnter} accessibilityLabel="Enter Shhh" />
-                  <SecondaryAction label="Learn how it works" onPress={() => setLearnOpen(true)} accessibilityLabel="Learn how it works" />
-                </View>
-                <View style={styles.fineprintRow}>
-                  <Text style={styles.fineprintCard}>By joining, you agree to our terms. </Text>
-                  <Text style={styles.fineprintBold}>18+ only.</Text>
-                </View>
-                <View style={styles.links}>
-                  <Text style={styles.linksLabel}>Consent-first. No harassment. No minors.</Text>
-                </View>
-              </View>
-            </SurfaceCard>
           </View>
         </View>
-      </ScrollView>
 
-      <Modal visible={learnOpen} transparent animationType="fade">
-        <Pressable style={styles.modalBackdrop} onPress={() => setLearnOpen(false)}>
-          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>How Shhh works</Text>
-              <Pressable onPress={() => setLearnOpen(false)} hitSlop={12}>
-                <Text style={styles.modalClose}>×</Text>
-              </Pressable>
+        {/* Hero content */}
+        <View style={[s.heroContent, isDesktop && s.heroContentDesktop]}>
+          <Text style={[s.heroTag]}>PRIVACY-NATIVE SOCIAL</Text>
+          <Text style={[s.heroTitle, isDesktop && s.heroTitleDesktop]}>
+            Who's nearby.{'\n'}Who's open.{'\n'}Right now.
+          </Text>
+          <Text style={[s.heroSub, isDesktop && s.heroSubDesktop]}>
+            Shhh is a discreet, proximity-driven social platform for adults who value
+            privacy, safety, and authentic connections.
+          </Text>
+
+          <View style={s.heroCTARow}>
+            <Pressable onPress={onEnter} style={s.heroCTA}>
+              <Text style={s.heroCTAText}>Enter Shhh</Text>
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            </Pressable>
+            <View style={s.heroMeta}>
+              <Ionicons name="shield-checkmark" size={14} color="rgba(147,51,234,0.8)" />
+              <Text style={s.heroMetaText}>Free · No credit card · 18+</Text>
             </View>
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalP}>
-                <Text style={styles.modalBold}>Proximity-first.</Text> See who's actually nearby — at venues, events, or out in the world.
-              </Text>
-              <Text style={styles.modalP}>
-                <Text style={styles.modalBold}>Consent-first.</Text> You choose who sees your profile. Blur and reveal on your terms.
-              </Text>
-              <Text style={styles.modalP}>
-                <Text style={styles.modalBold}>Discreet by design.</Text> Private · Verified · Safe. We never sell your data.
-              </Text>
-              <Text style={styles.modalP}>
-                Tap <Text style={styles.modalBold}>Enter</Text> to sign in with your phone and join.
-              </Text>
-            </ScrollView>
-          </Pressable>
+          </View>
+        </View>
+      </View>
+
+      {/* ====== FEATURES GRID ====== */}
+      <View style={[s.section, s.featuresSection]}>
+        <Text style={s.sectionTag}>HOW IT WORKS</Text>
+        <Text style={s.sectionTitle}>A radar, not a feed</Text>
+        <Text style={s.sectionSub}>
+          Shhh shows you who's around you and what they're open to — without
+          exposing who you are tomorrow.
+        </Text>
+
+        <View style={[s.featureGrid, isDesktop && s.featureGridDesktop]}>
+          {FEATURES.map((f, i) => (
+            <View key={i} style={[s.featureCard, isDesktop && s.featureCardDesktop]}>
+              <View style={s.featureIconWrap}>
+                <Ionicons name={f.icon as any} size={22} color="#A855F7" />
+              </View>
+              <Text style={s.featureTitle}>{f.title}</Text>
+              <Text style={s.featureDesc}>{f.desc}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* ====== TRUST SECTION ====== */}
+      <View style={[s.section, s.trustSection]}>
+        <View style={[s.trustInner, isDesktop && s.trustInnerDesktop]}>
+          <View style={s.trustLeft}>
+            <Text style={s.sectionTag}>TRUST & SAFETY</Text>
+            <Text style={s.trustTitle}>Built to disappear{'\n'}when you need it to</Text>
+            <Text style={s.trustSub}>
+              Most apps want your data. We want your trust. Every feature is designed
+              so you feel safe being unseen.
+            </Text>
+          </View>
+          <View style={s.trustRight}>
+            {TRUST_POINTS.map((point, i) => (
+              <View key={i} style={s.trustPoint}>
+                <Ionicons name="checkmark-circle" size={18} color="#34D399" />
+                <Text style={s.trustPointText}>{point}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      {/* ====== PREMIUM SECTION ====== */}
+      <View style={[s.section, s.premiumSection]}>
+        <Text style={s.sectionTag}>PREMIUM</Text>
+        <Text style={s.sectionTitle}>Pay for control,{'\n'}not exposure</Text>
+        <Text style={s.sectionSub}>
+          Free users are never punished. Premium gives you more privacy, more personas,
+          and more control — not more visibility.
+        </Text>
+        <View style={s.premiumTiers}>
+          {[
+            { name: 'Free', price: '$0', features: ['1 persona', 'Proximity grid', 'Safety tools'] },
+            { name: 'Phantom', price: '$19.99/mo', features: ['3 personas', 'Ghost browsing', 'Timed reveals', 'No ads'], popular: true },
+            { name: 'Elite', price: '$39.99/mo', features: ['5 personas', 'Priority safety', 'View analytics', 'Everything'] },
+          ].map((tier, i) => (
+            <View key={i} style={[s.tierCard, tier.popular && s.tierCardPopular]}>
+              {tier.popular && <View style={s.popularBadge}><Text style={s.popularText}>POPULAR</Text></View>}
+              <Text style={s.tierName}>{tier.name}</Text>
+              <Text style={[s.tierPrice, tier.popular && { color: '#A855F7' }]}>{tier.price}</Text>
+              {tier.features.map((f, j) => (
+                <View key={j} style={s.tierFeature}>
+                  <Ionicons name="checkmark" size={14} color={tier.popular ? '#A855F7' : 'rgba(255,255,255,0.4)'} />
+                  <Text style={s.tierFeatureText}>{f}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* ====== FINAL CTA ====== */}
+      <View style={[s.section, s.ctaSection]}>
+        <Text style={s.ctaTitle}>Your secret is safe</Text>
+        <Text style={s.ctaSub}>Join the community that knows when to disappear.</Text>
+        <Pressable onPress={onEnter} style={s.finalCTA}>
+          <Text style={s.finalCTAText}>Get Started</Text>
+          <Ionicons name="arrow-forward" size={18} color="#fff" />
         </Pressable>
-      </Modal>
-    </LinearGradient>
+      </View>
+
+      {/* ====== FOOTER ====== */}
+      <View style={s.footer}>
+        <Text style={s.footerText}>© 2026 Shhh · Privacy Policy · Terms · 18+</Text>
+      </View>
+    </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  full: { flex: 1, minHeight: Platform.OS === 'web' ? ('100vh' as any) : undefined },
-  scroll: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingBottom: 40, alignItems: 'center' },
-  glowPlum: {
-    position: 'absolute',
-    top: '-10%',
-    left: '5%',
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: 'rgba(124,43,255,0.08)',
-    opacity: 0.6,
-  },
-  glowPlum2: {
-    position: 'absolute',
-    top: '20%',
-    right: '-5%',
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    backgroundColor: 'rgba(179,92,255,0.06)',
-    opacity: 0.5,
-  },
-  glowGold: {
-    position: 'absolute',
-    bottom: '-15%',
-    left: '30%',
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: 'rgba(212,175,55,0.04)',
-    opacity: 0.5,
-  },
-  wrap: {
-    marginHorizontal: 'auto',
-    paddingHorizontal: 18,
-    paddingTop: 34,
-    paddingBottom: 28,
-    width: '100%',
-  },
-  top: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  brandTouch: { flexDirection: 'row', alignItems: 'center' },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-  },
-  pillText: { fontSize: 12, color: colors.textMuted, letterSpacing: 1.2, textTransform: 'uppercase' },
-  dot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    backgroundColor: colors.primaryLight,
-  },
-  grid: {
-    flexDirection: 'row',
-    gap: 18,
-    marginTop: 14,
-  },
-  gridStack: { flexDirection: 'column' },
-  hero: {
-    flex: 1.1,
-    minHeight: 380,
-    borderRadius: borderRadius.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    padding: 30,
-    ...shadows.card,
-  },
-  kicker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    alignSelf: 'flex-start',
-  },
-  spark: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.accentGold,
-  },
-  kickerText: { fontSize: 12, color: colors.textMuted, letterSpacing: 1.4, textTransform: 'uppercase' },
-  h1: {
-    marginTop: 16,
-    marginBottom: 14,
-    fontSize: 28,
-    lineHeight: 36,
-    color: colors.text,
-    fontWeight: '700',
-  },
-  subWrap: { marginTop: 4, marginBottom: 4 },
-  sub: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.textMuted,
-    maxWidth: 480,
-  },
-  features: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 18 },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  chipDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primaryLight,
-  },
-  chipText: { fontSize: 13, color: colors.text },
-  glowline: {
-    height: 1,
-    backgroundColor: colors.primaryLight,
-    opacity: 0.4,
-    marginTop: 18,
-    marginBottom: 4,
-  },
-  fineprint: { fontSize: 12, color: colors.textMuted, lineHeight: 1.45, marginTop: 16, maxWidth: 520 },
-  card: {
-    flex: 0.9,
-    borderRadius: borderRadius.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    ...shadows.card,
-  },
-  cardInner: { padding: 22 },
-  cardTitle: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 8 },
-  cardPWrap: { marginBottom: 14 },
-  cardP: { fontSize: 14, color: colors.textMuted, lineHeight: 21 },
-  ctaCol: { gap: 10 },
-  enterBtn: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
-    overflow: 'hidden',
-    position: 'relative',
-    alignItems: 'center',
-    ...shadows.glow,
-  },
-  enterBtnPressed: { opacity: 0.95 },
-  enterBtnText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '700' },
-  learnBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    alignItems: 'center',
-  },
-  learnBtnPressed: { opacity: 0.85 },
-  learnBtnText: { color: colors.primaryLight, fontSize: fontSize.md, fontWeight: '600' },
-  fineprintRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 },
-  fineprintCard: { fontSize: 12, color: colors.textMuted, lineHeight: 18 },
-  fineprintBold: { fontSize: 12, color: colors.text, fontWeight: '700', lineHeight: 18 },
-  links: { marginTop: 14 },
-  linksLabel: { fontSize: 11, color: colors.textMuted },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 440,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: borderRadius.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    ...shadows.card,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  modalTitle: { fontSize: fontSize.xl, fontWeight: '700', color: colors.text },
-  modalClose: { fontSize: 28, color: colors.textMuted, lineHeight: 28 },
-  modalBody: { padding: spacing.lg, maxHeight: 360 },
-  modalP: { color: colors.textSecondary, fontSize: fontSize.md, lineHeight: 24, marginBottom: spacing.md },
-  modalBold: { color: colors.text, fontWeight: '700' },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  scrollContent: { flexGrow: 1 },
+
+  // Hero
+  heroSection: { minHeight: 700, position: 'relative', justifyContent: 'flex-end' },
+  heroBgImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' } as any,
+  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
+  nav: { position: 'absolute' as const, top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, zIndex: 10 },
+  navDesktop: { paddingHorizontal: 60, paddingTop: 30 },
+  navLogo: { width: 100, height: 40 },
+  navRight: { flexDirection: 'row', gap: 12 },
+  navLoginBtn: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 24 },
+  navLoginText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  heroContent: { padding: 24, paddingBottom: 60, zIndex: 5 },
+  heroContentDesktop: { paddingHorizontal: 80, paddingBottom: 80, maxWidth: 700 },
+  heroTag: { color: '#A855F7', fontSize: 11, fontWeight: '800', letterSpacing: 3, marginBottom: 16 },
+  heroTitle: { color: '#fff', fontSize: 36, fontWeight: '900', lineHeight: 44, letterSpacing: -1 },
+  heroTitleDesktop: { fontSize: 56, lineHeight: 64 },
+  heroSub: { color: 'rgba(255,255,255,0.65)', fontSize: 16, lineHeight: 26, marginTop: 16, maxWidth: 500 },
+  heroSubDesktop: { fontSize: 18, lineHeight: 30 },
+  heroCTARow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 32 },
+  heroCTA: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#9333EA', paddingHorizontal: 28, paddingVertical: 16, borderRadius: 28 },
+  heroCTAText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  heroMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  heroMetaText: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
+
+  // Sections
+  section: { paddingHorizontal: 24, paddingVertical: 60 },
+  sectionTag: { color: '#A855F7', fontSize: 11, fontWeight: '800', letterSpacing: 3, marginBottom: 12 },
+  sectionTitle: { color: '#fff', fontSize: 32, fontWeight: '900', lineHeight: 40, letterSpacing: -0.5 },
+  sectionSub: { color: 'rgba(255,255,255,0.5)', fontSize: 16, lineHeight: 26, marginTop: 12, maxWidth: 500 },
+
+  // Features
+  featuresSection: { backgroundColor: '#050510' },
+  featureGrid: { marginTop: 32, gap: 12 },
+  featureGridDesktop: { flexDirection: 'row', flexWrap: 'wrap' },
+  featureCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)' },
+  featureCardDesktop: { width: '31%' },
+  featureIconWrap: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(147,51,234,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  featureTitle: { color: '#fff', fontSize: 17, fontWeight: '700', marginBottom: 6 },
+  featureDesc: { color: 'rgba(255,255,255,0.45)', fontSize: 14, lineHeight: 22 },
+
+  // Trust
+  trustSection: { backgroundColor: '#08060F' },
+  trustInner: {},
+  trustInnerDesktop: { flexDirection: 'row', gap: 60 },
+  trustLeft: { flex: 1, marginBottom: 24 },
+  trustTitle: { color: '#fff', fontSize: 28, fontWeight: '900', lineHeight: 36, marginBottom: 12 },
+  trustSub: { color: 'rgba(255,255,255,0.45)', fontSize: 15, lineHeight: 24 },
+  trustRight: { flex: 1, gap: 14 },
+  trustPoint: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  trustPointText: { color: 'rgba(255,255,255,0.7)', fontSize: 15 },
+
+  // Premium
+  premiumSection: { backgroundColor: '#050510', alignItems: 'center' },
+  premiumTiers: { flexDirection: 'row', gap: 12, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' },
+  tierCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 24, width: 220, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', position: 'relative' as const, overflow: 'hidden' },
+  tierCardPopular: { borderColor: 'rgba(147,51,234,0.4)', backgroundColor: 'rgba(147,51,234,0.05)' },
+  popularBadge: { position: 'absolute' as const, top: 0, right: 0, backgroundColor: '#9333EA', paddingHorizontal: 10, paddingVertical: 4, borderBottomLeftRadius: 10 },
+  popularText: { color: '#fff', fontSize: 9, fontWeight: '800' },
+  tierName: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  tierPrice: { color: 'rgba(255,255,255,0.5)', fontSize: 22, fontWeight: '800', marginBottom: 16 },
+  tierFeature: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  tierFeatureText: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
+
+  // Final CTA
+  ctaSection: { alignItems: 'center', paddingVertical: 80, backgroundColor: '#08060F' },
+  ctaTitle: { color: '#fff', fontSize: 36, fontWeight: '900', textAlign: 'center', letterSpacing: -1 },
+  ctaSub: { color: 'rgba(255,255,255,0.4)', fontSize: 16, marginTop: 8, textAlign: 'center' },
+  finalCTA: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#9333EA', paddingHorizontal: 32, paddingVertical: 18, borderRadius: 30, marginTop: 28 },
+  finalCTAText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+
+  // Footer
+  footer: { padding: 24, alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' },
+  footerText: { color: 'rgba(255,255,255,0.2)', fontSize: 12 },
 });
