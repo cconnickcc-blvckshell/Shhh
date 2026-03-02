@@ -3,7 +3,7 @@
 > **Purpose:** Master index of all corporate and production policy documents.  
 > **Placeholders:** Replace `[COMPANY_NAME]`, `[JURISDICTION]`, `[CONTACT_EMAIL]`, etc. with your actual values before publication.  
 > **Legal review:** Have all policies reviewed by qualified legal counsel before use.  
-> **Enhancements (March 2026):** Policies have been enhanced per legal review recommendations: EU consumer carve-outs, CCPA/CPRA updates, arbitration opt-out, force majeure, DMCA agent registration, data subject appeals, modern slavery remediation, and related provisions.
+> **Enhancements (March 2026):** Policies have been enhanced per legal review and CTO audit: EU consumer carve-outs, CCPA/CPRA updates, arbitration opt-out, force majeure, DMCA agent registration, data subject appeals, modern slavery remediation. **Audit tightening:** Deletion & retention clarification, moderation capacity disclaimers, ephemerality precision, location precision, consent hard line, downgraded absolute language, Policy–System Parity Matrix (internal).
 
 ---
 
@@ -109,6 +109,14 @@
 | Document | File | Audience |
 |----------|------|----------|
 | Software License | [SOFTWARE_LICENSE.md](SOFTWARE_LICENSE.md) | Users, developers |
+
+---
+
+## Internal (Not Public)
+
+| Document | File | Audience |
+|----------|------|----------|
+| Policy–System Parity Matrix | [POLICY_SYSTEM_PARITY_MATRIX.md](POLICY_SYSTEM_PARITY_MATRIX.md) | Legal, Engineering, Trust & Safety |
 
 ---
 

@@ -24,6 +24,8 @@ By accessing or using the Services, you agree to be bound by these Terms of Serv
 
 You must be at least 18 years of age (or the age of majority in your jurisdiction) to use the Services. By using the Services, you represent and warrant that you meet this requirement. We reserve the right to verify your age and identity.
 
+**Misrepresentation:** Providing false age or identity information is a violation of these Terms and may result in immediate account termination and reporting to authorities. We are not a guarantor of user truthfulness; we rely on your representations and our verification processes where implemented.
+
 ---
 
 ## 3. Account Registration and Security

@@ -15,7 +15,7 @@ Shhh is a privacy-native, proximity-driven platform for adults. We aim to foster
 
 ### 2.1 Consent
 
-- Respect others' boundaries. Consent is ongoing and can be withdrawn at any time.
+- **Consent is contextual and revocable. Prior consent does not imply future consent.** Respect others' boundaries. Consent is ongoing and can be withdrawn at any time.
 - Do not pressure others into sharing, meeting, or doing anything they are not comfortable with.
 - Do not share intimate content without explicit consent.
 

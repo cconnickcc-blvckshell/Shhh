@@ -1,8 +1,9 @@
 # Shhh — System-Wide E2E Capability Audit Report
 
-**Date:** February 2026  
+**Date:** March 2026  
 **Scope:** Mobile app (Expo/React Native), Admin Dashboard (React/Vite), backend API surface as consumed by frontends.  
-**Intent:** Real audit of what exists, what is half-implemented, and what is missing. No optimistic gloss.
+**Intent:** Real audit of what exists, what is half-implemented, and what is missing. No optimistic gloss.  
+**Incorporates:** External review findings (GPT audit), PRODUCTION_READINESS_GRADE_REPORT, codebase verification.
 
 ---
 
@@ -11,11 +12,12 @@
 | Area | Implemented | Partial / half-done | Not implemented / missing |
 |------|-------------|----------------------|----------------------------|
 | **Mobile screens** | ~28 screens with real API usage | 5 screens with stubs or broken flows | Stories, Tonight feed, Groups, Content/guides, several UX gaps |
-| **Mobile UX/UI** | Navigation, forms, lists, basic states | Error UI, loading UX, offline, a11y, analytics | Global blur/reveal, central error mapping, Stripe in-app open |
-| **Admin Dashboard** | 11 pages, real API calls | Depends on backend admin routes existing | Per-screen spec and a11y not documented |
-| **Backend → frontend** | Most consumed routes implemented | Some routes unused; safety/deletion/screenshot gaps | Deletion worker, panic notify, screenshot route |
+| **Mobile UX/UI** | Navigation, forms, lists, basic states; location/WebSocket/checkout per checklist | Error UI, loading UX, offline, a11y, analytics | Global blur/reveal, central error mapping |
+| **Admin Dashboard** | 11 pages, real API calls | Admin token in localStorage (XSS risk) | Per-screen spec and a11y not documented |
+| **Backend → frontend** | Most consumed routes; deletion worker; screenshot route; subscription/entitlements | Panic does not notify contacts; MongoDB purge gap for deleted users | Prod secret validation; OTP not enforced at API |
+| **Security & compliance** | Deletion worker, retention policy, incident plan, feature gating | — | OTP bypass; CORS wide open; prod secrets |
 
-**Bottom line:** Core flows (auth, discover, chat, events, profile, venues, whispers, couple, albums, verify, subscription) are **present and wired to APIs**. Quality and completeness vary: many screens have **no error UI**, **no loading indicator**, **hardcoded location**, **placeholder verification**, and **chat without real-time**. Several **documented features** (stories, tonight, groups, venue grid, blur/reveal) have **no mobile UI**. Admin exists and calls admin APIs; backend has known gaps (deletion, panic notify, screenshot 404).
+**Bottom line:** Core flows (auth, discover, chat, events, profile, venues, whispers, couple, albums, verify, subscription) are **present and wired to APIs**. Quality and completeness vary. Per MASTER_IMPLEMENTATION_CHECKLIST: location, WebSocket chat, checkout URL, venue tap, verify-code guard, loading/error UI on many screens are **done**. Remaining gaps: **OTP not enforced** (API allows /register and /login without OTP), **CORS wide open**, **admin localStorage**, **no prod secret validation**, **blur/reveal**, **placeholder verification**, **stories/tonight/groups** (no mobile UI).
 
 ---
 
@@ -51,7 +53,7 @@
 | profile/venue-staff/[id] | `app/profile/venue-staff/[id].tsx` | **Venue staff:** getStaff, removeStaff, link to invite. |
 | profile/venue-invite-staff/[id] | `app/profile/venue-invite-staff/[id].tsx` | **Invite staff:** userId + role, inviteStaff. |
 | event/[id] | `app/event/[id].tsx` | **Event detail:** get, RSVP, venue link, description. |
-| venue/[id] | `app/venue/[id].tsx` | **Venue detail:** GET full, check-in; Share/Review no-op; upcoming events link wrong (see gaps). |
+| venue/[id] | `app/venue/[id].tsx` | **Venue detail:** GET full, check-in; Share/Review no-op; upcoming tap → event (0.5). |
 | chat/[id] | `app/chat/[id].tsx` | **Chat:** getMessages, sendMessage, TTL; block/report; camera button no handler. |
 | user/[id] | `app/user/[id].tsx` | **User profile:** GET profile, like, message, whisper, block, report. |
 | album/index | `app/album/index.tsx` | **Albums:** getMyAlbums, getShared, create, tabs Mine/Shared, tap → album/[id]. |
@@ -59,7 +61,7 @@
 | couple/index | `app/couple/index.tsx` | **Couple:** getMe, create, link, requestDissolution, confirmDissolution. |
 | verify/index | `app/verify/index.tsx` | **Verification:** GET status; photo submit **placeholder URL**; ID submit **demo hash**. |
 | whispers/index | `app/whispers/index.tsx` | **Whispers:** inbox/sent, respond, ignore, view profile. |
-| subscription/index | `app/subscription/index.tsx` | **Premium:** GET subscription, POST checkout; **Alert with URL only** (no in-app browser). |
+| subscription/index | `app/subscription/index.tsx` | **Premium:** GET subscription, POST checkout; Linking.openURL; refetch on focus (1.18, 1.19). |
 
 ---
 
@@ -80,15 +82,15 @@
 
 | Screen / area | What works | What’s missing or broken |
 |---------------|------------|---------------------------|
-| **Discover** | API call, filters, whisper, tap to profile | **Location hardcoded** (40.7128, -74.006). No initial loading spinner. **No error UI** (catch empty). No discovery cap message. |
-| **Messages** | Conversation list, tap → chat | No participant names or last message snippet (backend may not return; UI shows generic “Conversation” / “Tap to view messages”). **No error UI.** No loading indicator. |
-| **Events** | List, RSVP, tap → event detail | **Location hardcoded.** No loading indicator. **No error UI.** Un-RSVP is implemented (not_going). |
-| **Me** | Menu, panic, logout | Emergency and Privacy routes **are** implemented (gap list was updated). No profile load spinner. |
-| **Venue [id]** | GET full, check-in, about, specials, reviews, upcoming events | **Share and Review buttons have no handlers.** **Bug:** Upcoming events tap does `router.push('/events')` instead of `router.push(\`/event/${ev.id}\`)`. Venue grid (GET /v1/venues/:id/grid) **not shown**. |
-| **Chat [id]** | Load messages, send, self-destruct toggle, block/report | **Camera button has no onPress.** **No WebSocket:** no joinConversation, onNewMessage, typing (only initial fetch + optimistic send). No loading spinner. **No error UI.** Screenshot detection calls POST /v1/safety/screenshot (implemented; inserts into screenshot_events). |
+| **Discover** | API call, filters, whisper, tap to profile; **useLocation()** (checklist 1.1); loading + error UI (1.2) | Fallback to NYC coords when location loading. No discovery cap message. |
+| **Messages** | Conversation list, tap → chat; loading + error UI (1.4) | No participant names or last message snippet (backend may not return; UI shows generic “Conversation” / “Tap to view messages”). |
+| **Events** | List, RSVP, tap → event detail; **useLocation()** (1.7); loading + error UI (1.6) | Un-RSVP implemented (not_going). |
+| **Me** | Menu, panic, logout; profile load spinner (1.8) | Emergency and Privacy routes implemented. |
+| **Venue [id]** | GET full, check-in, about, specials, reviews, upcoming events; **upcoming tap → `/event/${ev.id}`** (0.5) | **Share and Review buttons have no handlers.** Venue grid (GET /v1/venues/:id/grid) **not shown**. |
+| **Chat [id]** | Load messages, send, self-destruct toggle, block/report; **WebSocket join, onNewMessage, leave** (1.11); loading + error UI (1.13) | **Camera button has no onPress.** Screenshot detection calls POST /v1/safety/screenshot (implemented). |
 | **Album [id]** | Album meta, share/revoke by userId | **Media grid shows placeholder icon only;** no actual image/thumbnail URLs rendered. Share options (watermarkMode, notifyOnView, share_target_type) not in UI. |
 | **Verify** | Status and history from API, tier progress | **Photo verification:** sends fixed `selfieUrl: 'https://placeholder.com/selfie.jpg'` (no camera/picker, no upload). **ID verification:** sends fixed `documentHash: 'demo_document_hash_12345'`. |
-| **Subscription** | GET subscription, POST checkout | **Checkout:** shows Alert with URL or “Stripe not configured”; **does not open browser/external link**. No in-app refresh of tier after webhook. |
+| **Subscription** | GET subscription, POST checkout; **Linking.openURL** for checkout (1.18); **refetch tier on focus** (1.19) | Stripe webhook updates backend; app refetches on return. |
 
 ### 3.3 Not implemented (planned or backend exists, no mobile UI)
 
@@ -119,7 +121,7 @@
 | **Error UI** | UX_UI_SPEC: many screens “NOT IMPLEMENTED” error | Discover, Messages, Events, Me, Chat, User profile, Album list: load errors **swallowed** (catch empty or generic Alert). No retry, no inline error message. |
 | **Loading** | Expected per-screen | Many screens have **no initial loading indicator** (Discover, Messages, Events, Album index, Status); list appears when data arrives or stays blank. |
 | **Offline** | UX_UI §8.2 | **No NetInfo**, no offline banner, no queue for failed mutations, no cached reads. |
-| **Verify-code params** | UX_UI §3.3 | **No guard** when phone/mode missing; can crash. |
+| **Verify-code params** | UX_UI §3.3 | **Done** (checklist 0.6). Guard when phone/mode missing. |
 
 ### 4.2 Auth and global behavior
 
@@ -133,7 +135,7 @@
 
 | Item | Status |
 |------|--------|
-| **WebSocket in chat** | **Missing.** useSocket has joinConversation, onNewMessage, typing; **chat screen does not use them.** Only initial fetch and optimistic send. |
+| **WebSocket in chat** | **Done** (checklist 1.11). useSocket joinConversation, onNewMessage, leave wired in chat screen. |
 | **Camera / media in chat** | **Missing.** Camera button has no handler. |
 
 ### 4.4 Media and photos
@@ -190,14 +192,29 @@
 
 ## 6. Backend Gaps That Affect Frontend
 
-From SYSTEM_REALITY_REPORT_APPENDICES, DEV_HANDOVER, FEATURE_ADDITIONS_CRITIQUE:
+From SYSTEM_REALITY_REPORT_APPENDICES, DEV_HANDOVER, FEATURE_ADDITIONS_CRITIQUE, external review:
 
 | Gap | Impact on frontend |
 |-----|---------------------|
 | **POST /v1/safety/screenshot** | Implemented; inserts into screenshot_events. |
-| **Account deletion never runs** | Privacy “Request account deletion” creates a request; **no worker** processes it or sets users.deleted_at. User expectation of “account deleted” is not met. |
-| **Panic “contacts notified”** | Backend returns contactsNotified / “Panic alert sent” but **no Twilio/push**; copy is misleading. |
+| **Account deletion** | **Worker exists** (`process-deletions` every 5m); anonymizes PII, sets `deleted_at`. MongoDB messages not purged per user. |
+| **Panic "contacts notified"** | Backend returns `contactsNotified: 0` and honest message; **no Twilio/push**. Mobile must not claim contacts notified. |
 | **Trust-score route** | Fixed; uses req.params.userId correctly. |
+
+---
+
+## 6a. Security & Auth Audit (Incorporated from External Review)
+
+Findings verified against codebase. Evidence: file paths below.
+
+| Finding | Evidence | Risk |
+|---------|----------|------|
+| **OTP not enforced at API** | `auth.routes.ts` exposes `POST /register` and `POST /login` with no OTP. Anyone can auth with phone only. `auth.controller.ts` calls `registerWithPhone`, `loginWithPhone`. | High — account takeover if phone known |
+| **CORS wide open** | `app.ts` L47: `app.use(cors())` with no options. | Medium |
+| **Admin token in localStorage** | `admin-dashboard/src/api/client.ts`: `localStorage.setItem('admin_token', ...)`. XSS could exfiltrate. | Medium |
+| **No prod secret validation** | `config/index.ts` L24–26: JWT defaults to `dev-jwt-secret`; `utils/hash.ts` L3: PHONE_HASH_PEPPER defaults to `shhh-dev-pepper-change-in-production`. No startup check for `NODE_ENV=production`. | High |
+| **Subscription / entitlements** | **Exist.** `subscription.service.ts` (TIERS, checkout, webhook, hasFeature, isPremium); `ad.service.ts` checks premium; `persona.service.ts` uses persona_slots; discovery cap from subscription. | — |
+| **Compliance docs** | **Exist.** `DATA_RETENTION_POLICY.md`, `SECURITY_INCIDENT_RESPONSE_PLAN.md`, `DATA_BREACH_NOTIFICATION.md`. Deletion worker runs every 5m. | — |
 
 ---
 
@@ -209,11 +226,11 @@ From SYSTEM_REALITY_REPORT_APPENDICES, DEV_HANDOVER, FEATURE_ADDITIONS_CRITIQUE:
 |----------|-------------|---------|---------|
 | **Screens/routes** | 28 with real API | 5 with stubs or bugs | Stories, Tonight, Groups, Content, venue grid, ads in Discover |
 | **Error UI** | — | — | Most list/fetch screens |
-| **Loading UI** | Some (e.g. edit, emergency, hosting) | — | Discover, Messages, Events, Album index, Status |
+| **Loading UI** | Many (Discover, Messages, Events, Me, Chat, Album per checklist) | — | Status, some screens |
 | **Offline** | — | — | Entire app |
-| **Real-time chat** | — | Send/receive once | WebSocket join, onNewMessage, typing |
+| **Real-time chat** | WebSocket join, onNewMessage, leave (1.11) | — | — |
 | **Verification** | Status, history | — | Real photo (camera/upload), real ID |
-| **Subscription** | GET, POST checkout | — | Open Stripe URL in app; refresh after webhook |
+| **Subscription** | GET, POST checkout; Linking.openURL; refetch on focus (1.18, 1.19) | — | — |
 | **Blur/reveal** | — | — | Integration with blur-check API |
 | **Analytics** | — | — | All events |
 | **A11y** | — | Partial | Labels, live regions, headings on many screens |
@@ -232,23 +249,22 @@ From SYSTEM_REALITY_REPORT_APPENDICES, DEV_HANDOVER, FEATURE_ADDITIONS_CRITIQUE:
 - This-week events filter.
 - Blur/reveal driven by photo check.
 - Screenshot reporting (implemented).
-- Account deletion execution (worker missing).
+- Account deletion (worker exists; MongoDB purge gap).
 
 ---
 
 ## 8. Recommendations (prioritized)
 
-1. **Fix bugs first:** Venue upcoming events → `/event/[id]`; verify-code missing-params guard; backend screenshot route and deletion worker and panic copy/implementation.
-2. **Error and loading:** Add error state + retry (or at least message) and loading indicator on Discover, Messages, Events, Album index, Chat, User profile.
-3. **Chat:** Wire useSocket (joinConversation, onNewMessage) in chat screen; add camera/media handler or remove button.
-4. **Verification:** Replace placeholder photo URL and demo ID hash with real camera/picker and upload flow (and real ID flow when backend supports it).
-5. **Subscription:** Open checkout URL in browser/Linking.openURL; refresh subscription state after return or webhook.
-6. **Location:** Use device location (or explicit “use my location”) for Discover and Events instead of hardcoded NYC.
-7. **Stories / Tonight / Groups / Content:** Either implement from spec or explicitly deprioritize and document as “post-MVP.”
-8. **A11y and analytics:** Add accessibilityLabel where critical (auth, panic, block, report); add minimal analytics (screen_view, key actions) if product requires it.
+1. **Security (P0):** Enforce OTP for /register and /login (or remove direct auth); add prod secret validation at startup; restrict CORS; move admin token from localStorage to httpOnly cookie or secure storage.
+2. **Verification:** Replace placeholder photo URL and demo ID hash with real camera/picker and upload flow (and real ID flow when backend supports it).
+3. **Chat:** Add camera/media handler or remove button.
+4. **Stories / Tonight / Groups / Content:** Either implement from spec or explicitly deprioritize and document as post-MVP.
+5. **A11y and analytics:** Add accessibilityLabel where critical (auth, panic, block, report); add minimal analytics (screen_view, key actions) if product requires it.
+6. **Deletion:** Consider MongoDB message purge for deleted users; document retention.
 
 ---
 
 **End of E2E Capability Audit Report.**  
 - **Action list:** See **MASTER_IMPLEMENTATION_CHECKLIST.md** for a full comprehensive list addressing every item above plus all discussed-but-not-implemented features (tiers 0–8, million-dollar quality bar).  
-- For gap-by-gap tracking see **FRONTEND_GAP_LIST.md**. For backend/system reality see **SYSTEM_REALITY_REPORT_APPENDICES.md** and **SYSTEM_REALITY_REPORT.md**.
+- For gap-by-gap tracking see **FRONTEND_GAP_LIST.md**. For backend/system reality see **SYSTEM_REALITY_REPORT_APPENDICES.md** and **SYSTEM_REALITY_REPORT.md**.  
+- **Incorporated findings:** External review (GPT audit) verified against codebase; see §6a Security & Auth Audit. See **PRODUCTION_READINESS_GRADE_REPORT.md** for executive-grade assessment.

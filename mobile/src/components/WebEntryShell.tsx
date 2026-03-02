@@ -5,7 +5,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const API_BASE = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+// Use bundled assets so hero/logo display during build and in production without requiring the API
+const HERO_IMAGE = require('../../assets/images/hero.png');
+const LOGO_IMAGE = require('../../assets/images/logo.png');
 
 const FEATURES = [
   { icon: 'compass', title: 'Proximity Grid', desc: 'See who\'s nearby right now. No algorithms. Just proximity and intention.' },
@@ -32,9 +34,9 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
     <ScrollView style={s.container} contentContainerStyle={s.scrollContent}>
       {/* ====== HERO SECTION ====== */}
       <View style={s.heroSection}>
-        {/* Background image */}
+        {/* Background image — bundled asset so it works during build and without API */}
         <Image
-          source={{ uri: `${API_BASE}/uploads/brand/hero.png` }}
+          source={HERO_IMAGE}
           style={s.heroBgImage}
           resizeMode="cover"
         />
@@ -43,7 +45,7 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
         {/* Nav bar */}
         <View style={[s.nav, isDesktop && s.navDesktop]}>
           <Image
-            source={{ uri: `${API_BASE}/uploads/brand/logo.png` }}
+            source={LOGO_IMAGE}
             style={s.navLogo}
             resizeMode="contain"
           />

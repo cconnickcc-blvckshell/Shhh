@@ -11,7 +11,9 @@
 **Registered Address:** [COMPANY_ADDRESS]  
 **Registration Number:** [REGISTRATION_NUMBER] (if applicable)
 
-[COMPANY_NAME] ("we," "us," or "our") operates the Shhh mobile application and related services. We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Services.
+[COMPANY_NAME] ("we," "us," or "our") operates the Shhh mobile application and related services. We aim to protect your privacy and give you control over your data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Services.
+
+**Consent is contextual and revocable.** Prior consent does not imply future consent. You may withdraw consent at any time where processing is consent-based.
 
 ---
 
@@ -99,7 +101,16 @@ We retain your information for as long as your account is active or as needed to
 - **Messages:** Per TTL settings; some messages may be retained for compliance and safety.
 - **Logs and audit:** As required by law or our [Data Retention Policy](DATA_RETENTION_POLICY.md).
 
-When you request account deletion, we process your request in accordance with our [Data Subject Rights](DATA_SUBJECT_RIGHTS.md) process.
+### 6.1 Deletion & Retention Clarification
+
+When you request account deletion, we process your request in accordance with our [Data Subject Rights](DATA_SUBJECT_RIGHTS.md) process. To set accurate expectations:
+
+- **Active data deletion:** We aim to delete or anonymise your account data, profile, and associated content within 30 days of a verified deletion request. Some data may be retained longer where required for backups, legal holds, or technical constraints.
+- **Safety and audit retention:** We may retain certain data (e.g. safety reports, audit logs, moderation records) for longer periods where necessary for safety, abuse prevention, or legal compliance. This data is retained in accordance with our [Data Retention Policy](DATA_RETENTION_POLICY.md).
+- **Legal retention:** We retain data where required by law (e.g. financial records, certain logs). We do not use retained data for purposes beyond the stated retention reason.
+- **Anonymisation vs destruction:** In some cases we may anonymise data rather than destroy it (e.g. for analytics). Anonymised data cannot identify you.
+
+Transparency about these limits is more important than perfection. We are continuously improving our deletion processes.
 
 ---
 
@@ -129,13 +140,13 @@ You may also lodge a complaint with your local data protection authority.
 
 ## 9. Data Security
 
-We implement technical and organizational measures to protect your data, including encryption, access controls, and regular security assessments. See our [Security Policy](SECURITY_POLICY.md) for more details.
+We implement technical and organisational measures designed to protect your data, including encryption in transit, access controls, and security assessments. See our [Security Policy](SECURITY_POLICY.md) for more details. No system is perfectly secure; we aim to reduce risk to a reasonable level.
 
 ---
 
 ## 10. International Transfers
 
-Your data may be transferred to and processed in countries outside your residence, including the United States. We ensure appropriate safeguards where required by law, including:
+Your data may be transferred to and processed in countries outside your residence, including the United States. Where required by law, we use appropriate safeguards, including:
 
 - **EU/EEA:** Standard Contractual Clauses (SCCs) approved by the European Commission, or adequacy decisions where applicable.
 - **UK:** UK-approved transfer mechanisms.
