@@ -1,12 +1,15 @@
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, useWindowDimensions, Vibration, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { api, usersApi, messagingApi } from '../../src/api/client';
+import { api, usersApi, messagingApi, ApiError } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
+import { ConnectionWindowModal } from '../../src/components/ConnectionWindowModal';
+import { useDiscoverFiltersStore } from '../../src/stores/discoverFilters';
 import { colors, spacing, fontSize, borderRadius, layout } from '../../src/constants/theme';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { useCanSeeUnblurred } from '../../src/hooks/useCanSeeUnblurred';
+import { mapApiError } from '../../src/utils/errorMapper';
 
 const PRESENCE_LABELS: Record<string, { label: string; color: string }> = {
   open_to_chat: { label: 'Open to chat', color: '#34D399' },
@@ -29,6 +32,8 @@ export default function UserDetailScreen() {
   const [whisperText, setWhisperText] = useState('');
   const [showWhisper, setShowWhisper] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [connectionWindowModal, setConnectionWindowModal] = useState<{ cap: number; used: number; tierOptions: string[] } | null>(null);
+  const filterContext = useDiscoverFiltersStore((s) => s.filterContext);
   const { width } = useWindowDimensions();
   const { isDesktop } = useBreakpoint();
   const heroSize = Platform.OS === 'web' && isDesktop ? Math.min(width, 480) : width;
@@ -39,7 +44,7 @@ export default function UserDetailScreen() {
     setLoading(true);
     api<{ data: any }>(`/v1/users/${id}/profile`)
       .then(r => { setProfile(r.data); setLoadError(null); })
-      .catch((err: any) => setLoadError(err?.message || 'Could not load profile.'))
+      .catch((err: any) => setLoadError(mapApiError(err)))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -76,9 +81,20 @@ export default function UserDetailScreen() {
   const handleMessage = async () => {
     if (!id) return;
     try {
-      const conv = await messagingApi.createConversation([id]);
+      const conv = await messagingApi.createConversation([id], filterContext);
       router.push(`/chat/${conv.data.id}`);
-    } catch (err: any) { Alert.alert('', err.message); }
+    } catch (err: unknown) {
+      const apiErr = err as ApiError;
+      if (apiErr.code === 'INITIATION_CAP_REACHED' && apiErr.cap != null && apiErr.used != null) {
+        setConnectionWindowModal({
+          cap: apiErr.cap,
+          used: apiErr.used,
+          tierOptions: apiErr.tierOptions ?? ['discreet', 'phantom', 'elite'],
+        });
+      } else {
+        Alert.alert('', mapApiError(err));
+      }
+    }
   };
 
   const sendWhisper = async () => {
@@ -89,13 +105,14 @@ export default function UserDetailScreen() {
       setWhisperText('');
       setShowWhisper(false);
       Alert.alert('Whispered', 'Your anonymous message was sent');
-    } catch (err: any) { Alert.alert('', err.message); }
+    } catch (err: any) { Alert.alert('', mapApiError(err)); }
   };
 
   const presence = profile.presenceState ? PRESENCE_LABELS[profile.presenceState] : null;
   const shieldColor = profile.verificationStatus === 'reference_verified' ? '#34D399' : profile.verificationStatus === 'id_verified' ? '#A855F7' : profile.verificationStatus === 'photo_verified' ? '#60A5FA' : null;
 
   return (
+  <>
     <ScrollView style={s.container} bounces={false}>
       {/* Hero photo — capped on desktop so it doesn't blow up */}
       <View style={[s.heroWrap, isDesktop && s.heroWrapDesktop]}>
@@ -224,6 +241,15 @@ export default function UserDetailScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+
+    <ConnectionWindowModal
+      visible={!!connectionWindowModal}
+      onClose={() => setConnectionWindowModal(null)}
+      cap={connectionWindowModal?.cap ?? 30}
+      used={connectionWindowModal?.used ?? 30}
+      tierOptions={connectionWindowModal?.tierOptions}
+    />
+  </>
   );
 }
 

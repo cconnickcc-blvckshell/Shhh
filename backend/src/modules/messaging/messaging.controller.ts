@@ -15,9 +15,13 @@ export class MessagingController {
 
   async createConversation(req: Request, res: Response, next: NextFunction) {
     try {
-      const { participantIds, type } = req.body;
+      const { participantIds, type, filterContext } = req.body;
       const allParticipants = [req.user!.userId, ...participantIds];
-      const conv = await messagingService.createConversation(allParticipants, type as 'direct' | 'group' | 'event');
+      const conv = await messagingService.createConversation(
+        allParticipants,
+        type as 'direct' | 'group' | 'event',
+        filterContext as Record<string, unknown> | undefined
+      );
       res.status(conv.existing ? 200 : 201).json({ data: conv });
     } catch (err) {
       next(err);

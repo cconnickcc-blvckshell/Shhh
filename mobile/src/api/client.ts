@@ -33,6 +33,13 @@ export function getMediaUrl(storagePath: string): string {
   return `${API_BASE}/uploads${path}`;
 }
 
+export interface ApiError extends Error {
+  code?: string;
+  cap?: number;
+  used?: number;
+  tierOptions?: string[];
+}
+
 export async function api<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -47,8 +54,14 @@ export async function api<T = any>(path: string, options: RequestInit = {}): Pro
     if (res.status === 401 && onUnauthorized) {
       onUnauthorized();
     }
-    const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
-    throw new Error(err.error?.message || `Request failed: ${res.status}`);
+    const body = await res.json().catch(() => ({ error: { message: res.statusText } }));
+    const errMsg = body.error?.message || `Request failed: ${res.status}`;
+    const err = new Error(errMsg) as ApiError;
+    if (body.error?.code) err.code = body.error.code;
+    if (body.error?.cap != null) err.cap = body.error.cap;
+    if (body.error?.used != null) err.used = body.error.used;
+    if (body.error?.tierOptions) err.tierOptions = body.error.tierOptions;
+    throw err;
   }
 
   if (res.status === 204) return {} as T;
@@ -108,8 +121,11 @@ export const discoverApi = {
 
 export const messagingApi = {
   getConversations: () => api<{ data: any[] }>('/v1/conversations'),
-  createConversation: (participantIds: string[]) =>
-    api<{ data: { id: string } }>('/v1/conversations', { method: 'POST', body: JSON.stringify({ participantIds }) }),
+  createConversation: (participantIds: string[], filterContext?: Record<string, unknown>) =>
+    api<{ data: { id: string } }>('/v1/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ participantIds, ...(filterContext && Object.keys(filterContext).length > 0 && { filterContext }) }),
+    }),
   getMessages: (convId: string) => api<{ data: any[] }>(`/v1/conversations/${convId}/messages`),
   sendMessage: (convId: string, content: string, contentType?: string, ttlSeconds?: number) =>
     api<{ data: any }>(`/v1/conversations/${convId}/messages`, {

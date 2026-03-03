@@ -3,11 +3,18 @@ import { getRedis } from '../../config/redis';
 import { Message } from './message.model';
 import { v4 as uuidv4 } from 'uuid';
 import { emitNewMessage, emitToUser } from '../../websocket';
+import { InitiationCapService } from './initiation-cap.service';
+import { InitiationCapReachedError } from '../../utils/errors';
 
 const IDEMPOTENCY_TTL = 300; // 5 min
+const initiationCapService = new InitiationCapService();
 
 export class MessagingService {
-  async createConversation(participantIds: string[], type: 'direct' | 'group' | 'event' = 'direct') {
+  async createConversation(
+    participantIds: string[],
+    type: 'direct' | 'group' | 'event' = 'direct',
+    filterContext?: Record<string, unknown>
+  ) {
     if (type === 'direct' && participantIds.length === 2) {
       const existing = await query(
         `SELECT c.id FROM conversations c
@@ -19,6 +26,16 @@ export class MessagingService {
       if (existing.rows.length > 0) {
         return { id: existing.rows[0].id, existing: true };
       }
+    }
+
+    // Initiation cap: only for NEW conversations; replies exempt
+    const result = await initiationCapService.checkAndIncrement(participantIds[0], filterContext);
+    if (!result.allowed) {
+      throw new InitiationCapReachedError(
+        result.cap,
+        result.used,
+        result.tierOptions
+      );
     }
 
     const convId = uuidv4();

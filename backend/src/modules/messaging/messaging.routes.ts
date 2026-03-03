@@ -10,6 +10,7 @@ const controller = new MessagingController();
 const createConversationSchema = z.object({
   participantIds: z.array(z.string().uuid()).min(1).max(20),
   type: z.enum(['direct', 'group', 'event']).optional(),
+  filterContext: z.record(z.unknown()).optional(), // For initiation cap per filter view
 });
 
 const sendMessageSchema = z.object({

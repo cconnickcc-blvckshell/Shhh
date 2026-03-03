@@ -14,6 +14,9 @@ import { useCanSeeUnblurred } from '../../src/hooks/useCanSeeUnblurred';
 import { BrandMark } from '../../src/components/BrandMark';
 import { PageShell } from '../../src/components/layout';
 import { SafeState } from '../../src/components/ui';
+import { mapApiError } from '../../src/utils/errorMapper';
+import { useScreenView } from '../../src/hooks/useScreenView';
+import { useDiscoverFiltersStore } from '../../src/stores/discoverFilters';
 
 const HOVER_DURATION_MS = 160;
 const HOVER_EASING = Easing.out(Easing.ease);
@@ -124,6 +127,9 @@ function DiscoverTile({
       onLongPress={onLongPress}
       delayLongPress={400}
       {...hoverProps}
+      accessibilityLabel={`${item.displayName}, ${formatDist(item.distance)} away`}
+      accessibilityRole="button"
+      accessibilityHint="Double tap to view profile. Long press to whisper."
     >
       <Animated.View style={[isWeb ? animatedStyle : undefined, { flex: 1 }]}>
       <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} canSeeUnblurred={canSeeUnblurred ?? undefined} />
@@ -157,6 +163,7 @@ function DiscoverTile({
 }
 
 export default function DiscoverScreen() {
+  useScreenView('discover');
   const profile = useAuthStore((s) => s.profile);
   const location = useLocation();
   const lat = location.loading ? FALLBACK_LAT : location.latitude;
@@ -181,6 +188,8 @@ export default function DiscoverScreen() {
 
   const primaryIntent = profile?.primaryIntent ?? undefined;
 
+  const setFilterContext = useDiscoverFiltersStore((s) => s.setFilterContext);
+
   const load = useCallback(async () => {
     setLoadError(null);
     try {
@@ -189,13 +198,14 @@ export default function DiscoverScreen() {
       let list = (res.data as NearbyUser[]).sort((a, b) => a.distance - b.distance);
       if (verifiedOnly) list = list.filter((u) => u.verificationStatus && u.verificationStatus !== 'unverified');
       setUsers(list);
+      setFilterContext({ radius: radiusKm, primaryIntent: primaryIntent ?? '', verifiedOnly, sortMode });
     } catch (err: any) {
-      setLoadError(err?.message || 'Something went wrong. Pull down to try again.');
+      setLoadError(mapApiError(err));
       setUsers([]);
     } finally {
       setLoading(false);
     }
-  }, [lat, lng, radiusKm, primaryIntent, verifiedOnly]);
+  }, [lat, lng, radiusKm, primaryIntent, verifiedOnly, setFilterContext]);
 
   useEffect(() => {
     if (!location.loading) {
@@ -229,7 +239,7 @@ export default function DiscoverScreen() {
       Vibration.vibrate([0, 50, 30, 50]);
       setWhisperTarget(null);
       setWhisperText('');
-    } catch (err: any) { Alert.alert('', err.message); }
+    } catch (err: any) { Alert.alert('', mapApiError(err)); }
   };
 
   const renderTile = ({ item }: { item: NearbyUser }) => (
