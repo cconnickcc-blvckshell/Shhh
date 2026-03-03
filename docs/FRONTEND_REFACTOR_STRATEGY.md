@@ -144,7 +144,7 @@ Every screen uses it. No more inline “No one nearby” or one-off error boxes 
 
 It must look **intentional**.
 
-**Implementation:** Add `SafeState` (or equivalent) in `mobile/src/components/ui/`; migrate (tabs)/index, events, messages, profile, and other key screens to use it.
+**Implementation:** Add `SafeState` (or equivalent) in `mobile/src/components/ui/`; migrate (tabs)/index, events, messages, profile, and other key screens to use it. **Done:** `OfflineBanner` (NetInfo) mounted in root `_layout.tsx`; `mapApiError` (`src/utils/errorMapper.ts`) used for user-facing error copy on Discover, Messages, Events, Chat, Album, User.
 
 ---
 

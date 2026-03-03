@@ -78,7 +78,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   └── tsconfig.json
 ├── mobile/                           # React Native + Expo 55
 │   ├── app/
-│   │   ├── _layout.tsx               # Root layout, AuthGuard, 401→login
+│   │   ├── _layout.tsx               # Root layout, AuthGuard, OfflineBanner, 401→login
 │   │   ├── (auth)/
 │   │   │   ├── _layout.tsx
 │   │   │   ├── index.tsx             # Login
@@ -131,12 +131,18 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   ├── constants/theme.ts        # Design tokens + layout.contentMaxWidth
 │   │   ├── constants/breakpoints.ts  # Breakpoints + CONTENT_MAX_WIDTH
 │   │   ├── lib/tabRoutes.ts         # pathnameToTab, TAB_TO_ROUTE (URL derivation only)
+│   │   ├── utils/errorMapper.ts      # Maps API error messages to user-facing copy
+│   │   ├── utils/analytics.ts       # Analytics stub (screen_view, action; no PII)
 │   │   ├── hooks/useSocket.ts       # Socket.io hook
 │   │   ├── hooks/useBreakpoint.ts   # isWeb, isDesktop, showSidebar
 │   │   ├── hooks/useHover.ts        # Web hover state for polish
 │   │   ├── hooks/useCanSeeUnblurred.ts # GET /v1/photos/check/:userId; single blur authority
+│   │   ├── hooks/useOAuth.ts        # Apple sign-in flow (expo-apple-authentication)
+│   │   ├── hooks/useScreenView.ts   # Fires screen_view on mount (analytics stub)
 │   │   ├── components/layout/       # PageShell, ContentColumn, Card (layout spine)
 │   │   ├── components/ui/SafeState.tsx # loading, empty, error, offline screen states
+│   │   ├── components/OfflineBanner.tsx # NetInfo-based offline banner (mounted in root layout)
+│   │   ├── components/AuthOptions.tsx # Phone, Apple, Google, Snap auth options (pros/cons)
 │   │   ├── components/WebSidebar.tsx # Desktop web sidebar nav (derives active from pathname)
 │   │   └── components/WebEntryShell.tsx # Web-only unauthenticated entry
 │   └── package.json

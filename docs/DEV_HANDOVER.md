@@ -1430,6 +1430,11 @@ The mobile app uses **expo-router** (file-based routing). All screens are in `mo
 |------|------|-------------|
 | `useSocket` | `src/hooks/useSocket.ts` | Socket.io connection with JWT auth. Provides `joinConversation`, `leaveConversation`, `sendTyping`, `stopTyping`, `onNewMessage`, `onTyping`, `onAlbumShared` |
 | `useLocation` | `src/hooks/useLocation.ts` | Expo location permissions, GPS tracking, sends location to API. Defaults to NYC (40.7128, -74.006) on web. |
+| `useScreenView` | `src/hooks/useScreenView.ts` | Fires screen_view on mount. Use in screen components. analytics.ts stub. |
+| `useOAuth` | `src/hooks/useOAuth.ts` | Apple sign-in flow (expo-apple-authentication). Google/Snap use expo-auth-session. |
+| `mapApiError` | `src/utils/errorMapper.ts` | Maps API error messages to user-facing copy (rate limit, tier, OTP, etc.). |
+| `OfflineBanner` | `src/components/OfflineBanner.tsx` | NetInfo-based offline banner. Mounted in root _layout. |
+| `AuthOptions` | `src/components/AuthOptions.tsx` | Reusable auth options (phone, Apple, Google, Snap) with pros/cons. Used in Login/Register. |
 | `usePhotoUpload` | `src/hooks/usePhotoUpload.ts` | Image picker + multipart upload to `/v1/media/upload`. Supports camera and library. Self-destruct option. |
 | `useDistressGesture` | `src/hooks/useDistressGesture.ts` | Accelerometer-based shake detection (5 shakes in 3s). Triggers panic API call with location. Vibration feedback. 30s cooldown. |
 | `useScreenshotDetection` | `src/hooks/useScreenshotDetection.ts` | Expo screen capture listener. Reports to `/v1/safety/screenshot`. Alerts user that other person was notified. |
@@ -1457,6 +1462,9 @@ interface AuthState {
 - `sendOTP(phone)` — calls `/v1/auth/phone/send-code`, returns `{devCode?}` in dev mode
 - `verifyAndLogin(phone, code)` — verify OTP then login, navigate to tabs
 - `verifyAndRegister(phone, code, displayName)` — verify OTP then register, navigate to onboarding
+- `oauthApple(idToken)` — POST `/v1/auth/oauth/apple`, returns tokens
+- `oauthGoogle(idToken)` — POST `/v1/auth/oauth/google`, returns tokens
+- `oauthSnap(authCode)` — POST `/v1/auth/oauth/snap`, returns tokens
 - `login(phone)` — direct login (dev fallback, bypasses OTP)
 - `register(phone, displayName)` — direct register (dev fallback)
 - `logout()` — revoke tokens, clear state, navigate to auth
@@ -1471,7 +1479,7 @@ Token persistence: `window.localStorage` on web (key: `shhh_token`).
 
 ```typescript
 api<T>(path, options)        // Generic fetch wrapper with auth header injection
-authApi.{register, login, refresh, logout}
+authApi.{register, login, refresh, logout, oauthApple, oauthGoogle, oauthSnap}
 usersApi.{getMe, updateMe, like, pass, block, report}
 discoverApi.{nearby, updateLocation}
 messagingApi.{getConversations, createConversation, getMessages, sendMessage}
@@ -1485,7 +1493,7 @@ albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare}
 - Native: `http://10.0.2.2:3000` (Android emulator); iOS simulator typically `localhost:3000`
 - For production web/native, introduce `EXPO_PUBLIC_API_URL` and use it when set; document in SOFT_LAUNCH_WEB_PLAN.
 
-**Auth guard:** Root `app/_layout.tsx` wraps the app in `AuthGuard` (`src/components/AuthGuard.tsx`): unauthenticated users are redirected to `/(auth)`; 401 responses trigger `onUnauthorized` (clear session, redirect to login).
+**Auth guard:** Root `app/_layout.tsx` wraps the app in `AuthGuard` (`src/components/AuthGuard.tsx`): unauthenticated users are redirected to `/(auth)`; 401 responses trigger `onUnauthorized` (clear session, redirect to login). `OfflineBanner` is mounted in the root layout for global offline detection.
 
 ### 6.5 Web layout (soft launch)
 
