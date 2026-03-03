@@ -6,6 +6,63 @@
 
 ---
 
+## Table of Contents
+
+1. [Master Timeline](#master-timeline-week-by-week)
+2. [Role & Responsibility Matrix](#role--responsibility-matrix)
+3. [Strategic Objectives](#strategic-objectives-three-simultaneous-goals)
+4. [CTO Gate](#cto-gate-backend-readiness-before-blitz)
+5. [Phase 0 — Harden](#phase-0--harden-before-ignition-24-weeks-pre-launch)
+6. [Phase 1 — Seed](#phase-1--controlled-seeding-week-2-to-1)
+7. [Phase 2 — Detonation](#phase-2--the-weekend-detonation-48-hour-cluster)
+8. [Phase 3 — Scarcity](#phase-3--controlled-scarcity-week-12-post-launch)
+9. [Phase 4 — Viral Loop](#phase-4--viral-loop-engineering-week-3)
+10. [Influencer Budget](#influencer-budget-structure)
+11. [Analytics Schema](#analytics-event-schema)
+12. [Invite System Spec](#invite-system-spec)
+13. [Moderation Playbook](#moderation-playbook-outline)
+14. [Risk Matrix](#risk-assessment-matrix)
+15. [Post-Launch Analysis](#post-launch-analysis-framework)
+16. [KPIs](#key-performance-targets)
+17. [Decision Gates](#decision-gates-gono-go-at-phase-boundaries)
+18. [Positioning Safety](#critical-positioning-safety)
+19. [Contingency](#contingency-plans)
+
+---
+
+## Master Timeline (Week-by-Week)
+
+| Week | Phase | Focus | Key Milestones |
+|------|-------|-------|-----------------|
+| **-4** | 0 | Harden | Cloud DBs live; load test passed; observability on |
+| **-3** | 0 | Harden | Onboarding locked; invite system shipped; analytics wired |
+| **-2** | 0 → 1 | Harden + Seed | Brand language final; Founding Circle outreach begins |
+| **-1** | 1 | Seed | 1,000–2,000 users; influencer contracts signed; club event confirmed |
+| **0** | 2 | Detonation | Launch weekend; club event + influencer cluster + community codes |
+| **+1** | 3 | Scarcity | Limited invites live; Founder badge countdown; waitlist visible |
+| **+2** | 3 | Scarcity | Invite limits peak; "Last chance" messaging |
+| **+3** | 4 | Viral | Referral perks live; badge tiers; organic growth focus |
+| **+4+** | 4 | Viral | Scale paid only if D7 > 25%, CPI < $4 |
+
+---
+
+## Role & Responsibility Matrix
+
+| Area | Owner | Support | Approver |
+|------|-------|---------|----------|
+| **Backend readiness** | CTO / Eng Lead | DevOps | CTO |
+| **Onboarding + value clarity** | Product | Design, Eng | Product |
+| **Invite/referral system** | Eng | Product | CTO |
+| **Analytics + dashboards** | Eng | Product | Product |
+| **Moderation playbook** | Ops / Community | Legal | COO |
+| **Brand language** | Marketing / Founder | Legal | Founder |
+| **Community outreach** | Marketing / Founder | — | Founder |
+| **Influencer deals** | Marketing | Legal | Founder |
+| **Club event** | Marketing / Ops | Eng (QR, tech) | Founder |
+| **Launch weekend ops** | Ops | Eng (on-call) | COO |
+
+---
+
 ## Strategic Objectives (Three Simultaneous Goals)
 
 | Objective | What it means |
@@ -38,6 +95,26 @@
 
 **Verdict:** Do not enter Phase 1 until these pass. See [CONSOLIDATED_CTO_REVIEW.md](./CONSOLIDATED_CTO_REVIEW.md) §3.1 for P0 gates.
 
+### Load Test Script (Outline)
+
+| Test | Duration | Target | Pass Criteria |
+|------|----------|--------|---------------|
+| Ramp to 1,000 concurrent | 10 min ramp, 5 min hold | 1,000 users | p95 latency < 500ms; error rate < 0.1% |
+| Auth burst | 2 min | 100 req/min | No 429; p95 < 2s |
+| WebSocket join storm | 1 min | 500 joins | All join within 5s; no disconnects |
+| Discovery spike | 5 min | 500 req/min | Cache hit; p95 < 200ms |
+
+### Observability Checklist
+
+- [ ] HTTP request rate, error rate, p50/p95/p99 latency (by route or route group)
+- [ ] WebSocket connection count, join/leave rate
+- [ ] Redis hit rate, connection pool usage
+- [ ] PostgreSQL connection count, slow query log
+- [ ] SLO: `GET /v1/discover` p95 < 500ms
+- [ ] Alert: error rate > 1% for 5 min
+- [ ] Alert: p95 latency > 2s for 2 min
+- [ ] Dashboard: real-time installs, auth success/fail, active users
+
 ---
 
 ## Phase 0 — Harden Before Ignition (2–4 Weeks Pre-Launch)
@@ -46,16 +123,16 @@
 
 ### 0.1 Product Hardening Checklist
 
-| Item | Owner | Done |
-|------|-------|------|
-| Pixel-perfect onboarding (no friction, no jank) | Product/Eng | |
-| 60-second value clarity (first screen explains "why Shhh") | Product | |
-| Invite/referral system (codes, tracking) | Eng | |
-| Analytics: CPI, Day 1, Day 7 retention, funnel drop-offs | Eng | |
-| Moderation + reporting flows (admin queue, response time) | Ops | |
-| Server stress-tested for 5–10x projected load | Eng | |
-| Cloud databases live (Supabase, Upstash, Atlas) | Eng | |
-| Observability: metrics, SLO, alerting | Eng | |
+| Item | Owner | Sub-Tasks | Done |
+|------|-------|-----------|------|
+| **Pixel-perfect onboarding** | Product/Eng | No layout shift; no tap dead zones; keyboard avoids content; loading states on every async step; error states with retry | |
+| **60-second value clarity** | Product | First screen (or Entry Shell) answers: "What is this?" "Why should I care?" "What do I do next?" in < 60s; no jargon | |
+| **Invite/referral system** | Eng | Codes (unique, revocable); tracking (who invited whom); limit per user; redemption flow; analytics event `invite_sent`, `invite_redeemed` | |
+| **Analytics** | Eng | Events: `screen_view`, `signup_start`, `signup_complete`, `onboarding_complete`, `invite_sent`, `invite_redeemed`; CPI, D1, D7 in dashboard | |
+| **Moderation flows** | Ops | Admin queue; severity tiers; 24–48h SLA; escalation path; response templates (see §Moderation Playbook) | |
+| **Stress test** | Eng | 5–10x projected load; all tests pass; no memory leak over 30 min | |
+| **Cloud DBs** | Eng | Supabase, Upstash, Atlas live; migrations run; connection strings in prod env | |
+| **Observability** | Eng | Metrics, SLO, alerting; dashboard for launch weekend | |
 
 ### 0.2 Brand Positioning Language (Finalize)
 
@@ -72,7 +149,15 @@
 
 **Why:** Protects App Store, Stripe, ad accounts, long-term valuation. Subtlety is survival.
 
-### 0.3 Launch Readiness Sign-Off
+### 0.4 Phase 0 Week-by-Week
+
+| Week | Focus | Deliverables |
+|------|-------|--------------|
+| **-4** | Infra + stability | Cloud DBs live; load test passed; observability deployed; P0 gates (OTP, secrets, CORS) verified |
+| **-3** | Product + analytics | Onboarding locked; invite system shipped; analytics events wired; moderation playbook v1 |
+| **-2** | Polish + brand | Value clarity < 60s; brand language final; stress test at 10x; sign-off from CTO, Product, Ops, Legal |
+
+### 0.5 Launch Readiness Sign-Off
 
 - [ ] CTO: Backend passes load test; observability live
 - [ ] Product: Onboarding flow approved; value clarity < 60s
@@ -113,6 +198,48 @@
 - Codes are single-use or limited-use to prevent abuse
 - Moderation queue monitored daily; no backlog > 24h
 
+### 1.5 Community Outreach Playbook
+
+**Target community criteria:**
+- Private, vetted membership (not public forums)
+- Organizer has direct relationship with members
+- Size: 200–1,000 members (too small = no impact; too large = hard to control)
+- Values alignment: discretion, consent, safety
+
+**Outreach sequence:**
+1. Warm intro to organizer (via mutual contact if possible)
+2. 15-min call: explain Shhh, Founding Circle concept, no public promotion
+3. Offer: X codes for organizer to distribute; Founder badge for early joiners
+4. Ask: "Who else in your network runs similar communities?" (expand)
+5. Follow-up: codes delivered within 48h; check-in at Day 3 and Day 7
+
+**Red flags:** Organizer wants payment; wants public mention; has history of drama or controversy.
+
+### 1.6 Influencer Vetting & Outreach
+
+**Vetting criteria:**
+- Audience: sex-positive, lifestyle, relationship content (not explicit)
+- Engagement rate > 3%; authentic comments (not bot-heavy)
+- No recent brand controversies or App Store rejections
+- Willing to use soft framing ("discovery" not "ad")
+
+**Outreach template (adapt):**
+> "We're launching a private social app for people who value discretion and real-world connection. We're looking for a few creators to get early access before we go wider. No scripted content—just your honest take. We'd love to send you a code and a brief. Interested in a 15-min call?"
+
+**Contract points (non-exclusive):**
+- Post timing window (e.g. within 48h of launch)
+- No explicit language or imagery
+- Disclosure (e.g. "early access" or "partner" per platform rules)
+- Ownership of content; right to request removal if policy violation
+- Payment: 50% on signing, 50% on post delivery
+
+### 1.7 Club Partner Criteria
+
+- Established venue (1+ year); known in the community
+- Willing to host branded-but-subtle activation (no signage that screams "app")
+- Staff can assist with onboarding (QR, download, first use)
+- Exclusive or semi-exclusive for launch weekend (no competing events)
+
 ---
 
 ## Phase 2 — The Weekend Detonation (48-Hour Cluster)
@@ -151,11 +278,46 @@
 
 **Critical:** If Day 1 retention drops below 35%, pause paid amplification. Fix product before scaling noise.
 
-### 2.3 Weekend Ops
+### 2.3 Club Event Run-of-Show (Template)
 
-- **On-call:** 1 engineer + 1 ops during 48h window
-- **Moderation:** 2 shifts (12h each) to clear report queue
-- **Monitoring:** Dashboards on big screen; alert on error spike or latency > 1s
+| Time | Activity | Owner |
+|------|----------|-------|
+| **T-2h** | Ambassadors arrive; QR stations set; tablets charged; test download flow | Ops |
+| **T-1h** | Venue doors open; first guests; ambassadors greet, no hard sell | Ops |
+| **T-0** | Peak arrival; QR codes at bar, entrance, lounge; "Early access" badge unlock for attendees | Ops |
+| **T+1h** | Check download count; troubleshoot any issues; circulate for feedback | Ops + Eng |
+| **T+2h** | Wind down; collect feedback; thank venue staff | Ops |
+| **T+24h** | Post-event report: installs, signups, qualitative feedback | Ops |
+
+**Tech checklist:** QR codes link to App Store / web PWA; fallback: manual code entry if QR fails; tablets for on-the-spot signup if phone issues.
+
+### 2.4 Influencer Post Schedule (48h Cluster)
+
+| Slot | Creator | Platform | Format | Notes |
+|------|----------|----------|--------|-------|
+| Fri 6pm | Creator 1 | IG Story + Reel | "Something I've been testing…" | Teaser |
+| Fri 10pm | Creator 2 | TikTok | Discovery-style; no explicit | Peak evening |
+| Sat 10am | Creator 3 | IG | Carousel or Reel | Morning scroll |
+| Sat 2pm | Creator 4 | TikTok | Same framing | Afternoon |
+| Sat 6pm | Creator 5 | IG + Story | "Finally can share…" | Evening |
+| Sat 10pm | Creator 6 (upper-mid) | Multi | Main drop | Amplify earlier posts |
+
+**Stagger = extended algorithmic visibility.** Same weekend = clustering; different times = sustained spike.
+
+### 2.5 Weekend Ops Playbook
+
+**On-call roster:**
+- 1 engineer (backend, DB, deploy)
+- 1 ops (moderation, user issues, club event support)
+
+**Shift coverage:** 2x 12h shifts (e.g. 8am–8pm, 8pm–8am) for moderation; engineer on-call 24h.
+
+**Escalation:**
+- Error rate > 2%: Engineer investigates; consider rate limit or feature flag
+- Moderation backlog > 50: Ops lead adds temp moderator; prioritize safety reports
+- Negative viral post: No public response; internal comms; post-mortem within 48h
+
+**Monitoring:** Dashboard on big screen (TV or projector) with: installs, auth success/fail, active users, error rate, p95 latency. Refresh every 5 min during peak.
 
 ---
 
@@ -178,10 +340,25 @@ Users must feel: **"I got in early."**
 
 Scarcity converts installs into identity. Identity drives retention and referral.
 
-### 3.3 Guardrails
+### 3.3 Scarcity Logic (Implementation)
+
+| Mechanic | Spec | Example |
+|----------|------|---------|
+| **Daily invite limit** | N invites per user per day; reset at midnight UTC | N = 3 for first week; 5 for week 2 |
+| **Visible count** | "Invite Remaining: X" in UI; updates when invite sent | Creates urgency |
+| **Founder badge sunset** | Badge visible until date X; after X, badge hidden; "Last chance" banner 3 days before | X = 14 days post-launch |
+| **Waitlist** | If invite limit reached or codes exhausted, show queue; "X people ahead of you" | Queue position = signup order; no fake numbers |
+
+### 3.4 A/B Test Ideas (Optional)
+
+- Invite limit: 3 vs 5 per day (impact on conversion vs scarcity feel)
+- Founder badge sunset: 7 vs 14 days (urgency vs inclusivity)
+- Waitlist copy: "Join the waitlist" vs "You're in line—we'll notify you"
+
+### 3.5 Guardrails
 
 - Do not over-restrict; 2-week window is enough
-- After Week 2, ease invite limits gradually
+- After Week 2, ease invite limits gradually (e.g. 5 → 10 per day)
 - Founder badge sunset should feel earned, not punitive
 
 ---
@@ -206,13 +383,33 @@ Scarcity converts installs into identity. Identity drives retention and referral
 - Referral-to-signup > 25%
 - Day 7 retention > 25%
 
-### 4.3 When to Scale Paid
+### 4.3 Referral Mechanics (Spec)
+
+| Element | Spec |
+|---------|------|
+| **Invite flow** | User taps "Invite"; selects contact or copies link; link includes `?ref=userId` or code |
+| **Redemption** | New user signs up via link/code; `invite_redeemed` event; inviter gets credit |
+| **Perk tiers** | 1 referral = extra invite; 3 referrals = badge upgrade; 5 = early access to feature |
+| **Tracking** | `invite_sent`, `invite_redeemed`, `referrer_id`, `referred_at` |
+
+### 4.4 Viral Loop Math
+
+**K-factor = invites per user × conversion rate.**
+
+- If each user sends 2 invites and 30% convert: K = 0.6 (sub-viral but compounding)
+- If each user sends 3 invites and 40% convert: K = 1.2 (viral)
+- Target: K > 0.5 for sustained organic growth without paid
+
+**Optimization levers:** Increase invites per user (UX, perks), increase conversion (landing page, value prop).
+
+### 4.5 When to Scale Paid
 
 Only after:
-- Day 7 retention stable
+- Day 7 retention stable (> 25%)
 - CPI under $4
 - No critical bugs in top 5 flows
 - Moderation queue < 24h
+- K-factor > 0.3 (organic baseline established)
 
 ---
 
@@ -227,7 +424,14 @@ Only after:
 | Club event (venue, staff, visuals) | $15k–$40k |
 | **Total** | **$65k–$90k** |
 
-### Lean Tier (Under $20k)
+##### Lean Tier (Under $20k)
+
+| Item | Cost |
+|------|------|
+| 1–2 club events (venue, staff, minimal branding) | $5k–$12k |
+| Community organizer thank-you (gift, not payment) | $500–$1k |
+| Organic seeding only; no paid influencer | $0 |
+| **Total** | **$5.5k–$13k** |
 
 - Hyper-local activation only
 - 1–2 club events
@@ -235,6 +439,112 @@ Only after:
 - No paid influencer; rely on Founding Circle word-of-mouth
 
 **Reality:** Under $20k = slower ramp, but viable if product is strong and community is tight.
+
+### Mid Tier ($20k–$50k)
+
+| Item | Cost |
+|------|------|
+| 2–3 mid-tier creators @ $4k–$6k | $8k–$18k |
+| 1 club event | $8k–$15k |
+| Community codes + Founding Circle | $1k |
+| **Total** | **$17k–$34k** |
+
+---
+
+## Analytics Event Schema
+
+**Required events for launch:**
+
+| Event | When | Properties |
+|-------|------|------------|
+| `screen_view` | Screen mount | screen_name |
+| `signup_start` | User taps "Get Started" or equivalent | source (phone, apple, google, snap) |
+| `signup_complete` | User completes registration | source, time_to_complete |
+| `onboarding_complete` | User finishes onboarding | intent_selected |
+| `invite_sent` | User sends invite | channel (link, copy, share) |
+| `invite_redeemed` | New user signs up via invite | referrer_id |
+| `discovery_view` | User views Discover grid | result_count |
+| `first_message_sent` | User sends first message | conversation_id |
+
+**Derived metrics:**
+- CPI = paid spend / installs
+- Day 1 retention = users active 24h after signup / total signups
+- Day 7 retention = users active 7d after signup / total signups
+- Invite conversion = invite_redeemed / invite_sent
+- Funnel drop-off = signup_start → signup_complete → onboarding_complete (each step)
+
+---
+
+## Invite System Spec
+
+**Technical requirements:**
+
+| Requirement | Spec |
+|-------------|------|
+| **Code format** | Alphanumeric, 8–12 chars; no ambiguous chars (0/O, 1/l) |
+| **Uniqueness** | One code per user or per batch; revocable |
+| **Limit** | N per user per day; configurable |
+| **Redemption** | Code or link; link includes `?ref=code` or `?ref=userId` |
+| **Tracking** | `invite_codes` table or equivalent: code, user_id, created_at, redeemed_at, redeemed_by |
+
+**UX requirements:**
+
+- Invite entry: optional on signup (e.g. "Have a code?"); or required for gated launch
+- Invite send: share sheet (link, copy, message); or in-app invite flow
+- Visible count: "Invite Remaining: X" in profile or dedicated invite screen
+
+---
+
+## Moderation Playbook Outline
+
+**Severity tiers:**
+
+| Tier | Examples | Response SLA |
+|------|-----------|---------------|
+| **P0** | CSAM, threats, imminent harm | Immediate; escalate to legal/law enforcement |
+| **P1** | Harassment, non-consensual imagery, hate | < 4h |
+| **P2** | Spam, impersonation, policy violation | < 24h |
+| **P3** | Low-priority reports, edge cases | < 48h |
+
+**Actions:** Warn, restrict, suspend, ban. Document in audit log.
+
+**Response templates (internal):**
+- Acknowledge: "We've received your report and will review within 24h."
+- Action taken: "We've taken action on this report. Thank you for helping keep Shhh safe."
+- No action: "After review, we didn't find a policy violation. If you have more info, please reply."
+
+**Escalation:** P0 → Legal + law enforcement. P1 → Senior moderator. P2/P3 → Standard queue.
+
+---
+
+## Risk Assessment Matrix
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| Server overload | Medium | High | Load test; rate limit; waitlist |
+| Negative influencer post | Low | High | Vet carefully; no public response |
+| App Store rejection | Medium | High | Positioning language; no explicit content |
+| Moderation backlog | Medium | Medium | 2 shifts; temp moderators; prioritize P0/P1 |
+| CPI > $6 | Medium | Medium | Pause paid; optimize or go organic |
+| Community drama | Low | Medium | Private communities; organizer vetting |
+| Data breach | Low | Critical | Security audit; encryption; access controls |
+| Regulatory scrutiny | Low | High | Policy–system parity; legal review |
+
+---
+
+## Post-Launch Analysis Framework
+
+**When:** Day 7–10 after launch weekend.
+
+**Questions to answer:**
+
+1. **Funnel:** Where do users drop off? (signup → onboarding → first discovery → first message)
+2. **Retention:** What do D1 retainers do that D1 churners don't?
+3. **Invite:** Who sends invites? Who converts? What's the K-factor?
+4. **Technical:** Any errors or latency spikes? What caused them?
+5. **Moderation:** Report volume; response time; repeat offenders?
+
+**Decisions:** Scale paid? Fix onboarding? Double down on referral? Pause and iterate?
 
 ---
 
@@ -251,6 +561,18 @@ Only after:
 | Invite conversion | > 30% | Improve invite UX; clarify value prop |
 
 **Rule:** If targets miss, pause expansion. Do not scale noise over leakage.
+
+---
+
+## Decision Gates (Go/No-Go at Phase Boundaries)
+
+| Gate | Before | Criteria | Decision |
+|------|--------|----------|----------|
+| **0 → 1** | Phase 1 | Load test pass; observability live; sign-off from CTO, Product, Ops, Legal | No → extend Phase 0; Yes → begin seeding |
+| **1 → 2** | Phase 2 | 1,000+ users; D1 > 40%; influencer contracts signed; club event confirmed | No → extend Phase 1 or reduce Phase 2 scope; Yes → detonate |
+| **2 → 3** | Phase 3 | Launch weekend complete; no critical outages; moderation queue < 24h | No → pause; fix; Yes → scarcity |
+| **3 → 4** | Phase 4 | Scarcity period complete; D7 > 25%; invite conversion > 30% | No → iterate on product; Yes → viral loop |
+| **4 → Scale** | Paid scale | D7 stable; CPI < $4; K > 0.3; no P0 bugs | No → organic only; Yes → increase paid spend |
 
 ---
 
@@ -346,7 +668,8 @@ Only after:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | March 2026 | Initial launch plan; expanded from GPT marketing framework; aligned with E2E audit and production readiness |
+| 1.0 | March 2026 | Initial launch plan; expanded from GPT marketing framework |
+| 1.1 | March 2026 | Expanded depth: master timeline, RACI, load test script, observability checklist, Phase 0 week-by-week, community outreach playbook, influencer vetting, club run-of-show, influencer post schedule, weekend ops playbook, scarcity logic, referral mechanics, viral loop math, analytics schema, invite spec, moderation playbook, risk matrix, post-launch analysis, decision gates, budget tiers |
 
 ---
 
