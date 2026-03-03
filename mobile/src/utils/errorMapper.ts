@@ -1,0 +1,30 @@
+/**
+ * Maps API error messages to user-friendly copy.
+ * Backend returns { error: { message: string } }; we parse message for known patterns.
+ * @see docs/E2E_CAPABILITY_AUDIT_REPORT.md §4.2, MASTER_IMPLEMENTATION_CHECKLIST 2.1
+ */
+
+const PATTERNS: Array<{ pattern: RegExp | string; message: string }> = [
+  { pattern: /rate limit|too many requests/i, message: 'Too many attempts. Please wait a few minutes and try again.' },
+  { pattern: /verification tier|tier \d+ required/i, message: 'Verification required. Complete your profile verification to continue.' },
+  { pattern: /feature.*premium|subscription required/i, message: 'This feature requires a premium subscription.' },
+  { pattern: /invalid.*otp|otp.*invalid|wrong.*code/i, message: 'Invalid verification code. Please try again.' },
+  { pattern: /session.*token|sessionToken|otp.*verify/i, message: 'Please verify your phone number first, then try again.' },
+  { pattern: /venue access|owner or staff/i, message: 'You don\'t have permission to manage this venue.' },
+  { pattern: /authentication required|invalid.*token|expired/i, message: 'Your session expired. Please sign in again.' },
+  { pattern: /network|fetch|failed to fetch/i, message: 'Connection error. Check your internet and try again.' },
+  { pattern: /blocked|block/i, message: 'This action isn\'t available.' },
+];
+
+export function mapApiError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err ?? 'Something went wrong');
+  if (!raw || raw === 'Something went wrong') return 'Something went wrong. Please try again.';
+
+  const lower = raw.toLowerCase();
+  for (const { pattern, message } of PATTERNS) {
+    if (typeof pattern === 'string' && lower.includes(pattern.toLowerCase())) return message;
+    if (pattern instanceof RegExp && pattern.test(raw)) return message;
+  }
+
+  return raw;
+}
