@@ -38,14 +38,21 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 | unlimitedAlbums | ❌ | ❌ | ❌ | ✅ |
 | No ads | ❌ | ✅ | ✅ | ✅ |
 
-### 1.2 Discovery Cap
+### 1.2 Discovery & Initiation Cap
 
-| Component | Status | Spec |
-|-----------|--------|------|
-| **Free cap** | ✅ | 30 results (`DISCOVERY_CAP_FREE`) |
-| **Premium cap** | ✅ | 50 results (`DISCOVERY_CAP_PREMIUM`) |
-| **Venue/event bypass** | ✅ | `venueId` or `eventId` in query bypasses cap |
-| **Response** | ✅ | `discoveryCap`, `radiusUsedKm`, `computedRadiusKm` in response |
+**Two distinct concepts:**
+
+| Concept | Current implementation | Target model (GPT directive) |
+|---------|------------------------|------------------------------|
+| **Visibility cap** | Free: 30 results, Premium: 50 results in Discover grid | **Deprecate or relax.** Users may browse/see profiles beyond any cap. |
+| **Initiation cap** | Not implemented | **Implement.** Cap applies only to starting NEW outbound conversations (first message). Replies do NOT count. |
+
+**Core rule (non-negotiable):**
+- Users may **browse/see profiles beyond the cap**.
+- The cap applies only to **starting NEW outbound conversations** (first message) after the limit is hit.
+- **Replies do NOT count** against the cap.
+
+**Current state:** Discovery result limit (30/50) exists; initiation cap does not. See §Connection Window (Initiation Cap) for full implementation directive.
 
 ### 1.3 Ads
 
@@ -136,9 +143,118 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 
 ---
 
-## 4. Ad System: Experience-Safe Integration
+## 4. Connection Window (Initiation Cap) — Implementation Directive
 
-### 4.1 Placement Rules (Preserve Experience)
+**Context:** We are NOT copying Grindr's "XTRA unlock 600 profiles" wall. Shhh's cap is **outbound initiation power**, not visibility.
+
+### 4.1 Core Rules
+
+| Rule | Spec |
+|------|------|
+| **Browse unlimited** | Never cut the grid. Never show a full-screen "locked" wall. Keep browsing normal and fluid. |
+| **Gate at action** | When user attempts to message a profile that would exceed their limit → show premium modal. |
+| **Replies exempt** | If someone messages you, you can respond even if at cap. Replies do NOT count. |
+| **New initiation only** | First message to a user with no active conversation. Re-initiation after archive/expiry counts as new. |
+
+### 4.2 UX Behavior
+
+**Gating moment (action-based, not feed-based):**
+
+When user taps "Message" and would exceed limit, show a bottom sheet / dialog:
+
+- **Title:** "Connection window reached"
+- **Copy:** "You've used your 30 new connections for today."
+- **Subcopy:** "Expand your reach with Phantom (50) or Elite (Unlimited)."
+- **Progress:** `Connections used: 30/30`
+- **Reset timer:** `Resets in: HH:MM`
+- **CTA:** "Upgrade" (primary), "Not now" (secondary)
+
+**Optional soft signal:** Small "window meter" in Discover header, e.g. `30/30 connections used • resets in 8h`. No flashing banners, no big yellow bars.
+
+### 4.3 Backend Contract
+
+**Capability 1: Initiation eligibility**
+
+Before creating a new conversation or sending first message to a user with no existing thread:
+
+- Check if initiator has remaining initiation quota in the window.
+- If not, return structured error:
+
+```json
+{
+  "code": "INITIATION_CAP_REACHED",
+  "cap": 30,
+  "used": 30,
+  "resetsAt": "2026-03-03T00:00:00.000Z",
+  "tierOptions": ["discreet", "phantom", "elite"]
+}
+```
+
+**Capability 2: Replies exempt**
+
+If message is in an existing conversation → allow send regardless of cap.
+
+**Capability 3: Quota by tier**
+
+| Tier | Initiation cap per window |
+|------|---------------------------|
+| Free | 30 |
+| Discreet | 30 (or 40 — TBD) |
+| Phantom | 50 |
+| Elite | Unlimited |
+
+### 4.4 Window Reset (Open Decision)
+
+| Option | Description | Recommendation |
+|--------|-------------|----------------|
+| **1. Daily reset** | Midnight local or UTC | Simple; can feel unfair (use at 11:59, reset at midnight) |
+| **2. Rolling 24h** | From first initiation, 24h window | Fairer; more complex to explain |
+| **3. Regeneration** | 1 initiation every X minutes, up to max | Best "premium = power" feel; most complex |
+
+**Recommendation:** Rolling 24h OR regeneration. Document chosen approach in config.
+
+### 4.5 Implementation Checklist
+
+**Backend:**
+- [ ] Define initiation quota rules (Free: 30, Phantom: 50, Elite: unlimited)
+- [ ] Add `initiation_usage` table or Redis keys: `initiation:{userId}:{windowStart}` with count
+- [ ] Enforce at `POST /v1/conversations` (create) and `POST /v1/conversations/:id/messages` when conversation is new
+- [ ] Ensure replies (existing conversation) bypass enforcement
+- [ ] Return `INITIATION_CAP_REACHED` with `cap`, `used`, `resetsAt`
+
+**Frontend:**
+- [ ] Add global handler for `INITIATION_CAP_REACHED` response
+- [ ] Create `ConnectionWindowModal` component (meter, reset time, tier comparison, CTA)
+- [ ] Integrate into: Profile "Message" action, Discover card quick message
+- [ ] Optional: "Connection meter" in Discover header
+
+**Analytics:**
+- [ ] `initiation_cap_reached`
+- [ ] `upgrade_cta_viewed`
+- [ ] `upgrade_cta_clicked`
+- [ ] `upgrade_success`
+
+### 4.6 Guardrails (Do NOT)
+
+- No Grindr-style "unlock 600 profiles" wall
+- No interstitial paywalls interrupting browsing
+- No gating on viewing profiles
+- No counting replies against cap
+
+### 4.7 Discovery Result Limit (Current)
+
+The existing `DISCOVERY_CAP_FREE` (30) and `DISCOVERY_CAP_PREMIUM` (50) limit *grid results*. Per this directive:
+
+- **Option A:** Remove or relax (e.g. 100 for all) so browsing is never artificially limited.
+- **Option B:** Keep for performance/latency; ensure it's high enough (e.g. 50 free, 100 premium) that users rarely hit it during normal browse.
+
+**Principle:** Initiation cap is the monetization lever. Visibility cap (if any) should not feel punitive.
+
+---
+
+## 5. Ad System: Experience-Safe Integration
+
+### 5.1 Placement Rules (Preserve Experience)
 
 | Surface | When to show | UX rule |
 |---------|--------------|---------|
@@ -148,7 +264,7 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 
 **Never:** Interstitial popup, ad between every N items, ad during active chat.
 
-### 4.2 Implementation Checklist
+### 5.2 Implementation Checklist
 
 | Task | Location | Effort |
 |------|----------|--------|
@@ -160,7 +276,7 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 | Post-event: fetch after RSVP | `event/[id].tsx` | S |
 | Seed 1–2 ad placements for testing | `backend/src/database/seed.ts` | S |
 
-### 4.3 Experience Guardrails
+### 5.3 Experience Guardrails
 
 - **Discover:** Insert ad as card 3–5 (not first); user can scroll past; no auto-play.
 - **Messages:** Collapsible or subtle; "Sponsored" label; tap → venue.
@@ -168,9 +284,9 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 
 ---
 
-## 5. Subscription: Fix Checkout + Surface Value
+## 6. Subscription: Fix Checkout + Surface Value
 
-### 5.1 Checkout Fix
+### 6.1 Checkout Fix
 
 | Option | Pros | Cons |
 |--------|------|------|
@@ -184,18 +300,18 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 - Subscription screen: `useFocusEffect` refetch; show "Welcome to Phantom" on success.
 - Add `subscription/success` and `subscription/cancel` routes that redirect to subscription screen with query params.
 
-### 5.2 Surface Value (Soft Paywalls)
+### 6.2 Surface Value (Soft Paywalls)
 
 | Moment | CTA | Destination |
 |--------|-----|-------------|
-| **Discover at cap** | "You've seen 30 today. Upgrade for 50." | Subscription |
+| **Initiation cap reached** | "Connection window reached" modal — "You've used 30 new connections. Phantom: 50, Elite: Unlimited." | Subscription |
 | **Persona limit** | "Create another persona — upgrade to Discreet." | Subscription |
 | **Album limit** | "Unlimited albums with Elite." | Subscription |
 | **Ad shown** | "Go ad-free with Discreet." | Subscription |
 
-**Principle:** Show value at the moment of constraint, not as a wall before core action.
+**Principle:** Show value at the moment of constraint (action-based), not as a wall before core action. Never gate browsing.
 
-### 5.3 Feature Wiring
+### 6.3 Feature Wiring
 
 | Feature | Where to enforce | Status |
 |---------|------------------|--------|
@@ -207,9 +323,9 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 
 ---
 
-## 6. Retention Engineering
+## 7. Retention Engineering
 
-### 6.1 Metrics to Track
+### 7.1 Metrics to Track
 
 | Event | When | Purpose |
 |-------|------|---------|
@@ -221,7 +337,7 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 | `day_1_active` | Open app 24h after signup | D1 retention |
 | `day_7_active` | Open app 7d after signup | D7 retention |
 
-### 6.2 Retention Loops
+### 7.2 Retention Loops
 
 | Loop | Mechanism | Status |
 |------|------------|--------|
@@ -231,7 +347,7 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 | **Presence** | "X people online now" | ✅ Exists |
 | **Crossing paths** | "You've both been at [Venue]" | Backend exists; mobile gap |
 
-### 6.3 Lifecycle Messaging (From LAUNCH_PLAN)
+### 7.3 Lifecycle Messaging (From LAUNCH_PLAN)
 
 | Sequence | Channel | Trigger |
 |----------|---------|---------|
@@ -245,7 +361,7 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 
 ---
 
-## 7. Phased Plan (Without Ruining Experience)
+## 8. Phased Plan (Without Ruining Experience)
 
 ### Phase 1 — Fix & Surface (2–3 weeks)
 
@@ -254,11 +370,11 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 | # | Task | Owner | Experience impact |
 |---|------|-------|-------------------|
 | 1 | Fix subscription deep link return; refetch on success | Eng | Low — improves upgrade flow |
-| 2 | Add "See more" / upgrade CTA when Discover at cap | Eng | Low — soft paywall |
+| 2 | **Connection Window:** Implement initiation cap (backend + frontend). See §4. | Eng | Low — action-based paywall |
 | 3 | Integrate ads in Discover (card in grid) | Eng | Low — 1–2/day max |
 | 4 | Seed 1–2 ad placements for dev/staging | Eng | None |
 | 5 | Wire `anonymousBrowsing` to discovery (if "who viewed" exists) or defer | Eng | Low |
-| 6 | Add analytics events: signup_complete, first_message_sent, first_like | Eng | None |
+| 6 | Add analytics events: signup_complete, first_message_sent, first_like, initiation_cap_reached | Eng | None |
 
 ### Phase 2 — Ads Everywhere, Soft Paywalls (1–2 weeks)
 
@@ -292,7 +408,7 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 
 ---
 
-## 8. Experience Guardrails (Non-Negotiable)
+## 9. Experience Guardrails (Non-Negotiable)
 
 | Rule | Why |
 |------|-----|
@@ -306,7 +422,7 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 
 ---
 
-## 9. Revenue Model Summary
+## 10. Revenue Model Summary
 
 | Stream | Status | Notes |
 |--------|--------|-------|
@@ -317,7 +433,7 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 
 ---
 
-## 10. Success Criteria
+## 11. Success Criteria
 
 | Metric | Target | When |
 |--------|--------|------|
@@ -334,6 +450,7 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | March 2026 | Initial plan; inventory, evaluation, phased plan |
+| 1.1 | March 2026 | Connection Window (initiation cap) directive: cap on outbound first message, not visibility; replies exempt; ConnectionWindowModal; backend contract; window reset options; phased plan updated |
 
 ---
 
