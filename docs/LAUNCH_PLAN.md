@@ -6,27 +6,45 @@
 
 ---
 
+## Execution Rules (Non-Negotiable)
+
+> **No phase may begin unless its acceptance checklist is fully satisfied.**  
+> **All limits** (invites/day, rate limits, badge expiry, waitlist thresholds) **must be config-driven.**  
+> **No explicit sexual language** in any public asset.  
+> **No claims of anonymity.** Say "discretion by design," not "anonymous."  
+> **All marketing messaging** must route through the approved copy sheet.
+
+---
+
 ## Table of Contents
 
 1. [Master Timeline](#master-timeline-week-by-week)
 2. [Role & Responsibility Matrix](#role--responsibility-matrix)
 3. [Strategic Objectives](#strategic-objectives-three-simultaneous-goals)
-4. [CTO Gate](#cto-gate-backend-readiness-before-blitz)
-5. [Phase 0 — Harden](#phase-0--harden-before-ignition-24-weeks-pre-launch)
-6. [Phase 1 — Seed](#phase-1--controlled-seeding-week-2-to-1)
-7. [Phase 2 — Detonation](#phase-2--the-weekend-detonation-48-hour-cluster)
-8. [Phase 3 — Scarcity](#phase-3--controlled-scarcity-week-12-post-launch)
-9. [Phase 4 — Viral Loop](#phase-4--viral-loop-engineering-week-3)
-10. [Influencer Budget](#influencer-budget-structure)
-11. [Analytics Schema](#analytics-event-schema)
-12. [Invite System Spec](#invite-system-spec)
-13. [Moderation Playbook](#moderation-playbook-outline)
-14. [Risk Matrix](#risk-assessment-matrix)
-15. [Post-Launch Analysis](#post-launch-analysis-framework)
-16. [KPIs](#key-performance-targets)
-17. [Decision Gates](#decision-gates-gono-go-at-phase-boundaries)
-18. [Positioning Safety](#critical-positioning-safety)
-19. [Contingency](#contingency-plans)
+4. [First 60 Seconds Gate](#first-60-seconds-acceptance-criteria)
+5. [CTO Gate](#cto-gate-backend-readiness-before-blitz)
+6. [Phase 0 — Harden](#phase-0--harden-before-ignition-24-weeks-pre-launch)
+7. [Phase 1 — Seed](#phase-1--controlled-seeding-week-2-to-1)
+8. [Phase 2 — Detonation](#phase-2--the-weekend-detonation-48-hour-cluster)
+9. [Phase 3 — Scarcity](#phase-3--controlled-scarcity-week-12-post-launch)
+10. [Phase 4 — Viral Loop](#phase-4--viral-loop-engineering-week-3)
+11. [Creative Kit](#creative-kit-required-deliverables)
+12. [App Store & ASO](#app-store-readiness--aso)
+13. [Lifecycle Messaging](#lifecycle-messaging)
+14. [Paid Strategy](#paid-strategy-post-validation-only)
+15. [Safety & Trust Controls](#safety--trust-controls)
+16. [Club Activation Kit](#club-activation-kit)
+17. [Influencer Budget](#influencer-budget-structure)
+18. [Analytics Schema](#analytics-event-schema)
+19. [Invite System Spec](#invite-system-spec)
+20. [Moderation Playbook](#moderation-playbook-outline)
+21. [Risk Matrix](#risk-assessment-matrix)
+22. [Post-Launch Analysis](#post-launch-analysis-framework)
+23. [KPIs](#key-performance-targets)
+24. [Decision Gates](#decision-gates-gono-go-at-phase-boundaries)
+25. [Positioning Safety](#critical-positioning-safety)
+26. [Contingency](#contingency-plans)
+27. [Approved Copy Sheet](#approved-copy-sheet-reference)
 
 ---
 
@@ -73,6 +91,21 @@
 
 ---
 
+## First 60 Seconds Acceptance Criteria
+
+**Everything depends on the first-use moment.** This is a hard gate before Phase 1.
+
+| Criterion | Spec | Pass/Fail |
+|-----------|------|-----------|
+| **Value clarity** | User lands → understands what Shhh is in 1 sentence | |
+| **Signup speed** | Completes signup in < 60s median | |
+| **Immediate payoff** | Sees something compelling immediately (nearby "pulse," curated grid, or invite room) | |
+| **First action** | Sends first action (follow, react, message, or join) within 2 minutes | |
+
+**This is how a "million-dollar app" feels:** no confusion, no friction, instant momentum.
+
+---
+
 ## CTO Gate: Backend Readiness Before Blitz
 
 > **Blitz marketing amplifies weaknesses instantly. If product isn't stable, blitz becomes public failure.**
@@ -82,7 +115,7 @@
 | Capability | Target | Current State | Action |
 |------------|--------|---------------|--------|
 | **Concurrent users** | 1,000+ | k6 tests exist; no prod load test | Run load test at 2x target before Phase 1 |
-| **Auth bursts** | 100+ req/min during launch window | Rate limiter exists (100/15min global); auth-specific limits | Verify auth rate limits; consider temporary bump for launch weekend |
+| **Auth bursts** | 100+ req/min during launch window | Rate limiter exists; must be deterministic (see §Auth Rate Limits) | Per-IP, per-device, per-phone limits; launch-week config tuning |
 | **Real-time spikes** | WebSocket joins, presence updates | Socket.io; Redis presence | Load-test WebSocket join storm |
 | **Moderation load** | Reports, blocks, panic | Admin dashboard; manual review | Ensure 1–2 humans on standby during Phase 2 |
 | **Database** | Postgres + Redis + Mongo under load | Supabase/Upstash/Atlas target stack | Migrate to cloud DBs before Phase 0; see [GET_ONLINE.md](./GET_ONLINE.md) |
@@ -94,6 +127,18 @@
 - Alerting on error spike or latency degradation
 
 **Verdict:** Do not enter Phase 1 until these pass. See [CONSOLIDATED_CTO_REVIEW.md](./CONSOLIDATED_CTO_REVIEW.md) §3.1 for P0 gates.
+
+### Auth Rate Limits (Deterministic)
+
+| Limit Type | Spec | Launch-Week Tuning |
+|------------|------|---------------------|
+| **Per-IP** | Auth attempts per 15 min | Config flag to bump (e.g. 50 → 100) |
+| **Per-device** | Same device, multiple accounts | Throttle after N attempts |
+| **Per-phone** | OTP send + verify per number | Separate from login submit |
+| **OTP resend** | Distinct limit from initial send | e.g. 3 resends per 15 min |
+| **Login submit** | Distinct from OTP | e.g. 10 attempts per 15 min |
+
+**No vague "100/15min global."** Each limit must be explicit, config-driven, and tunable for launch weekend.
 
 ### Load Test Script (Outline)
 
@@ -126,7 +171,7 @@
 | Item | Owner | Sub-Tasks | Done |
 |------|-------|-----------|------|
 | **Pixel-perfect onboarding** | Product/Eng | No layout shift; no tap dead zones; keyboard avoids content; loading states on every async step; error states with retry | |
-| **60-second value clarity** | Product | First screen (or Entry Shell) answers: "What is this?" "Why should I care?" "What do I do next?" in < 60s; no jargon | |
+| **60-second value clarity** | Product | First screen (or Entry Shell) answers: "What is this?" "Why should I care?" "What do I do next?" in < 60s; no jargon. See §First 60 Seconds. | |
 | **Invite/referral system** | Eng | Codes (unique, revocable); tracking (who invited whom); limit per user; redemption flow; analytics event `invite_sent`, `invite_redeemed` | |
 | **Analytics** | Eng | Events: `screen_view`, `signup_start`, `signup_complete`, `onboarding_complete`, `invite_sent`, `invite_redeemed`; CPI, D1, D7 in dashboard | |
 | **Moderation flows** | Ops | Admin queue; severity tiers; 24–48h SLA; escalation path; response templates (see §Moderation Playbook) | |
@@ -154,15 +199,16 @@
 | Week | Focus | Deliverables |
 |------|-------|--------------|
 | **-4** | Infra + stability | Cloud DBs live; load test passed; observability deployed; P0 gates (OTP, secrets, CORS) verified |
-| **-3** | Product + analytics | Onboarding locked; invite system shipped; analytics events wired; moderation playbook v1 |
-| **-2** | Polish + brand | Value clarity < 60s; brand language final; stress test at 10x; sign-off from CTO, Product, Ops, Legal |
+| **-3** | Product + analytics | Onboarding locked; invite system shipped; analytics events wired; moderation playbook v1; First 60 Seconds spec pass |
+| **-2** | Polish + brand | Value clarity < 60s; brand language final; Creative Kit delivered; stress test at 10x; sign-off from CTO, Product, Ops, Legal |
 
 ### 0.5 Launch Readiness Sign-Off
 
-- [ ] CTO: Backend passes load test; observability live
-- [ ] Product: Onboarding flow approved; value clarity < 60s
+- [ ] CTO: Backend passes load test; observability live; auth rate limits deterministic
+- [ ] Product: Onboarding flow approved; First 60 Seconds criteria pass
 - [ ] Ops: Moderation playbook; 24–48h response SLA for reports
 - [ ] Legal: Positioning language approved; no policy–system mismatch
+- [ ] Marketing: Creative Kit delivered; approved copy sheet in use
 
 ---
 
@@ -240,6 +286,19 @@
 - Staff can assist with onboarding (QR, download, first use)
 - Exclusive or semi-exclusive for launch weekend (no competing events)
 
+### 1.8 Organizer Thank-You Boundary
+
+**Document the boundary. Keep it clean and defensible.**
+
+| Allowed | Not Allowed |
+|---------|-------------|
+| Gift (e.g. premium bottle, branded merch, dinner) | Cash-for-access |
+| Thank-you note; recognition in private | "Pay to promote to members" |
+| Early access codes for organizer's community | Payment for distribution of codes |
+| Founding Circle badge for organizer | Any quid-pro-quo that implies paid promotion |
+
+**Principle:** Organizers get early access and status because they add value; not because they pay or are paid.
+
 ---
 
 ## Phase 2 — The Weekend Detonation (48-Hour Cluster)
@@ -291,7 +350,21 @@
 
 **Tech checklist:** QR codes link to App Store / web PWA; fallback: manual code entry if QR fails; tablets for on-the-spot signup if phone issues.
 
-### 2.4 Influencer Post Schedule (48h Cluster)
+### 2.4 Club Activation Kit
+
+**Prevents chaos. Pack before event.**
+
+| Item | Spec |
+|------|------|
+| **QR fallbacks** | Short code entry (e.g. SHHH-XXXX) + typed URL (shhh.app/join/XXXX) if QR fails |
+| **Ambassador script** | 30-second, non-cringe: "Shhh is a private way to connect with people nearby. Scan for early access. I can walk you through it." No hard sell. |
+| **Badge unlock verification** | Flow to confirm attendee got Founder/early-access badge; troubleshoot if not |
+| **Offline backup** | Printed cards with codes (minimal, premium design); hand out if tech fails |
+| **Privacy signage** | "No photos unless opt-in" + wristband system (e.g. green = OK to photograph; default = no) |
+
+**Pack list:** QR stands, tablets (charged), printed cards, wristbands, ambassador script cards.
+
+### 2.5 Influencer Post Schedule (48h Cluster)
 
 | Slot | Creator | Platform | Format | Notes |
 |------|----------|----------|--------|-------|
@@ -304,7 +377,7 @@
 
 **Stagger = extended algorithmic visibility.** Same weekend = clustering; different times = sustained spike.
 
-### 2.5 Weekend Ops Playbook
+### 2.6 Weekend Ops Playbook
 
 **On-call roster:**
 - 1 engineer (backend, DB, deploy)
@@ -344,7 +417,7 @@ Scarcity converts installs into identity. Identity drives retention and referral
 
 | Mechanic | Spec | Example |
 |----------|------|---------|
-| **Daily invite limit** | N invites per user per day; reset at midnight UTC | N = 3 for first week; 5 for week 2 |
+| **Daily invite limit** | N invites per user per day; reset at local midnight (or fixed timezone e.g. America/Toronto for launch) | N = 3 for first week; 5 for week 2. Store rule in config. |
 | **Visible count** | "Invite Remaining: X" in UI; updates when invite sent | Creates urgency |
 | **Founder badge sunset** | Badge visible until date X; after X, badge hidden; "Last chance" banner 3 days before | X = 14 days post-launch |
 | **Waitlist** | If invite limit reached or codes exhausted, show queue; "X people ahead of you" | Queue position = signup order; no fake numbers |
@@ -413,6 +486,87 @@ Only after:
 
 ---
 
+## Creative Kit (Required Deliverables)
+
+**Without this, creators improvise → poor conversion or platform scrutiny.**
+
+| Asset | Spec |
+|-------|------|
+| **6–10 vertical videos** (7–12 sec) | 3 angles: (1) Mystery/discovery — "I wasn't sure I should show this…"; (2) Discretion/control — "proximity without exposure"; (3) Invite scarcity — "I only have 3 invites" |
+| **12–18 story frames** | Templates with safe copy; no explicit terms |
+| **8 stills** | Brand vibe, premium, not explicit |
+| **3 landing page hero variations** | For A/B test |
+| **Do/Don't language sheet** | For creators: no explicit terms, no implied sex acts, no "anonymous" promises; use approved copy sheet |
+
+**All creative must route through approved copy sheet.** No improvisation on positioning.
+
+---
+
+## App Store Readiness & ASO
+
+**App Store is a marketing channel—don't treat it like a formality.**
+
+| Element | Spec |
+|---------|------|
+| **App name / subtitle** | Keywords that stay safe (no "hookup," "swingers," etc.); "Private social" / "Proximity" / "Discretion" |
+| **Screenshot set** | Sells "private social" without sexual implication; premium, mysterious |
+| **Preview video** | Clean, premium, mysterious; no explicit or suggestive content |
+| **Privacy nutrition labels** | Aligned with reality (location, contacts, etc.); no over-claim |
+| **Review-response templates** | Support optics; empathetic, consistent; escalate policy questions |
+
+**ASO keywords:** Proximity, discretion, private, connection, nearby, real-world. Avoid adult-adjacent terms.
+
+---
+
+## Lifecycle Messaging
+
+**Turn waitlist into a weapon. Without this, waitlist becomes a graveyard.**
+
+| Sequence | Trigger | Content |
+|----------|---------|---------|
+| **Waitlist confirmation** | Day 0 | "You're on the list. We'll notify you when you're up." |
+| **Waitlist nurture** | Day 2 | Soft value reminder; "What to expect when you're in" |
+| **Waitlist nurture** | Day 5 | Scarcity hint; "Limited spots opening soon" |
+| **"You're up"** | Invite window opens | "Your invite is ready. Expires in 24h." + CTA |
+| **Re-engagement** | D2 post-signup | Nudge: "Who's nearby tonight?" |
+| **Re-engagement** | D5 post-signup | "You have 3 invites left. Share with someone you trust." |
+| **Event-mode** | Opt-in | "Tonight at [venue]. X people nearby." |
+
+**Channels:** Email + SMS (opt-in). Keep copy consistent with approved sheet.
+
+---
+
+## Paid Strategy (Post-Validation Only)
+
+**Design for paid now; run only after validation.**
+
+| Element | Spec |
+|---------|------|
+| **Retargeting pool** | Site visitors, waitlist signups, engaged users (D1 retainers); pixel/ID setup |
+| **Spark ads / whitelisting** | If you buy rights to influencer posts; run as ads with creator approval |
+| **CPI guardrails** | Daily cap (e.g. $500/day max until validated); CPI target < $4 |
+| **Kill-switch criteria** | CPI > $6 for 48h → pause; D1 < 35% → pause; moderation backlog > 50 → pause |
+
+**Do not run paid until:** D7 > 25%, CPI < $4, K-factor > 0.3, no P0 bugs.
+
+---
+
+## Safety & Trust Controls
+
+**Policy ↔ enforcement parity. Protects you and increases conversion (users trust the environment).**
+
+| Control | Spec |
+|---------|------|
+| **Consent/harassment policy** | Surfaced in-product; 1-tap access from profile, chat, report flow |
+| **Block + report** | 2 taps max from any screen where abuse can occur |
+| **Device/IP throttles** | Throttle auth and signup from abusive IPs/devices; config-driven |
+| **Ban evasion strategy** | Device fingerprinting-lite, phone verification on re-signup; flag suspicious patterns |
+| **"No anonymity" rule** | Say "discretion by design," not "anonymous"; never promise anonymity you cannot guarantee |
+
+**In-product copy:** "We take harassment seriously. Block and report in 2 taps. We review within 24h."
+
+---
+
 ## Influencer Budget Structure
 
 ### Blitz Tier (Real Impact)
@@ -429,7 +583,7 @@ Only after:
 | Item | Cost |
 |------|------|
 | 1–2 club events (venue, staff, minimal branding) | $5k–$12k |
-| Community organizer thank-you (gift, not payment) | $500–$1k |
+| Community organizer thank-you (gift, not payment; see §Organizer Boundary) | $500–$1k |
 | Organic seeding only; no paid influencer | $0 |
 | **Total** | **$5.5k–$13k** |
 
@@ -484,6 +638,7 @@ Only after:
 | **Code format** | Alphanumeric, 8–12 chars; no ambiguous chars (0/O, 1/l) |
 | **Uniqueness** | One code per user or per batch; revocable |
 | **Limit** | N per user per day; configurable |
+| **Reset time** | Local midnight per user, or fixed timezone (e.g. America/Toronto for launch); config-driven. Not UTC if user base is regional. |
 | **Redemption** | Code or link; link includes `?ref=code` or `?ref=userId` |
 | **Tracking** | `invite_codes` table or equivalent: code, user_id, created_at, redeemed_at, redeemed_by |
 
@@ -632,9 +787,11 @@ Only after:
 ### Product
 
 - [ ] Onboarding flow < 60s to value
+- [ ] First 60 Seconds acceptance criteria pass
 - [ ] Founder badge implemented
-- [ ] Invite codes + tracking
+- [ ] Invite codes + tracking (config-driven limits, reset timezone)
 - [ ] Scarcity mechanics (limited invites, visible count)
+- [ ] Safety controls: consent/harassment policy in-product; block+report 2 taps max
 
 ### Ops
 
@@ -646,9 +803,12 @@ Only after:
 ### Marketing
 
 - [ ] Brand language finalized
+- [ ] Creative Kit delivered (videos, story frames, stills, landing page variants, Do/Don't sheet)
+- [ ] App Store assets ready (screenshots, preview video, ASO keywords)
 - [ ] Influencer contracts/agreements
 - [ ] Club partner confirmed
 - [ ] Community organizer intros completed
+- [ ] Lifecycle messaging sequences built (waitlist, re-engagement, event-mode)
 
 ---
 
@@ -664,12 +824,24 @@ Only after:
 
 ---
 
+## Approved Copy Sheet (Reference)
+
+**All marketing and creator content must use approved language.** Maintain a separate doc (e.g. `COPY_SHEET.md` or Notion) with:
+
+- **Do:** "Private social layer," "proximity without exposure," "discretion by design," "connect with people nearby—on your terms"
+- **Don't:** Explicit sexual terms, "anonymous," "hookup," "swingers," implied sex acts, promises you cannot keep
+
+Creators receive the Do/Don't sheet before contract. No improvisation.
+
+---
+
 ## Document History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | March 2026 | Initial launch plan; expanded from GPT marketing framework |
-| 1.1 | March 2026 | Expanded depth: master timeline, RACI, load test script, observability checklist, Phase 0 week-by-week, community outreach playbook, influencer vetting, club run-of-show, influencer post schedule, weekend ops playbook, scarcity logic, referral mechanics, viral loop math, analytics schema, invite spec, moderation playbook, risk matrix, post-launch analysis, decision gates, budget tiers |
+| 1.1 | March 2026 | Expanded depth: master timeline, RACI, load test, observability, Phase 0–4 detail, analytics, invite spec, moderation, risk matrix, decision gates |
+| 1.2 | March 2026 | GPT review: Execution rules, First 60 Seconds gate, auth rate limits (deterministic), Creative Kit, App Store & ASO, Lifecycle messaging, Paid strategy, Safety & Trust Controls, Club Activation Kit, Organizer boundary, invite reset timezone, approved copy sheet |
 
 ---
 
