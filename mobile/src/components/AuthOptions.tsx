@@ -54,6 +54,9 @@ export function AuthOptions({ onSelect, isLoading }: AuthOptionsProps) {
           onPress={() => onSelect(opt.id)}
           disabled={isLoading}
           activeOpacity={0.8}
+          accessibilityLabel={`Sign in with ${opt.label}`}
+          accessibilityRole="button"
+          accessibilityHint={opt.pros}
         >
           <View style={s.optionHeader}>
             <View style={s.iconWrap}>

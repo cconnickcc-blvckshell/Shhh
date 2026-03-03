@@ -6,6 +6,8 @@ import { messagingApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 import { PageShell, ContentColumn } from '../../src/components/layout';
 import { SafeState } from '../../src/components/ui';
+import { mapApiError } from '../../src/utils/errorMapper';
+import { useScreenView } from '../../src/hooks/useScreenView';
 
 interface Conversation {
   id: string;
@@ -14,6 +16,8 @@ interface Conversation {
   last_message_at?: string | null;
   unreadCount?: number;
   unread_count?: number;
+  participantNames?: string[];
+  lastMessageSnippet?: string | null;
 }
 
 function timeAgo(d: string | null | undefined): string {
@@ -28,6 +32,7 @@ function timeAgo(d: string | null | undefined): string {
 }
 
 export default function MessagesScreen() {
+  useScreenView('messages');
   const [convos, setConvos] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -39,7 +44,7 @@ export default function MessagesScreen() {
       const r = await messagingApi.getConversations();
       setConvos(r.data);
     } catch (err: any) {
-      setLoadError(err?.message || 'Something went wrong. Pull down to try again.');
+      setLoadError(mapApiError(err));
       setConvos([]);
     } finally {
       setLoading(false);
@@ -72,9 +77,12 @@ export default function MessagesScreen() {
         renderItem={({ item }) => {
           const lastAt = item.lastMessageAt ?? item.last_message_at;
           const unread = item.unreadCount ?? item.unread_count ?? 0;
-          const label = item.type === 'group' ? 'Group chat' : 'Direct chat';
+          const label = item.participantNames?.length
+            ? (item.type === 'group' ? item.participantNames.join(', ') : item.participantNames[0])
+            : (item.type === 'group' ? 'Group chat' : 'Direct chat');
+          const preview = item.lastMessageSnippet ?? (lastAt ? 'Tap to open' : 'No messages yet');
           return (
-            <TouchableOpacity style={styles.row} onPress={() => router.push(`/chat/${item.id}`)} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.row} onPress={() => router.push(`/chat/${item.id}`)} activeOpacity={0.7} accessibilityLabel={`${label}, ${preview}`} accessibilityRole="button" accessibilityHint="Opens conversation">
               <View style={styles.avatar}>
                 <Ionicons name={item.type === 'group' ? 'people' : 'person'} size={22} color={colors.primaryLight} />
                 {unread > 0 && <View style={styles.onlineDot} />}
@@ -85,7 +93,7 @@ export default function MessagesScreen() {
                   {lastAt ? <Text style={styles.time}>{timeAgo(lastAt)}</Text> : null}
                 </View>
                 <Text style={styles.preview} numberOfLines={1}>
-                  {lastAt ? 'Tap to open' : 'No messages yet'}
+                  {preview}
                 </Text>
               </View>
               {unread > 0 && (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/api/client';
@@ -29,10 +29,14 @@ const INTENT_FLAGS = [
 export default function StatusScreen() {
   const [currentPresence, setCurrentPresence] = useState('invisible');
   const [activeIntents, setActiveIntents] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api<{ data: any }>('/v1/presence/me').then(r => setCurrentPresence(r.data.state || 'invisible')).catch(() => {});
-    api<{ data: any[] }>('/v1/intents').then(r => setActiveIntents(r.data.map((i: any) => i.flag))).catch(() => {});
+    setLoading(true);
+    Promise.all([
+      api<{ data: any }>('/v1/presence/me').then(r => setCurrentPresence(r.data.state || 'invisible')).catch(() => {}),
+      api<{ data: any[] }>('/v1/intents').then(r => setActiveIntents(r.data.map((i: any) => i.flag))).catch(() => {}),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const setPresence = async (state: string) => {
@@ -54,6 +58,15 @@ export default function StatusScreen() {
       }
     } catch (err: any) { Alert.alert('Error', err.message); }
   };
+
+  if (loading) {
+    return (
+      <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primaryLight} />
+        <Text style={s.loadText}>Loading your status...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
@@ -150,4 +163,5 @@ const s = StyleSheet.create({
   intentActive: { backgroundColor: 'rgba(147,51,234,0.15)', borderColor: 'rgba(147,51,234,0.4)' },
   intentText: { color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: '600' },
   intentTextActive: { color: colors.primaryLight },
+  loadText: { color: colors.textMuted, fontSize: 14, marginTop: spacing.md },
 });

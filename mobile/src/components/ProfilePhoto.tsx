@@ -1,9 +1,7 @@
 import { View, Image, StyleSheet, ImageStyle, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
 import { colors } from '../constants/theme';
-
-const API_BASE = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+import { getMediaUrl } from '../api/client';
 
 interface Props {
   storagePath?: string | null;
@@ -19,7 +17,7 @@ interface Props {
 
 function buildUrl(path: string): string {
   if (path.startsWith('http')) return path;
-  return `${API_BASE}/uploads${path}`;
+  return getMediaUrl(path.startsWith('/') ? path : `/${path}`);
 }
 
 export function ProfilePhoto({ storagePath, photosJson, size, blurred, canSeeUnblurred, borderRadius: br, fill }: Props) {

@@ -164,8 +164,8 @@ export default function UserDetailScreen() {
 
         {/* Kinks/Interests */}
         {profile.kinks?.length > 0 && (
-          <View style={s.section}>
-            <Text style={s.sectionLabel}>INTERESTS</Text>
+          <View style={s.section} accessibilityRole="none">
+            <Text style={s.sectionLabel} accessibilityRole="header">INTERESTS</Text>
             <View style={s.tagRow}>
               {profile.kinks.map((k: string) => (
                 <View key={k} style={s.tag}><Text style={s.tagText}>{k}</Text></View>

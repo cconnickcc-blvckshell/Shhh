@@ -190,8 +190,11 @@ export default function DiscoverScreen() {
 
   const setFilterContext = useDiscoverFiltersStore((s) => s.setFilterContext);
 
+  const [atDiscoveryCap, setAtDiscoveryCap] = useState(false);
+
   const load = useCallback(async () => {
     setLoadError(null);
+    setAtDiscoveryCap(false);
     try {
       await discoverApi.updateLocation(lat, lng);
       const res = await discoverApi.nearby(lat, lng, radiusKm, primaryIntent);
@@ -199,6 +202,8 @@ export default function DiscoverScreen() {
       if (verifiedOnly) list = list.filter((u) => u.verificationStatus && u.verificationStatus !== 'unverified');
       setUsers(list);
       setFilterContext({ radius: radiusKm, primaryIntent: primaryIntent ?? '', verifiedOnly, sortMode });
+      const cap = res.discoveryCap ?? 30;
+      if (res.count >= cap) setAtDiscoveryCap(true);
     } catch (err: any) {
       setLoadError(mapApiError(err));
       setUsers([]);
@@ -323,6 +328,12 @@ export default function DiscoverScreen() {
         </View>
       </View>
 
+      {atDiscoveryCap && users.length > 0 && (
+        <View style={s.capBanner}>
+          <Ionicons name="information-circle" size={18} color={colors.host} />
+          <Text style={s.capBannerText}>You've reached your discovery limit for this view. Change filters or refresh to see more.</Text>
+        </View>
+      )}
       {loading && users.length === 0 ? (
         <SafeState variant="loading" message="Finding people nearby..." />
       ) : loadError && users.length === 0 ? (
@@ -399,4 +410,6 @@ const s = StyleSheet.create({
   whisperSend: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   whisperClose: { padding: 4 },
   emptyWrap: { flex: 1, paddingVertical: 80 },
+  capBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: spacing.md, paddingVertical: 10, backgroundColor: 'rgba(251,191,36,0.12)', borderBottomWidth: 0.5, borderBottomColor: 'rgba(251,191,36,0.2)' },
+  capBannerText: { flex: 1, color: colors.text, fontSize: fontSize.sm },
 });

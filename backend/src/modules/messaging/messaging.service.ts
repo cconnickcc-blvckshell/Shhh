@@ -63,7 +63,10 @@ export class MessagingService {
       ? ', c.requires_mutual_consent, c.consent_granted_by'
       : ', NULL AS requires_mutual_consent, NULL AS consent_granted_by';
     const result = await query(
-      `SELECT c.id, c.type, c.last_message_at, cp.unread_count${consentCols}
+      `SELECT c.id, c.type, c.last_message_at, cp.unread_count,
+        (SELECT array_agg(cp2.user_id) FROM conversation_participants cp2
+         WHERE cp2.conversation_id = c.id AND cp2.user_id != $1 AND cp2.left_at IS NULL) AS other_user_ids
+        ${consentCols}
        FROM conversations c
        JOIN conversation_participants cp ON c.id = cp.conversation_id
        WHERE cp.user_id = $1 AND cp.left_at IS NULL
@@ -71,8 +74,53 @@ export class MessagingService {
        LIMIT 50`,
       [userId]
     );
+
+    const convIds = result.rows.map((r: { id: string }) => r.id);
+    const otherUserIds = new Set<string>();
+    for (const row of result.rows) {
+      const ids = row.other_user_ids as string[] | null;
+      if (ids) for (const id of ids) otherUserIds.add(id);
+    }
+
+    let displayNames: Record<string, string> = {};
+    if (otherUserIds.size > 0) {
+      const namesResult = await query(
+        `SELECT user_id, display_name FROM user_profiles WHERE user_id = ANY($1)`,
+        [Array.from(otherUserIds)]
+      );
+      for (const r of namesResult.rows) {
+        displayNames[r.user_id] = r.display_name || 'Unknown';
+      }
+    }
+
+    let lastMessages: Record<string, { content: string; contentType: string }> = {};
+    if (convIds.length > 0) {
+      const agg = await Message.aggregate([
+        { $match: { conversationId: { $in: convIds } } },
+        { $sort: { createdAt: -1 } },
+        { $group: { _id: '$conversationId', content: { $first: '$content' }, contentType: { $first: { $ifNull: ['$contentType', 'text'] } } } },
+      ]).exec();
+      for (const m of agg) {
+        lastMessages[m._id] = { content: m.content || '', contentType: m.contentType || 'text' };
+      }
+    }
+
     return result.rows.map((row: Record<string, unknown>) => {
-      const out: Record<string, unknown> = { id: row.id, type: row.type, lastMessageAt: row.last_message_at, unreadCount: row.unread_count };
+      const otherIds = (row.other_user_ids as string[] | null) || [];
+      const participantNames = otherIds.map((id: string) => displayNames[id] || 'Unknown').filter(Boolean);
+      const lastMsg = lastMessages[row.id as string];
+      const lastSnippet = lastMsg
+        ? (lastMsg.contentType === 'image' ? '📷 Photo' : lastMsg.content.substring(0, 60) + (lastMsg.content.length > 60 ? '…' : ''))
+        : null;
+
+      const out: Record<string, unknown> = {
+        id: row.id,
+        type: row.type,
+        lastMessageAt: row.last_message_at,
+        unreadCount: row.unread_count,
+        participantNames: participantNames.length > 0 ? participantNames : ['Chat'],
+        lastMessageSnippet: lastSnippet,
+      };
       if (row.consent_granted_by != null) {
         const granted = (row.consent_granted_by as string[]) || [];
         out.consentState = {

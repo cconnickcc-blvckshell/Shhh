@@ -61,7 +61,7 @@ export default function EditProfileScreen() {
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="close" size={22} color="#fff" />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Edit Profile</Text>
+        <Text style={s.headerTitle} accessibilityRole="header">Edit Profile</Text>
         <TouchableOpacity onPress={save} disabled={saving} style={s.saveBtn}>
           <Text style={[s.saveText, saving && { opacity: 0.4 }]}>{saving ? '...' : 'Save'}</Text>
         </TouchableOpacity>

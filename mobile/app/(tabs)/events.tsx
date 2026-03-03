@@ -9,6 +9,7 @@ import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { BannerImage } from '../../src/components/Backgrounds';
 import { PageShell, Card } from '../../src/components/layout';
 import { SafeState } from '../../src/components/ui';
+import { mapApiError } from '../../src/utils/errorMapper';
 
 const FALLBACK_LAT = 40.7128;
 const FALLBACK_LNG = -74.006;
@@ -31,7 +32,7 @@ export default function EventsScreen() {
       const r = await eventsApi.nearby(lat, lng);
       setEvents(r.data);
     } catch (err: any) {
-      setLoadError(err?.message || 'Something went wrong. Pull down to try again.');
+      setLoadError(mapApiError(err));
       setEvents([]);
     } finally {
       setLoading(false);

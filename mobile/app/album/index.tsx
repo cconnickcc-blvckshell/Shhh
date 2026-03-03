@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { albumsApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
+import { mapApiError } from '../../src/utils/errorMapper';
 
 export default function AlbumsScreen() {
   const [myAlbums, setMyAlbums] = useState<any[]>([]);
@@ -24,7 +25,7 @@ export default function AlbumsScreen() {
       setMyAlbums(mine.data);
       setSharedAlbums(shared.data);
     } catch (err: any) {
-      setLoadError(err?.message || 'Something went wrong. Pull down to try again.');
+      setLoadError(mapApiError(err));
       setMyAlbums([]);
       setSharedAlbums([]);
     } finally {

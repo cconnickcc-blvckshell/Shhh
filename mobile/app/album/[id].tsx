@@ -10,6 +10,8 @@ export default function AlbumDetailScreen() {
   const [album, setAlbum] = useState<any>(null);
   const [shareUserId, setShareUserId] = useState('');
   const [showShare, setShowShare] = useState(false);
+  const [watermarkMode, setWatermarkMode] = useState<'off' | 'subtle' | 'invisible'>('subtle');
+  const [notifyOnView, setNotifyOnView] = useState(true);
   const { width } = useWindowDimensions();
   const cols = 3;
   const tileSize = (width - spacing.md * 2 - 4 * (cols - 1)) / cols;
@@ -27,7 +29,7 @@ export default function AlbumDetailScreen() {
   const handleShare = async () => {
     if (!shareUserId.trim() || !id) return;
     try {
-      await albumsApi.share(id, shareUserId.trim(), 24);
+      await albumsApi.share(id, { userId: shareUserId.trim(), expiresInHours: 24, watermarkMode, notifyOnView });
       setShareUserId('');
       setShowShare(false);
       Alert.alert('Shared', 'Album shared for 24 hours');
@@ -63,6 +65,20 @@ export default function AlbumDetailScreen() {
             <TextInput style={styles.shareInput} value={shareUserId} onChangeText={setShareUserId} placeholder="User ID to share with..." placeholderTextColor={colors.textMuted} />
             <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
               <Text style={styles.shareBtnText}>Share (24h)</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.shareOptions}>
+            <Text style={styles.shareOptLabel}>Watermark</Text>
+            <View style={styles.shareOptRow}>
+              {(['off', 'subtle', 'invisible'] as const).map((m) => (
+                <TouchableOpacity key={m} style={[styles.shareOptChip, watermarkMode === m && styles.shareOptChipActive]} onPress={() => setWatermarkMode(m)}>
+                  <Text style={[styles.shareOptChipText, watermarkMode === m && styles.shareOptChipTextActive]}>{m}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.shareOptToggle} onPress={() => setNotifyOnView((v) => !v)}>
+              <Ionicons name={notifyOnView ? 'notifications' : 'notifications-off'} size={18} color={notifyOnView ? colors.primaryLight : colors.textMuted} />
+              <Text style={styles.shareOptToggleText}>Notify when viewed</Text>
             </TouchableOpacity>
           </View>
           {album.shares?.length > 0 && (
@@ -123,6 +139,15 @@ const styles = StyleSheet.create({
   shareInput: { flex: 1, backgroundColor: colors.surfaceElevated, color: colors.text, padding: 12, borderRadius: borderRadius.md, fontSize: fontSize.sm },
   shareBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 12, borderRadius: borderRadius.md },
   shareBtnText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
+  shareOptions: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 0.5, borderTopColor: colors.border },
+  shareOptLabel: { color: colors.textMuted, fontSize: fontSize.xs, marginBottom: 6 },
+  shareOptRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  shareOptChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.surfaceElevated },
+  shareOptChipActive: { backgroundColor: colors.primary, borderWidth: 1, borderColor: colors.primary },
+  shareOptChipText: { color: colors.textMuted, fontSize: fontSize.sm },
+  shareOptChipTextActive: { color: '#fff' },
+  shareOptToggle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  shareOptToggleText: { color: colors.text, fontSize: fontSize.sm },
   shareList: { marginTop: spacing.md },
   shareListTitle: { color: colors.textMuted, fontSize: fontSize.xs, marginBottom: spacing.sm },
   shareItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm },

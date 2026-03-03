@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/api/client';
+import { usePhotoUpload } from '../../src/hooks/usePhotoUpload';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
+import { mapApiError } from '../../src/utils/errorMapper';
 
 const TIERS = [
   { tier: 0, label: 'Basic', desc: 'Phone verified — browse only', icon: 'phone-portrait', color: colors.textMuted },
@@ -15,6 +17,7 @@ const TIERS = [
 export default function VerificationScreen() {
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { pickAndUpload, takePhotoAndUpload, uploading } = usePhotoUpload();
 
   const load = async () => {
     try {
@@ -26,8 +29,20 @@ export default function VerificationScreen() {
 
   useEffect(() => { load(); }, []);
 
-  // Photo and ID verification: real camera/picker + upload flow not yet implemented.
-  // Placeholder submissions removed per P0 — show "Coming soon" until implemented.
+  const submitPhotoVerification = async (useCamera: boolean) => {
+    const result = useCamera
+      ? await takePhotoAndUpload('photos')
+      : await pickAndUpload('photos');
+    if (!result?.url) return;
+    const selfieUrl = result.url;
+    try {
+      await api('/v1/verification/photo', { method: 'POST', body: JSON.stringify({ selfieUrl }) });
+      Alert.alert('Submitted', 'Your photo verification has been submitted for review.');
+      load();
+    } catch (err: any) {
+      Alert.alert('', mapApiError(err));
+    }
+  };
 
   const currentTier = status?.currentTier || 0;
 
@@ -64,7 +79,16 @@ export default function VerificationScreen() {
             </View>
             {isComplete ? (
               <Ionicons name="checkmark-circle" size={24} color={t.color} />
-            ) : isCurrent && (t.tier === 1 || t.tier === 2) ? (
+            ) : isCurrent && t.tier === 1 ? (
+              <View style={styles.actionRow}>
+                <TouchableOpacity style={[styles.actionBtn, uploading && { opacity: 0.6 }]} onPress={() => submitPhotoVerification(false)} disabled={uploading}>
+                  {uploading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.actionBtnText}>Pick photo</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.actionBtn, uploading && { opacity: 0.6 }]} onPress={() => submitPhotoVerification(true)} disabled={uploading}>
+                  <Text style={styles.actionBtnText}>Take photo</Text>
+                </TouchableOpacity>
+              </View>
+            ) : isCurrent && t.tier === 2 ? (
               <View style={[styles.actionBtn, { opacity: 0.7 }]}>
                 <Text style={styles.actionBtnText}>Coming soon</Text>
               </View>
@@ -110,6 +134,7 @@ const styles = StyleSheet.create({
   tierLabel: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
   tierDesc: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
   pendingBadge: { color: colors.warning, fontSize: fontSize.xxs, fontWeight: '600', marginTop: 4 },
+  actionRow: { flexDirection: 'row', gap: 8 },
   actionBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: borderRadius.md },
   actionBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
   historySection: { marginTop: spacing.lg },

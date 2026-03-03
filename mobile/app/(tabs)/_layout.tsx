@@ -59,12 +59,16 @@ export default function TabLayout() {
       screenOptions={{
         ...TAB_OPTIONS,
         tabBarStyle,
+        tabBarAccessibilityLabel: 'Main navigation',
+        tabBarAccessibilityRole: 'tablist',
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Explore',
+          tabBarAccessibilityLabel: 'Explore',
+          tabBarTestID: 'tab-explore',
           headerTitle: 'Shhh',
           headerTitleStyle: { color: colors.primaryLight, fontWeight: '900', fontSize: 20, letterSpacing: -1 },
           tabBarIcon: ({ color, focused }) => (
@@ -79,6 +83,8 @@ export default function TabLayout() {
         name="messages"
         options={{
           title: 'Chat',
+          tabBarAccessibilityLabel: 'Chat',
+          tabBarTestID: 'tab-chat',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? s.activeWrap : s.inactiveWrap}>
               <Ionicons name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} size={21} color={color} />
@@ -91,6 +97,8 @@ export default function TabLayout() {
         name="events"
         options={{
           title: 'Events',
+          tabBarAccessibilityLabel: 'Events',
+          tabBarTestID: 'tab-events',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? s.activeWrap : s.inactiveWrap}>
               <Ionicons name={focused ? 'flame' : 'flame-outline'} size={21} color={color} />
@@ -103,6 +111,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Me',
+          tabBarAccessibilityLabel: 'Me',
+          tabBarTestID: 'tab-me',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? s.activeWrap : s.inactiveWrap}>
               <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={23} color={color} />

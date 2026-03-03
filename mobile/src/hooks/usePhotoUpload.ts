@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { Platform, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { getAuthToken } from '../api/client';
-
-const API_BASE = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+import { getAuthToken, API_BASE, getMediaUrl } from '../api/client';
 
 interface UploadResult {
   id: string;
@@ -105,7 +103,9 @@ export function usePhotoUpload() {
       }
 
       const json = await res.json();
-      return json.data;
+      const data = json.data;
+      const storagePath = data?.url || data?.storage_path;
+      return { ...data, url: storagePath ? getMediaUrl(storagePath) : data?.url };
     } catch (err: any) {
       Alert.alert('Upload Failed', err.message);
       return null;

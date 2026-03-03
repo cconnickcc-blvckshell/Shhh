@@ -65,12 +65,12 @@ export default function PrivacyDataScreen() {
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={s.title}>Privacy & Data</Text>
+        <Text style={s.title} accessibilityRole="header">Privacy & Data</Text>
         <Text style={s.subtitle}>Control your data and account.</Text>
       </View>
 
-      <View style={s.section}>
-        <Text style={s.sectionTitle}>YOUR DATA</Text>
+      <View style={s.section} accessibilityRole="none">
+        <Text style={s.sectionTitle} accessibilityRole="header">YOUR DATA</Text>
         <TouchableOpacity style={s.row} onPress={handleExport} disabled={exporting} activeOpacity={0.8}>
           <View style={s.iconWrap}>
             <Ionicons name="download-outline" size={22} color={colors.primaryLight} />
@@ -83,8 +83,8 @@ export default function PrivacyDataScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={s.section}>
-        <Text style={s.sectionTitle}>ACCOUNT</Text>
+      <View style={s.section} accessibilityRole="none">
+        <Text style={s.sectionTitle} accessibilityRole="header">ACCOUNT</Text>
         <TouchableOpacity style={[s.row, s.rowDanger]} onPress={handleDeletion} disabled={deleting} activeOpacity={0.8}>
           <View style={[s.iconWrap, s.iconWrapDanger]}>
             <Ionicons name="trash-outline" size={22} color={colors.danger} />

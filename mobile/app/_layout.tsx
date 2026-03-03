@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { colors } from '../src/constants/theme';
 import { AuthGuard } from '../src/components/AuthGuard';
+import { OfflineBanner } from '../src/components/OfflineBanner';
 import { setOnUnauthorized } from '../src/api/client';
 import { useAuthStore } from '../src/stores/auth';
 
@@ -18,7 +20,9 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <StatusBar style="light" />
       <AuthGuard>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <View style={{ flex: 1 }}>
+        <OfflineBanner />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="chat/[id]" options={{ headerShown: true, headerStyle: { backgroundColor: colors.surface }, headerTintColor: '#fff', title: 'Chat' }} />
@@ -45,6 +49,7 @@ export default function RootLayout() {
         <Stack.Screen name="whispers/index" />
         <Stack.Screen name="subscription/index" />
       </Stack>
+      </View>
       </AuthGuard>
     </QueryClientProvider>
   );

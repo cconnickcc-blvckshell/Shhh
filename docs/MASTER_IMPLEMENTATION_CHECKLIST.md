@@ -69,15 +69,15 @@
 
 | ID | Action | Source | Notes |
 |----|--------|--------|-------|
-| 2.1 | **Central error mapper** — Map API codes (RATE_LIMIT, TIER_REQUIRED, INVALID_OTP, etc.) to user-facing copy; use in API client or shared hook. | E2E §4.2, FRONTEND_GAP 9.5, UX_UI §6.3 | mobile/src/api/ or shared util |
-| 2.2 | **Offline detection** — Use NetInfo; show offline banner or inline message; optionally queue failed mutations or explain “try when back online.” | E2E §4.1, FRONTEND_GAP 9.3, UX_UI §8.2 | Root layout or provider |
-| 2.3 | **Accessibility: auth** — accessibilityLabel on Login/Register/Verify inputs and buttons; live region for errors. | E2E §4.5, FRONTEND_GAP 9.1, UX_BEHAVIOR §6.1 | (auth)/index, register, verify-code |
-| 2.4 | **Accessibility: Discover** — Tiles labeled by name/role/distance; long-press announced. | E2E §4.5, UX_BEHAVIOR §6.2 | (tabs)/index.tsx |
+| 2.1 | **Central error mapper** — Map API codes (RATE_LIMIT, TIER_REQUIRED, INVALID_OTP, etc.) to user-facing copy; use in API client or shared hook. | E2E §4.2, FRONTEND_GAP 9.5, UX_UI §6.3 | ✅ mobile/src/utils/errorMapper.ts |
+| 2.2 | **Offline detection** — Use NetInfo; show offline banner or inline message; optionally queue failed mutations or explain “try when back online.” | E2E §4.1, FRONTEND_GAP 9.3, UX_UI §8.2 | ✅ OfflineBanner + NetInfo in _layout |
+| 2.3 | **Accessibility: auth** — accessibilityLabel on Login/Register/Verify inputs and buttons; live region for errors. | E2E §4.5, FRONTEND_GAP 9.1, UX_BEHAVIOR §6.1 | ✅ (auth)/index, AuthOptions |
+| 2.4 | **Accessibility: Discover** — Tiles labeled by name/role/distance; long-press announced. | E2E §4.5, UX_BEHAVIOR §6.2 | ✅ (tabs)/index.tsx DiscoverTile |
 | 2.5 | **Accessibility: conversation list** — Row accessibilityLabel with conversation name and last activity. | E2E §4.5, UX_BEHAVIOR §6.2 | (tabs)/messages.tsx |
 | 2.6 | **Accessibility: tab bar** — Tabs as tab list with selected state; labels (Explore, Chat, Events, Me). | UX_BEHAVIOR §6.2 | (tabs)/_layout.tsx |
-| 2.7 | **Accessibility: Panic / Block / Report** — Focusable and clearly announced (e.g. “Panic alert – double tap to send”). | E2E §4.5, UX_BEHAVIOR §6.1 | profile, user/[id], chat |
+| 2.7 | **Accessibility: Panic / Block / Report** — Focusable and clearly announced (e.g. “Panic alert – double tap to send”). | E2E §4.5, UX_BEHAVIOR §6.1 | ✅ profile panic, chat menu |
 | 2.8 | **Accessibility: headings** — Venue, profile, and settings sections use semantic headings for screen reader navigation. | UX_BEHAVIOR §6.2, UX_UI §8.5 | venue, user, profile screens |
-| 2.9 | **Analytics** — Integrate analytics SDK; fire screen_view and key actions (privacy-safe, no PII). | E2E §4.5, FRONTEND_GAP 9.4, UX_UI §8.6 | Root + key screens |
+| 2.9 | **Analytics** — Integrate analytics SDK; fire screen_view and key actions (privacy-safe, no PII). | E2E §4.5, FRONTEND_GAP 9.4, UX_UI §8.6 | ✅ analytics.ts + useScreenView |
 | 2.10 | **API base URL from env** — Use EXPO_PUBLIC_API_URL (or equivalent) for API_BASE and uploads; no hardcoded localhost/10.0.2.2. | E2E §4.4, FRONTEND_GAP 4, 7.4 | mobile/src/api/client.ts, ProfilePhoto |
 
 ---
@@ -187,7 +187,7 @@
 
 ## Implementation progress — full status (Tiers 0–7)
 
-**Done: 17 | Remaining: 55** (Tier 8 is deferred, not counted.)
+**Done: 37 | Remaining: 35** (Tier 8 is deferred, not counted.)
 
 | Tier | ID | Status | Notes |
 |------|----|--------|-------|
@@ -199,36 +199,36 @@
 | 0 | 0.6 | ✅ Done | Verify-code guard when phone/mode missing. |
 | 1 | 1.1 | ✅ Done | Discover: useLocation(); device lat/lng. |
 | 1 | 1.2 | ✅ Done | Discover: loading + error UI with retry. |
-| 1 | 1.3 | ⬜ Todo | Discover: discovery cap message when API at cap. |
+| 1 | 1.3 | ✅ Done | Discover: discovery cap message when API at cap. |
 | 1 | 1.4 | ✅ Done | Messages: loading + error UI with retry. |
-| 1 | 1.5 | ⬜ Todo | Messages: participant names + last message (API + UI). |
+| 1 | 1.5 | ✅ Done | Messages: participant names + last message (API + UI). |
 | 1 | 1.6 | ✅ Done | Events: loading + error UI with retry. |
 | 1 | 1.7 | ✅ Done | Events: useLocation() for nearby. |
 | 1 | 1.8 | ✅ Done | Me: profile load spinner + loadProfile when missing. |
-| 1 | 1.9 | ⬜ Todo | Venue [id]: Share + Review handlers. |
-| 1 | 1.10 | ⬜ Todo | Venue [id]: show venue grid (GET /venues/:id/grid). |
+| 1 | 1.9 | ✅ Done | Venue [id]: Share + Review handlers. |
+| 1 | 1.10 | ✅ Done | Venue [id]: show venue grid (GET /venues/:id/grid). |
 | 1 | 1.11 | ✅ Done | Chat: WebSocket join, onNewMessage, leave. |
-| 1 | 1.12 | ⬜ Todo | Chat: camera/media handler or remove button. |
+| 1 | 1.12 | ✅ Done | Chat: camera button removed (media handler deferred). |
 | 1 | 1.13 | ✅ Done | Chat: loading + error UI with retry. |
-| 1 | 1.14 | ⬜ Todo | Album [id]: media grid thumbnails (not placeholder icons). |
-| 1 | 1.15 | ⬜ Todo | Album [id]: share options (watermarkMode, notifyOnView, share_target_type). |
-| 1 | 1.16 | ⬜ Todo | Verify: real photo (camera/picker + upload). |
-| 1 | 1.17 | ⬜ Todo | Verify: real ID flow or document “coming soon”. |
+| 1 | 1.14 | ✅ Done | Album [id]: media grid uses actual URLs from backend. |
+| 1 | 1.15 | ✅ Done | Album [id]: share options (watermarkMode, notifyOnView). |
+| 1 | 1.16 | ✅ Done | Verify: real photo (camera/picker + upload). |
+| 1 | 1.17 | ✅ Done | Verify: real ID flow or document “coming soon”. |
 | 1 | 1.18 | ✅ Done | Subscription: open Stripe URL (Linking.openURL). |
 | 1 | 1.19 | ✅ Done | Subscription: refetch tier on focus. |
 | 1 | 1.20 | ✅ Done | User profile: error UI with retry + back. |
 | 1 | 1.21 | ✅ Done | Album index: loading + error UI with retry. |
-| 1 | 1.22 | ⬜ Todo | Profile/Status: loading indicator until presence/intents loaded. |
-| 2 | 2.1 | ⬜ Todo | Central error mapper (API codes → user copy). |
-| 2 | 2.2 | ⬜ Todo | Offline detection (NetInfo + banner). |
-| 2 | 2.3 | ⬜ Todo | Accessibility: auth (labels, live region). |
-| 2 | 2.4 | ⬜ Todo | Accessibility: Discover tiles. |
-| 2 | 2.5 | ⬜ Todo | Accessibility: conversation list rows. |
-| 2 | 2.6 | ⬜ Todo | Accessibility: tab bar. |
-| 2 | 2.7 | ⬜ Todo | Accessibility: Panic / Block / Report. |
-| 2 | 2.8 | ⬜ Todo | Accessibility: headings (venue, profile, settings). |
-| 2 | 2.9 | ⬜ Todo | Analytics (screen_view, key actions, no PII). |
-| 2 | 2.10 | ⬜ Todo | API base URL from env (EXPO_PUBLIC_API_URL). |
+| 1 | 1.22 | ✅ Done | Profile/Status: loading indicator until presence/intents loaded. |
+| 2 | 2.1 | ✅ Done | Central error mapper (errorMapper.ts). |
+| 2 | 2.2 | ✅ Done | Offline detection (OfflineBanner + NetInfo). |
+| 2 | 2.3 | ✅ Done | Accessibility: auth (labels, live region). |
+| 2 | 2.4 | ✅ Done | Accessibility: Discover tiles. |
+| 2 | 2.5 | ✅ Done | Accessibility: conversation list rows. |
+| 2 | 2.6 | ✅ Done | Accessibility: tab bar (tablist, labels). |
+| 2 | 2.7 | ✅ Done | Accessibility: Panic / Block / Report. |
+| 2 | 2.8 | ✅ Done | Accessibility: headings (venue, profile, settings). |
+| 2 | 2.9 | ✅ Done | Analytics (analytics.ts + useScreenView). |
+| 2 | 2.10 | ✅ Done | API base URL from env (ProfilePhoto uses getMediaUrl). |
 | 3 | 3.1 | ⬜ Todo | Blur/reveal in discovery (photos/check + ProfilePhoto). |
 | 3 | 3.2 | ⬜ Todo | Blur/reveal on user profile. |
 | 3 | 3.3 | ⬜ Todo | Discovery grid thumbnails (API or ?w= param). |

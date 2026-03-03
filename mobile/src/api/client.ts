@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 const envApiUrl = typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL;
-const API_BASE = envApiUrl
+export const API_BASE = envApiUrl
   ? (process.env.EXPO_PUBLIC_API_URL as string).replace(/\/$/, '')
   : Platform.OS === 'web'
     ? 'http://localhost:3000'
@@ -113,7 +113,7 @@ export const discoverApi = {
     let url = `/v1/discover?lat=${lat}&lng=${lng}`;
     if (radius != null) url += `&radius=${radius}`;
     if (primaryIntent) url += `&primaryIntent=${encodeURIComponent(primaryIntent)}`;
-    return api<{ data: any[]; count: number }>(url);
+    return api<{ data: any[]; count: number; discoveryCap?: number }>(url);
   },
   updateLocation: (lat: number, lng: number, isPrecise?: boolean) =>
     api('/v1/discover/location', { method: 'POST', body: JSON.stringify({ lat, lng, isPrecise }) }),
@@ -151,6 +151,7 @@ export const venuesApi = {
   getAnalytics: (venueId: string, days = 30) => api<{ data: any[] }>(`/v1/venues/${venueId}/analytics?days=${days}`),
   getStaff: (venueId: string) => api<{ data: any[] }>(`/v1/venues/${venueId}/staff`),
   get: (id: string) => api<{ data: any }>(`/v1/venues/${id}`),
+  getGrid: (venueId: string) => api<{ data: any[]; count: number }>(`/v1/venues/${venueId}/grid`),
   create: (data: { name: string; description?: string; lat: number; lng: number; type?: string; capacity?: number; amenities?: string[] }) =>
     api<{ data: any }>('/v1/venues', { method: 'POST', body: JSON.stringify(data) }),
   updateProfile: (venueId: string, data: Record<string, unknown>) =>
@@ -194,8 +195,8 @@ export const albumsApi = {
   getAlbum: (id: string) => api<{ data: any }>(`/v1/media/albums/${id}`),
   create: (name: string, description?: string, isPrivate?: boolean) =>
     api<{ data: any }>('/v1/media/albums', { method: 'POST', body: JSON.stringify({ name, description, isPrivate }) }),
-  share: (albumId: string, userId: string, expiresInHours?: number) =>
-    api(`/v1/media/albums/${albumId}/share`, { method: 'POST', body: JSON.stringify({ userId, expiresInHours }) }),
+  share: (albumId: string, opts: { userId: string; expiresInHours?: number; watermarkMode?: 'off' | 'subtle' | 'invisible'; notifyOnView?: boolean }) =>
+    api(`/v1/media/albums/${albumId}/share`, { method: 'POST', body: JSON.stringify(opts) }),
   revokeShare: (albumId: string, userId: string) =>
     api(`/v1/media/albums/${albumId}/share/${userId}`, { method: 'DELETE' }),
 };

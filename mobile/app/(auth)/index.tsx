@@ -11,6 +11,7 @@ import { AuthScreenBackground, AppIconImage } from '../../src/components/Backgro
 import { WebEntryShell } from '../../src/components/WebEntryShell';
 import { AuthOptions, type AuthMethod } from '../../src/components/AuthOptions';
 import { useOAuth } from '../../src/hooks/useOAuth';
+import { useScreenView } from '../../src/hooks/useScreenView';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -18,6 +19,7 @@ const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 const SNAP_CLIENT_ID = process.env.EXPO_PUBLIC_SNAP_CLIENT_ID;
 
 export default function LoginScreen() {
+  useScreenView('login');
   const [phone, setPhone] = useState('');
   const [showLoginForm, setShowLoginForm] = useState(Platform.OS !== 'web');
   const [authStep, setAuthStep] = useState<'choose' | 'phone'>('choose');
@@ -118,9 +120,9 @@ export default function LoginScreen() {
               <Text style={styles.tagline}>YOUR SECRET IS SAFE</Text>
             </View>
             <AuthOptions onSelect={handleAuthSelect} isLoading={isLoading} />
-            {error && <View style={styles.errorBox}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
+            {error && <View style={styles.errorBox} accessibilityLiveRegion="polite" accessibilityLabel={`Error: ${error}`}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
             <Link href="/(auth)/register" asChild>
-              <TouchableOpacity style={styles.linkWrap}><Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.linkWrap} accessibilityLabel="Sign up" accessibilityRole="link"><Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text></TouchableOpacity>
             </Link>
           </View>
         </View>
@@ -148,18 +150,18 @@ export default function LoginScreen() {
             <Text style={styles.label}>PHONE NUMBER</Text>
             <View style={[styles.inputWrap, phone.length > 0 && styles.inputFocused]}>
               <Ionicons name="call-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
-              <TextInput style={styles.input} placeholder="+1 (555) 000-0000" placeholderTextColor={colors.textMuted} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" />
+              <TextInput style={styles.input} placeholder="+1 (555) 000-0000" placeholderTextColor={colors.textMuted} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" accessibilityLabel="Phone number" accessibilityHint="Enter your phone number to continue" />
             </View>
 
-            {error && <View style={styles.errorBox}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
+            {error && <View style={styles.errorBox} accessibilityLiveRegion="polite" accessibilityLabel={`Error: ${error}`}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
 
-            <TouchableOpacity style={[styles.button, !canSubmit && styles.buttonDisabled]} onPress={handleContinue} disabled={isLoading || !canSubmit} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.button, !canSubmit && styles.buttonDisabled]} onPress={handleContinue} disabled={isLoading || !canSubmit} activeOpacity={0.8} accessibilityLabel="Continue" accessibilityRole="button" accessibilityHint="Verify your phone to sign in">
               {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <><Text style={styles.buttonText}>Continue</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></>}
             </TouchableOpacity>
           </View>
 
           <Link href="/(auth)/register" asChild>
-            <TouchableOpacity style={styles.linkWrap}><Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.linkWrap} accessibilityLabel="Sign up" accessibilityRole="link"><Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text></TouchableOpacity>
           </Link>
         </View>
       </KeyboardAvoidingView>

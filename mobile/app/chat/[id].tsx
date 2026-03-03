@@ -7,6 +7,7 @@ import { useAuthStore } from '../../src/stores/auth';
 import { useSocket } from '../../src/hooks/useSocket';
 import { useScreenshotDetection } from '../../src/hooks/useScreenshotDetection';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
+import { mapApiError } from '../../src/utils/errorMapper';
 
 interface Message { _id: string; senderId: string; content: string; contentType: string; createdAt: string; expiresAt?: string; }
 
@@ -28,7 +29,7 @@ export default function ChatScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity onPress={openSafetyMenu} style={{ padding: 12 }} hitSlop={12}>
+        <TouchableOpacity onPress={openSafetyMenu} style={{ padding: 12 }} hitSlop={12} accessibilityLabel="Conversation options" accessibilityRole="button" accessibilityHint="Block, report, or view safety info">
           <Ionicons name="ellipsis-horizontal" size={22} color="#fff" />
         </TouchableOpacity>
       ),
@@ -63,7 +64,7 @@ export default function ChatScreen() {
     usersApi.report(otherUserId, 'inappropriate').then(() => {
       Alert.alert('Reported', 'Thank you. We take reports seriously and will review.');
       router.back();
-    }).catch((e: Error) => Alert.alert('', e.message || 'Could not submit report.'));
+    }).catch((e: Error) => Alert.alert('', mapApiError(e)));
   }
 
   function showSafetyInfo() {
@@ -80,7 +81,7 @@ export default function ChatScreen() {
     messagingApi
       .getMessages(convId)
       .then((r) => { setMsgs(Array.isArray(r.data) ? r.data : []); setLoadError(null); })
-      .catch((err: any) => { setLoadError(err?.message || 'Could not load messages.'); setMsgs([]); })
+      .catch((err: any) => { setLoadError(mapApiError(err)); setMsgs([]); })
       .finally(() => setLoading(false));
   }, [convId]);
 
@@ -107,9 +108,13 @@ export default function ChatScreen() {
 
   const send = async () => {
     if (!input.trim() || !convId) return;
-    const res = await messagingApi.sendMessage(convId, input.trim(), 'text', selfDestruct ? 30 : undefined);
-    setMsgs(p => [res.data, ...p]);
-    setInput('');
+    try {
+      const res = await messagingApi.sendMessage(convId, input.trim(), 'text', selfDestruct ? 30 : undefined);
+      setMsgs(p => [res.data, ...p]);
+      setInput('');
+    } catch (err: any) {
+      Alert.alert('', mapApiError(err));
+    }
   };
 
   const renderMsg = ({ item }: { item: Message }) => {
@@ -176,7 +181,6 @@ export default function ChatScreen() {
         <TouchableOpacity onPress={() => setSelfDestruct(!selfDestruct)} style={[s.iconBtn, selfDestruct && s.iconActive]}>
           <Ionicons name="timer" size={20} color={selfDestruct ? colors.host : colors.textMuted} />
         </TouchableOpacity>
-        <TouchableOpacity style={s.iconBtn}><Ionicons name="camera" size={20} color={colors.textMuted} /></TouchableOpacity>
         <View style={s.inputWrap}>
           <TextInput style={s.input} value={input} onChangeText={setInput} placeholder={selfDestruct ? 'Self-destructing...' : 'Message...'} placeholderTextColor={colors.textMuted} multiline onSubmitEditing={send} />
         </View>

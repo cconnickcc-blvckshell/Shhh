@@ -8,6 +8,7 @@ import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 import { PageShell, ContentColumn, Card } from '../../src/components/layout';
 import { SafeState } from '../../src/components/ui';
+import { useScreenView } from '../../src/hooks/useScreenView';
 
 function StatPill({ icon, value, color }: { icon: string; value: string; color: string }) {
   return (
@@ -43,6 +44,7 @@ const mStyles = StyleSheet.create({
 });
 
 export default function ProfileScreen() {
+  useScreenView('profile');
   const { profile, logout, loadProfile, isAuthenticated } = useAuthStore();
   useEffect(() => {
     if (isAuthenticated && !profile) loadProfile();
@@ -80,7 +82,7 @@ export default function ProfileScreen() {
       {/* Hero section */}
       <Card style={styles.heroCard}>
         <ProfilePhoto photosJson={profile?.photosJson} size={110} borderRadius={55} canSeeUnblurred={true} />
-        <Text style={styles.name}>{profile?.displayName || 'User'}</Text>
+        <Text style={styles.name} accessibilityRole="header">{profile?.displayName || 'User'}</Text>
         {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
 
         {/* Stat pills */}
@@ -93,7 +95,8 @@ export default function ProfileScreen() {
 
       {/* Interests */}
       {profile?.kinks?.length > 0 && (
-        <Card style={styles.section}>
+        <Card style={styles.section} accessibilityRole="none">
+          <Text style={styles.sectionHeader} accessibilityRole="header">Interests</Text>
           <View style={styles.tagRow}>
             {profile.kinks.map((k: string) => (
               <View key={k} style={styles.tag}><Text style={styles.tagText}>{k}</Text></View>
@@ -103,7 +106,8 @@ export default function ProfileScreen() {
       )}
 
       {/* Menu */}
-      <Card noPadding style={styles.menuCard}>
+      <Card noPadding style={styles.menuCard} accessibilityRole="none">
+        <Text style={[styles.sectionHeader, { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 }]} accessibilityRole="header">Menu</Text>
         <MenuItem icon="radio-outline" label="Your Status" onPress={() => router.push('/profile/status')} badge="Live" accent />
         <View style={styles.div} />
         <MenuItem icon="create-outline" label="Edit Profile" onPress={() => router.push('/profile/edit')} />
@@ -138,7 +142,7 @@ export default function ProfileScreen() {
       </Card>
 
       {/* Safety */}
-      <TouchableOpacity style={styles.panicBtn} onPress={handlePanic} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.panicBtn} onPress={handlePanic} activeOpacity={0.8} accessibilityLabel="Panic alert" accessibilityRole="button" accessibilityHint="Double tap to send emergency alert with your location">
         <Ionicons name="alert-circle" size={18} color="#fff" />
         <Text style={styles.panicText}>Panic Alert</Text>
       </TouchableOpacity>
@@ -161,6 +165,7 @@ const styles = StyleSheet.create({
   bio: { color: 'rgba(255,255,255,0.55)', fontSize: 14, marginTop: 6, textAlign: 'center', maxWidth: 260, lineHeight: 20 },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 18 },
   section: { paddingHorizontal: 20, paddingVertical: 16, marginBottom: spacing.md },
+  sectionHeader: { color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 8 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: { backgroundColor: 'rgba(147,51,234,0.12)', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 0.5, borderColor: 'rgba(147,51,234,0.25)' },
   tagText: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
