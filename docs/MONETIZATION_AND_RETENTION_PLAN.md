@@ -160,16 +160,15 @@ Gate power, safety, and comfort—not core discovery or matching. Users must fee
 
 **Gating moment (action-based, not feed-based):**
 
-When user taps "Message" and would exceed limit, show a bottom sheet / dialog:
+When user taps "Message" and would exceed limit for this view, show a bottom sheet / dialog:
 
 - **Title:** "Connection window reached"
-- **Copy:** "You've used your 30 new connections for today."
-- **Subcopy:** "Expand your reach with Phantom (50) or Elite (Unlimited)."
-- **Progress:** `Connections used: 30/30`
-- **Reset timer:** `Resets in: HH:MM`
+- **Copy:** "You've reached your limit for this view."
+- **Subcopy:** "Change filters or refresh to see more — or expand with Phantom (50) or Elite (Unlimited)."
+- **Progress:** `Connections used: 30/30` (for this filter view)
 - **CTA:** "Upgrade" (primary), "Not now" (secondary)
 
-**Optional soft signal:** Small "window meter" in Discover header, e.g. `30/30 connections used • resets in 8h`. No flashing banners, no big yellow bars.
+**Optional soft signal:** Small meter in Discover header, e.g. `30/30 for this view`. No flashing banners, no big yellow bars.
 
 ### 4.3 Backend Contract
 
@@ -185,42 +184,49 @@ Before creating a new conversation or sending first message to a user with no ex
   "code": "INITIATION_CAP_REACHED",
   "cap": 30,
   "used": 30,
-  "resetsAt": "2026-03-03T00:00:00.000Z",
   "tierOptions": ["discreet", "phantom", "elite"]
 }
 ```
+
+(No `resetsAt` — cap is per filter view; change filters or refresh to get more.)
 
 **Capability 2: Replies exempt**
 
 If message is in an existing conversation → allow send regardless of cap.
 
-**Capability 3: Quota by tier**
+**Capability 3: Quota by tier (per filter view)**
 
-| Tier | Initiation cap per window |
-|------|---------------------------|
+| Tier | Cap per filter view |
+|------|---------------------|
 | Free | 30 |
 | Discreet | 30 (or 40 — TBD) |
 | Phantom | 50 |
 | Elite | Unlimited |
 
-### 4.4 Window Reset (Open Decision)
+Cap refreshes when user changes filters or refreshes. No time-based reset.
 
-| Option | Description | Recommendation |
-|--------|-------------|----------------|
-| **1. Daily reset** | Midnight local or UTC | Simple; can feel unfair (use at 11:59, reset at midnight) |
-| **2. Rolling 24h** | From first initiation, 24h window | Fairer; more complex to explain |
-| **3. Regeneration** | 1 initiation every X minutes, up to max | Best "premium = power" feel; most complex |
+### 4.4 Cap Scope: Per Filter View (No Time Reset)
 
-**Recommendation:** Rolling 24h OR regeneration. Document chosen approach in config.
+**No 24h reset.** The cap is tied to the **current filter view** (range), not time.
+
+| Trigger | Effect |
+|---------|--------|
+| **Change filters** | Cap refreshes. New view = new quota. |
+| **Refresh** | Cap refreshes. |
+| **Filter examples** | "Online now" → 30 (or 50/unlimited) for that view; "Women" → 30 for that view; "Gay tops" → 30 for that view. |
+
+**Behavior:** The cap adapts to whatever filters the user has. Each filter combination or refresh gives a fresh count for that view. Free: 30 per view; Phantom: 50 per view; Elite: unlimited.
+
+**Design note:** If both visibility and initiation cap refresh on filter change, users could switch filters to see/message more. That may be acceptable (fluid UX, no punitive feel) or you may want initiation to be global-per-session. Document the chosen behavior.
 
 ### 4.5 Implementation Checklist
 
 **Backend:**
-- [ ] Define initiation quota rules (Free: 30, Phantom: 50, Elite: unlimited)
-- [ ] Add `initiation_usage` table or Redis keys: `initiation:{userId}:{windowStart}` with count
+- [ ] Define initiation quota rules (Free: 30, Phantom: 50, Elite: unlimited) **per filter view**
+- [ ] Track usage per `userId` + `filterHash` (e.g. radius + primaryIntent + gender + onlineOnly). Change filters = new hash = fresh quota.
 - [ ] Enforce at `POST /v1/conversations` (create) and `POST /v1/conversations/:id/messages` when conversation is new
 - [ ] Ensure replies (existing conversation) bypass enforcement
-- [ ] Return `INITIATION_CAP_REACHED` with `cap`, `used`, `resetsAt`
+- [ ] Return `INITIATION_CAP_REACHED` with `cap`, `used` (no `resetsAt`)
 
 **Frontend:**
 - [ ] Add global handler for `INITIATION_CAP_REACHED` response
@@ -241,14 +247,19 @@ If message is in an existing conversation → allow send regardless of cap.
 - No gating on viewing profiles
 - No counting replies against cap
 
-### 4.7 Discovery Result Limit (Current)
+### 4.7 Discovery Result Limit (Current) vs Filter-View Cap
 
-The existing `DISCOVERY_CAP_FREE` (30) and `DISCOVERY_CAP_PREMIUM` (50) limit *grid results*. Per this directive:
+**User-specified model:** Cap is per filter view; no 24h reset. When filters change or user refreshes, the count adapts (e.g. 30 online, 30 women, 30 gay tops — each view shows up to 30).
 
-- **Option A:** Remove or relax (e.g. 100 for all) so browsing is never artificially limited.
-- **Option B:** Keep for performance/latency; ensure it's high enough (e.g. 50 free, 100 premium) that users rarely hit it during normal browse.
+**Interpretation:** The cap may be the **discovery result limit** (visibility) per filter view, not a separate initiation quota. In that case:
+- `GET /v1/discover` returns max 30 (free) or 50 (premium) per request
+- Each request is keyed by current filters (radius, intent, gender, online, etc.)
+- Change filters = new request = new 30/50 for that view
+- No initiation cap; you can message anyone you see
 
-**Principle:** Initiation cap is the monetization lever. Visibility cap (if any) should not feel punitive.
+**If initiation cap is separate:** Track initiations per `userId` + `filterHash`; cap refreshes when filter hash changes. See §4.5.
+
+**Principle:** Cap adapts to filters. No time-based reset.
 
 ---
 
@@ -450,7 +461,8 @@ The existing `DISCOVERY_CAP_FREE` (30) and `DISCOVERY_CAP_PREMIUM` (50) limit *g
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | March 2026 | Initial plan; inventory, evaluation, phased plan |
-| 1.1 | March 2026 | Connection Window (initiation cap) directive: cap on outbound first message, not visibility; replies exempt; ConnectionWindowModal; backend contract; window reset options; phased plan updated |
+| 1.1 | March 2026 | Connection Window (initiation cap) directive: cap on outbound first message, not visibility; replies exempt |
+| 1.2 | March 2026 | No 24h reset; cap per filter view — refreshes when filters change or user refreshes; adapts to radius, intent, gender, etc. |
 
 ---
 
