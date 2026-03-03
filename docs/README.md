@@ -29,6 +29,7 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 | **SCOPE_PIVOT_TODO.md** | **Scope when pivoting:** done vs remaining by tier; full remaining list with ID, action, where. | When switching tasks or returning to implementation. |
 | **SOFT_LAUNCH_WEB_PLAN.md** | **Web soft launch:** one codebase, sidebar on web, entry shell, layout constraint, trust signals. Phases 1–4 (post–CTO review). | When doing web-first soft launch or web layout. |
 | **LAUNCH_PLAN.md** | **Launch blitz plan:** Phase 0–4 (harden, seed, detonate, scarcity, viral loop); CTO gate; influencer budget; KPIs; positioning safety. | When planning public launch or marketing blitz. |
+| **MONETIZATION_AND_RETENTION_PLAN.md** | **Monetization + retention:** Inventory (subscription, ads, discovery cap); evaluation; ad integration; checkout fix; retention loops; phased plan without ruining experience. | When implementing or iterating on revenue and retention. |
 | **SYSTEM_REALITY_REPORT.md** | CTO-facing audit: capability matrix, deep dives, test strategy. | When capability set or high-level architecture changes. |
 | **SYSTEM_REALITY_REPORT_APPENDICES.md** | Full route matrix (method, path, auth, tier, file); schema/migrations; threat model. | When adding or changing any route: update Appendix A. |
 | **GAME_CHANGER_ROADMAP.md** | Prioritized backlog of game-changer ideas; themed phases. Progress and "Implemented" list. | When picking or implementing a game-changer; update after build. |
