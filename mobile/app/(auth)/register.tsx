@@ -25,7 +25,9 @@ export default function RegisterScreen() {
   const canSubmit = phone.length >= 10 && displayName.length >= 2;
 
   const [googleRequest, , googlePrompt] = useIdTokenAuthRequest(
-    GOOGLE_CLIENT_ID ? { clientId: GOOGLE_CLIENT_ID } : {}
+    GOOGLE_CLIENT_ID
+      ? { clientId: GOOGLE_CLIENT_ID, webClientId: GOOGLE_CLIENT_ID }
+      : { clientId: 'disabled', webClientId: 'disabled' }
   );
 
   const redirectUri = AuthSession.makeRedirectUri();
