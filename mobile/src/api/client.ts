@@ -64,6 +64,18 @@ export const authApi = {
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/login', {
       method: 'POST', body: JSON.stringify({ phone, ...(sessionToken && { sessionToken }) }),
     }),
+  oauthApple: (idToken: string, displayName?: string) =>
+    api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/oauth/apple', {
+      method: 'POST', body: JSON.stringify({ idToken, ...(displayName && { displayName }) }),
+    }),
+  oauthGoogle: (idToken: string, displayName?: string) =>
+    api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/oauth/google', {
+      method: 'POST', body: JSON.stringify({ idToken, ...(displayName && { displayName }) }),
+    }),
+  oauthSnap: (authCode: string, displayName?: string) =>
+    api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/oauth/snap', {
+      method: 'POST', body: JSON.stringify({ authCode, ...(displayName && { displayName }) }),
+    }),
   refresh: (refreshToken: string) =>
     api<{ data: { accessToken: string; refreshToken: string } }>('/v1/auth/refresh', {
       method: 'POST', body: JSON.stringify({ refreshToken }),

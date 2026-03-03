@@ -27,6 +27,21 @@ const refreshSchema = z.object({
   refreshToken: z.string().uuid(),
 });
 
+const oauthAppleSchema = z.object({
+  idToken: z.string().min(1),
+  displayName: z.string().min(2).max(50).optional(),
+});
+
+const oauthGoogleSchema = z.object({
+  idToken: z.string().min(1),
+  displayName: z.string().min(2).max(50).optional(),
+});
+
+const oauthSnapSchema = z.object({
+  authCode: z.string().min(1),
+  displayName: z.string().min(2).max(50).optional(),
+});
+
 const sendCodeSchema = z.object({
   phone: z.string().min(10).max(15),
 });
@@ -72,6 +87,9 @@ router.delete('/push-token', authenticate, validate(z.object({
 
 router.post('/register', authRateLimiter, validate(registerSchema), controller.register);
 router.post('/login', authRateLimiter, validate(loginSchema), controller.login);
+router.post('/oauth/apple', authRateLimiter, validate(oauthAppleSchema), controller.oauthApple);
+router.post('/oauth/google', authRateLimiter, validate(oauthGoogleSchema), controller.oauthGoogle);
+router.post('/oauth/snap', authRateLimiter, validate(oauthSnapSchema), controller.oauthSnap);
 router.post('/refresh', validate(refreshSchema), controller.refresh);
 router.delete('/logout', authenticate, controller.logout);
 

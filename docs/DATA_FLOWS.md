@@ -5,7 +5,11 @@
 
 ---
 
-## 1. Auth Flow (OTP → Tokens)
+## 1. Auth Flow (Phone OTP or OAuth → Tokens)
+
+**Phone path:** User selects phone → send-code → verify (returns sessionToken) → register/login with sessionToken.
+
+**OAuth path:** User selects Apple/Google/Snap → native OAuth flow → POST /auth/oauth/{apple|google|snap} with idToken (Apple/Google) or authCode (Snap) → backend verifies, creates/links user → returns tokens.
 
 ```
 User          Mobile App         API                    Redis              PostgreSQL
@@ -19,8 +23,10 @@ User          Mobile App         API                    Redis              Postg
   |-- Enter code -->|               |                      |                      |
   |               |-- POST /auth/phone/verify ----->|      |                      |
   |               |                |-- Validate OTP ------->|                      |
+  |               |                |-- Create OTP session (sessionToken) -->|      |
+  |               |<-- 200 { verified, sessionToken } ----|                      |
+  |               |-- POST /auth/register or /auth/login (sessionToken) -->|      |
   |               |                |-- Check user exists ------------------>|      |
-  |               |                |   (register or login)                  |      |
   |               |                |-- Create JWT + refresh hash ----------->|      |
   |               |<-- 200 { accessToken, refreshToken } --|                  |
   |               |-- Store tokens (SecureStore)    |                      |      |

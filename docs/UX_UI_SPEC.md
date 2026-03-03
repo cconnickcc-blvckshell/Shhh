@@ -1,6 +1,6 @@
 # Shhh — UX/UI Specification
 
-> **Version**: 1.1.0 | **Last updated**: February 2026  
+> **Version**: 1.2.0 | **Last updated**: March 2026  
 > **Purpose**: Frontend/visual counterpart to **ARCHITECTURE.md**. Screens, layout, components, interactions, and how the UI connects to the backend.  
 > **Scope**: Mobile app (React Native + Expo 55, expo-router), Admin Dashboard (React + Vite). Routes and implementation status aligned with current codebase and **DEV_HANDOVER.md** §6; **E2E_CAPABILITY_AUDIT_REPORT.md** and **MASTER_IMPLEMENTATION_CHECKLIST.md** for full gap list.  
 > **Companion**: **UX_BEHAVIOR_SPEC.md** (invariants, user states, safety flows, copy, a11y gates).
@@ -75,14 +75,14 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 
 | Field | Description |
 |-------|-------------|
-| **Intent** | On web: first show Entry Shell (tone, “Enter”, “Learn how it works”); then login. On native: authenticate by phone; lead into OTP or (dev) direct login. |
-| **Entry points** | App cold start when not authenticated; link from Register "Already a member? Log in". On web, Entry Shell is the first view; “Enter” reveals login form. |
-| **Exit paths** | Success: navigate to `/(auth)/verify-code` (params: phone, mode: 'login') or, in dev with devCode, alert then same; or direct to `/(tabs)` if login(phone) succeeds. Link to `/(auth)/register`. |
-| **Data dependencies (API)** | POST `/v1/auth/login` (optional, tried first); POST `/v1/auth/phone/send-code` (body: phone). |
-| **Store state** | `useAuthStore`: sendOTP, login, isLoading, error, clearError. |
-| **Layout** | Centered single column: glow blob, logo (fingerprint icon + "Shhh"), tagline "YOUR SECRET IS SAFE", form (phone input), primary button "Continue", link "Don't have an account? Sign up". KeyboardAvoidingView. |
-| **Components** | None from library; inline Text, TextInput, TouchableOpacity, ActivityIndicator, Ionicons. |
-| **Interactions** | Enter phone (≥10 chars), tap Continue → login or send OTP and navigate; tap Sign up → register. |
+| **Intent** | On web: first show Entry Shell (tone, “Enter”, “Learn how it works”); then login. AuthOptions: phone, Apple, Google, Snapchat — each with pros/cons. Phone leads into OTP; OAuth uses native flows then POST /auth/oauth/{apple|google|snap}. |
+| **Entry points** | App cold start when not authenticated; link from Register "Already a member? Log in". On web, Entry Shell is the first view; “Enter” reveals AuthOptions then login form. |
+| **Exit paths** | Phone: navigate to `/(auth)/verify-code` (params: phone, mode: 'login') or direct to `/(tabs)` if login succeeds. OAuth: POST /auth/oauth/* → tokens → `/(tabs)`. Link to `/(auth)/register`. |
+| **Data dependencies (API)** | POST `/v1/auth/login` (phone + sessionToken); POST `/v1/auth/phone/send-code` (body: phone); POST `/v1/auth/oauth/apple`, `/oauth/google`, `/oauth/snap` (idToken or authCode). |
+| **Store state** | `useAuthStore`: sendOTP, login, oauthApple, oauthGoogle, oauthSnap, isLoading, error, clearError. |
+| **Layout** | AuthOptions first (phone, Apple, Google, Snap with pros/cons). Phone path: glow blob, logo, tagline, form (phone input), "Continue", link to register. KeyboardAvoidingView. |
+| **Components** | AuthOptions (reusable); inline Text, TextInput, TouchableOpacity, ActivityIndicator, Ionicons. |
+| **Interactions** | Select auth method; phone: enter phone (≥10 chars), tap Continue → send OTP and navigate; OAuth: tap provider → native flow → tokens. Tap Sign up → register. |
 | **States** | **Loading**: button shows ActivityIndicator. **Error**: error box with alert icon and store error. **Empty**: default; no empty list. **Offline**: NOT IMPLEMENTED — no network detection or retry UI. |
 | **Edge cases** | Invalid phone length: button disabled. Rate limit (5/15min): error from API shown; no specific copy. Dev mode: devCode in alert. |
 | **Analytics events** | NOT IMPLEMENTED. Suggested (privacy-safe): screen_view login, action send_otp_request, action login_success / login_fallback_otp. |
@@ -94,14 +94,14 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 
 | Field | Description |
 |-------|-------------|
-| **Intent** | Create account: display name + phone, then OTP. |
+| **Intent** | Create account: AuthOptions (phone, Apple, Google, Snap). Phone: display name + phone, then OTP. OAuth: optional display name, then provider flow. |
 | **Entry points** | Link from Login "Don't have an account? Sign up". |
-| **Exit paths** | Success: navigate to `/(auth)/verify-code` (params: phone, mode: 'register', displayName); or dev fallback register then `/(auth)/onboarding`. Link to `/(auth)`. |
-| **Data dependencies (API)** | POST `/v1/auth/phone/send-code`; (dev) POST `/v1/auth/register` (phone, displayName). |
-| **Store state** | useAuthStore: sendOTP, register, isLoading, error, clearError. |
-| **Layout** | Same pattern as login: glow, icon (sparkles), "Join Shhh", "Create your secret identity", Display Name input, Phone input, "Get Started" button, "Already a member? Log in". |
-| **Components** | Inline only. |
-| **Interactions** | Fill display name (≥2) and phone (≥10), tap Get Started → send OTP and go to verify-code. |
+| **Exit paths** | Phone: navigate to `/(auth)/verify-code` (params: phone, mode: 'register', displayName). OAuth: POST /auth/oauth/* → tokens → `/(auth)/onboarding`. Link to `/(auth)`. |
+| **Data dependencies (API)** | POST `/v1/auth/phone/send-code`; POST `/v1/auth/register` (phone, displayName, sessionToken); POST `/v1/auth/oauth/apple`, `/oauth/google`, `/oauth/snap`. |
+| **Store state** | useAuthStore: sendOTP, register, oauthApple, oauthGoogle, oauthSnap, isLoading, error, clearError. |
+| **Layout** | AuthOptions first; phone path: glow, icon (sparkles), "Join Shhh", Display Name input, Phone input, "Get Started", "Already a member? Log in". |
+| **Components** | AuthOptions (reusable); inline only. |
+| **Interactions** | Select auth method; phone: fill display name (≥2) and phone (≥10), tap Get Started → send OTP and go to verify-code. OAuth: tap provider → flow. |
 | **States** | Loading/error/empty/offline: same as login; no offline handling. |
 | **Edge cases** | Same rate limit as login. Dev: registerDirect on send OTP failure. |
 | **Analytics events** | NOT IMPLEMENTED. |
@@ -116,7 +116,7 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Intent** | Enter 6-digit OTP to complete login or registration. |
 | **Entry points** | From login or register after send OTP; params: phone, mode ('login' | 'register'), displayName (if register). |
 | **Exit paths** | Back arrow → router.back(). Success login → `/(tabs)`; success register → `/(auth)/onboarding`. |
-| **Data dependencies (API)** | POST `/v1/auth/phone/verify` (phone, code); then authApi.login or authApi.register. |
+| **Data dependencies (API)** | POST `/v1/auth/phone/verify` (phone, code) → returns sessionToken; then authApi.login or authApi.register (sessionToken required in prod). |
 | **Store state** | useAuthStore: verifyAndLogin, verifyAndRegister, sendOTP. Local: digits[6], loading, error, resendTimer(60s). |
 | **Layout** | Back, glow, icon, "Verify your number", "Enter the 6-digit code sent to", masked phone, 6 digit inputs, error line, resend "Resend code in Ns" / "Resend verification code". |
 | **Components** | Inline only. |

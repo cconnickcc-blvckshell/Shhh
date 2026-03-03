@@ -7,7 +7,12 @@
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Added
+
+- OAuth sign-in: `POST /v1/auth/oauth/apple`, `POST /v1/auth/oauth/google`, `POST /v1/auth/oauth/snap` (idToken for Apple/Google, authCode for Snapchat)
+- OTP session token: `POST /v1/auth/phone/verify` returns `sessionToken`; register/login require it in production
+- PWA: `manifest.json`, theme-color meta, Add to Home Screen support for web build
+- Target stack: Supabase (PostgreSQL + PostGIS), Redis, MongoDB — see `docs/SUPABASE_REDIS_MONGO_SETUP.md`
 
 ---
 

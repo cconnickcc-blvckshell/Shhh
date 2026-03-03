@@ -30,12 +30,14 @@ Returns: `status`, `version`, `modules` (list of loaded modules). If any core mo
 | `JWT_SECRET` | Access token signing | Token forgery |
 | `JWT_REFRESH_SECRET` | Refresh token signing | Token forgery |
 | `PHONE_HASH_PEPPER` | HMAC for phone hashing | PII exposure, enumeration |
-| `DATABASE_URL` | PostgreSQL connection | API down |
-| `REDIS_URL` | Redis connection | OTP, cache, rate limits fail |
-| `MONGODB_URL` | Message storage | Messaging fails |
+| `DATABASE_URL` | PostgreSQL connection (Supabase or self-hosted) | API down |
+| `REDIS_URL` | Redis connection (Upstash, Redis Cloud, or self-hosted) | OTP, cache, rate limits fail |
+| `MONGODB_URL` | Message storage (Atlas or self-hosted) | Messaging fails |
 | `CORS_ORIGINS` | Allowed origins (comma-separated) | Required in prod; app exits if missing |
 
-**Note:** Production startup validates JWT_SECRET, JWT_REFRESH_SECRET, PHONE_HASH_PEPPER, CORS_ORIGINS; app exits if defaults or missing.
+**Optional for Supabase/cloud Postgres:** `DATABASE_SSL=true`, `DATABASE_POOL_SIZE=20`
+
+**Note:** Production startup validates JWT_SECRET, JWT_REFRESH_SECRET, PHONE_HASH_PEPPER, CORS_ORIGINS; app exits if defaults or missing. Target stack: Supabase + Redis + MongoDB — see **docs/SUPABASE_REDIS_MONGO_SETUP.md**.
 
 ---
 

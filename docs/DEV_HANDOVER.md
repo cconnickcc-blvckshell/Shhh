@@ -224,35 +224,41 @@ The backend has **24 route modules** wired in `app.ts`. Each module follows the 
 
 ### 4.1 Auth Module
 
-**What it does:** User registration, login, JWT token management, OTP verification, push token registration.
+**What it does:** User registration, login (phone or OAuth), JWT token management, OTP verification, push token registration.
 
 **Key files:**
-- `modules/auth/auth.service.ts` — JWT generation, Argon2id hashing, token rotation
+- `modules/auth/auth.service.ts` — JWT generation, Argon2id hashing, token rotation, loginOrRegisterWithOAuth
 - `modules/auth/auth.controller.ts` — HTTP handler functions
 - `modules/auth/auth.routes.ts` — Route definitions
-- `modules/auth/otp.service.ts` — OTP generation, Twilio SMS, dev-mode code bypass
+- `modules/auth/oauth.service.ts` — Apple/Google/Snapchat token verification (id_token or auth_code)
+- `modules/auth/otp.service.ts` — OTP generation, Twilio SMS, dev-mode code bypass, OTP session (sessionToken)
 - `modules/auth/push.service.ts` — Expo push notification token management
 
 **Endpoints:**
 
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| POST | `/v1/auth/register` | No | — | Register with phone + displayName. Returns `{userId, accessToken, refreshToken}` |
-| POST | `/v1/auth/login` | No | — | Login with phone. Returns tokens. |
+| POST | `/v1/auth/register` | No | — | Register with phone + displayName (requires `sessionToken` in prod). Returns `{userId, accessToken, refreshToken}` |
+| POST | `/v1/auth/login` | No | — | Login with phone (requires `sessionToken` in prod). Returns tokens. |
+| POST | `/v1/auth/oauth/apple` | No | — | Sign in with Apple. Body: `{idToken, displayName?}`. Returns tokens. |
+| POST | `/v1/auth/oauth/google` | No | — | Sign in with Google. Body: `{idToken, displayName?}`. Returns tokens. |
+| POST | `/v1/auth/oauth/snap` | No | — | Sign in with Snapchat. Body: `{authCode, displayName?}`. Returns tokens. |
 | POST | `/v1/auth/refresh` | No | — | Rotate refresh token. Old token is revoked. |
 | DELETE | `/v1/auth/logout` | Yes | 0 | Revoke all refresh tokens for the user |
 | POST | `/v1/auth/phone/send-code` | No | — | Send OTP via Twilio (returns `devCode` in dev mode) |
-| POST | `/v1/auth/phone/verify` | No | — | Verify OTP code |
+| POST | `/v1/auth/phone/verify` | No | — | Verify OTP code; returns `{verified, sessionToken}` |
 | POST | `/v1/auth/push-token` | Yes | 0 | Register Expo push notification token |
 
-**Database tables owned:** `users`, `refresh_tokens`, `push_tokens`
+**Database tables owned:** `users`, `refresh_tokens`, `push_tokens`, `oauth_accounts`
 
 **Key business rules:**
 - Phone numbers are SHA-256 hashed before storage — the raw phone is **never** persisted
+- OAuth users: `users.phone_hash` may be NULL; identity linked via `oauth_accounts` (provider, provider_user_id)
 - Registration creates a user at tier 0 and an empty `user_profiles` row
 - Access tokens expire in 2h (dev) or 15m (prod); refresh tokens expire in 7 days
 - Refresh token rotation: old token is revoked on each refresh call (one-time use)
 - OTP rate limited to 5 attempts per 15 minutes per phone number
+- In prod, register/login require `sessionToken` from `POST /auth/phone/verify` (OTP session); in test, optional for backward compat
 - In dev/test mode without Twilio credentials, OTP codes are returned in the response as `devCode`
 - **Stealth (neutral notifications):** If `user_profiles.preferences_json.neutral_notifications === true`, `push.service.sendPush` uses generic title/body ("Notification", "You have a new notification"); set via `PUT /v1/users/me` with `preferencesJson`
 - Every auth action is logged to `audit_logs`
@@ -931,16 +937,17 @@ See [Section 14: Billing & Premium](#14-billing--premium) for full details.
 | `007_whispers_onboarding_shield.sql` | `whispers`. Onboarding columns on `users`. Event lifecycle columns. |
 | `008_ads_venue_overhaul.sql` | `ad_placements`, `ad_impressions`, `ad_cadence_rules`, `ad_controls`, `venue_analytics`, `venue_staff`, `venue_reviews`, `venue_specials`. Venue profile columns. |
 | `009_admin_rbac_phone_pepper.sql` | `role` column on `users` (`user` \| `moderator` \| `admin` \| `superadmin`), `admin_actions` table. |
+| `028_oauth_accounts.sql` | `oauth_accounts` table (provider, provider_user_id, user_id); `users.phone_hash` nullable for OAuth-only users. |
 
 ### 5.2 All Tables by Domain
 
-#### Identity & Auth (6 tables)
+#### Identity & Auth (7 tables)
 
 ```sql
 -- Core user accounts
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    phone_hash VARCHAR(128) UNIQUE NOT NULL,   -- HMAC-SHA256 of phone (with pepper)
+    phone_hash VARCHAR(128),                    -- HMAC-SHA256 of phone (with pepper); nullable for OAuth-only users (028)
     email_hash VARCHAR(128) UNIQUE,             -- HMAC-SHA256 of email (with pepper)
     password_hash VARCHAR(256),                  -- Argon2id hash
     is_active BOOLEAN DEFAULT true,
@@ -996,6 +1003,18 @@ CREATE TABLE user_references (
     rating INTEGER CHECK (1-5),
     comment_encrypted TEXT, is_visible BOOLEAN DEFAULT true,
     UNIQUE(from_user_id, to_user_id)
+);
+
+-- OAuth account links (028)
+CREATE TABLE oauth_accounts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL FK→users ON DELETE CASCADE,
+    provider VARCHAR(20) NOT NULL,           -- apple | google | snap
+    provider_user_id VARCHAR(256) NOT NULL,
+    email_hash VARCHAR(128),
+    display_name VARCHAR(100),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(provider, provider_user_id)
 );
 
 -- Push notification tokens
@@ -2316,6 +2335,15 @@ The mobile app's API client uses `window.localStorage` for token persistence on 
 | `STRIPE_SECRET_KEY` | — | Prod only | Stripe API secret key |
 | `STRIPE_WEBHOOK_SECRET` | — | Prod only | Stripe webhook signing secret (from Stripe dashboard) |
 | `APP_URL` | `shhh://` | No | App deep link scheme for Stripe redirect |
+| `GOOGLE_CLIENT_ID` | — | OAuth only | Google OAuth client ID (for id_token verification) |
+| `APPLE_TEAM_ID` | — | OAuth only | Apple Team ID (for Apple Sign In) |
+| `APPLE_CLIENT_ID` | — | OAuth only | Apple Services ID / bundle ID |
+| `APPLE_KEY_ID` | — | OAuth only | Apple Sign In key ID |
+| `SNAP_CLIENT_ID` | — | OAuth only | Snapchat Login Kit client ID |
+| `SNAP_CLIENT_SECRET` | — | OAuth only | Snapchat Login Kit client secret |
+| `CORS_ORIGINS` | — | Prod | Comma-separated allowed origins (e.g. `https://app.shhh.app,https://shhh.app`) |
+| `DATABASE_SSL` | `false` | Supabase | Set `true` for Supabase/remote Postgres |
+| `DATABASE_POOL_SIZE` | `20` | No | PostgreSQL connection pool size |
 
 ---
 

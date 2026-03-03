@@ -2,7 +2,7 @@
 
 This document extends `SYSTEM_REALITY_REPORT.md` with exhaustive reference material. Cite both when presenting to the CTO.
 
-> **Last updated:** March 2026 — Bugs 1 (trust-score) and 3 (screenshot) marked FIXED; Appendix B/C/G/I updated.
+> **Last updated:** March 2026 — Bugs 1 (trust-score) and 3 (screenshot) marked FIXED; Appendix B/C/G/I updated. OAuth routes (auth/oauth/apple, google, snap) added.
 > **Enhancement work:** When adding or changing routes, update **Appendix A** (route matrix). See **docs/ENHANCEMENT_ROADMAP.md** and **docs/README.md** for doc sync checklist.
 
 ---
@@ -19,6 +19,9 @@ Every v1 route with method, path, auth, tier/role, and source file. Single sourc
 | DELETE | auth/logout | Yes | 0 | — | auth/auth.routes.ts |
 | POST | auth/phone/send-code | No (rate-limited) | — | — | auth/auth.routes.ts |
 | POST | auth/phone/verify | No (rate-limited) | — | — | auth/auth.routes.ts |
+| POST | auth/oauth/apple | No (rate-limited) | — | — | auth/auth.routes.ts |
+| POST | auth/oauth/google | No (rate-limited) | — | — | auth/auth.routes.ts |
+| POST | auth/oauth/snap | No (rate-limited) | — | — | auth/auth.routes.ts |
 | POST | auth/push-token | Yes | 0 | — | auth/auth.routes.ts |
 | GET | users/me | Yes | 0 | — | users/users.routes.ts |
 | PUT | users/me | Yes | 0 | — | users/users.routes.ts |

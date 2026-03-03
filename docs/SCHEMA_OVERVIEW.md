@@ -9,7 +9,7 @@
 
 | Table | Purpose |
 |-------|---------|
-| `users` | Core user; `phone_hash`, `verification_tier`, `deleted_at` |
+| `users` | Core user; `phone_hash` (nullable for OAuth-only), `verification_tier`, `deleted_at` |
 | `user_profiles` | Display name, bio, photos, preferences, kinks, experience_level |
 | `refresh_tokens` | JWT refresh token hashes; rotation support |
 | `locations` | PostGIS point; user's current location with expiry |
@@ -22,6 +22,7 @@
 
 | Table | Purpose |
 |-------|---------|
+| `oauth_accounts` | OAuth provider links (apple, google, snap); `provider`, `provider_user_id`, `user_id` |
 | `verifications` | Photo/ID verification submissions; admin approve/reject |
 | `references` | User references (tier 2) |
 

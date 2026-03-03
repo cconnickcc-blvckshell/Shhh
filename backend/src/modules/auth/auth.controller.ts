@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { config } from '../../config';
 import { AuthService } from './auth.service';
 import { OTPService } from './otp.service';
+import * as oauthService from './oauth.service';
 
 const authService = new AuthService();
 const otpService = new OTPService();
@@ -58,6 +59,39 @@ export class AuthController {
       const { refreshToken } = req.body;
       const tokens = await authService.refreshToken(refreshToken);
       res.json({ data: tokens });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async oauthApple(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { idToken, displayName } = req.body;
+      const oauthUser = await oauthService.verifyAppleIdToken(idToken);
+      const result = await authService.loginOrRegisterWithOAuth(oauthUser, displayName);
+      res.json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async oauthGoogle(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { idToken, displayName } = req.body;
+      const oauthUser = await oauthService.verifyGoogleIdToken(idToken);
+      const result = await authService.loginOrRegisterWithOAuth(oauthUser, displayName);
+      res.json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async oauthSnap(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { authCode, displayName } = req.body;
+      const oauthUser = await oauthService.verifySnapAuthCode(authCode);
+      const result = await authService.loginOrRegisterWithOAuth(oauthUser, displayName);
+      res.json({ data: result });
     } catch (err) {
       next(err);
     }

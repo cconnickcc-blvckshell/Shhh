@@ -58,7 +58,8 @@
           "photosPermission": "Shhh needs access to your photos for profile pictures and albums",
           "cameraPermission": "Shhh needs camera access for profile photos and verification"
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "extra": {
       "eas": {

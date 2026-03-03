@@ -6,11 +6,15 @@ let pool: Pool | null = null;
 
 export function getPool(): Pool {
   if (!pool) {
+    const ssl = process.env.DATABASE_SSL === 'true'
+      ? { rejectUnauthorized: true }
+      : undefined;
     pool = new Pool({
       connectionString: config.database.url,
-      max: 20,
+      max: parseInt(process.env.DATABASE_POOL_SIZE || '20', 10),
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 10000,
+      ...(ssl && { ssl }),
     });
 
     pool.on('error', (err) => {

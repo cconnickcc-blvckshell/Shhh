@@ -39,6 +39,8 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 
 | Document | Purpose | When to read/update |
 |----------|---------|---------------------|
+| **GET_ONLINE.md** | **Quick start:** Local verification, cloud DB setup, deploy backend + frontend. | When getting the app running online for the first time. |
+| **SUPABASE_REDIS_MONGO_SETUP.md** | **Target stack setup:** Supabase (Postgres + PostGIS), Redis, MongoDB. Step-by-step for production. | When configuring production infra or onboarding. |
 | **OPS_RUNBOOK.md** | Incident response, debugging, health checks, rollback. | When on-call or troubleshooting. |
 | **DEPLOYMENT_GUIDE.md** | Terraform, ECS, migrations, CI/CD, staging vs prod. | When deploying or changing infra. |
 | **TESTING_GUIDE.md** | How to run backend tests, load tests; what's covered. | When adding tests or debugging CI. |

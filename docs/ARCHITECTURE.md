@@ -1,6 +1,6 @@
 # Shhh — Architecture Document
 
-> Last updated: March 2026 (aligned with current codebase; API ledger §4 Presence/Personas/Intents/Preferences/Ads corrected)  
+> Last updated: March 2026 (aligned with current codebase; API ledger §4 Auth OAuth, Presence/Personas/Intents/Preferences/Ads; migration 028)  
 > **When changing the system:** Update this doc’s §2 (file tree), §4 (API ledger), §6 (schema) when adding modules, routes, or tables.  
 > **Implementation status:** See **docs/E2E_CAPABILITY_AUDIT_REPORT.md**, **docs/MASTER_IMPLEMENTATION_CHECKLIST.md**, **docs/CONSOLIDATED_CTO_REVIEW.md**, **docs/SCOPE_PIVOT_TODO.md**, **docs/SOFT_LAUNCH_WEB_PLAN.md** for web-first soft launch.
 
@@ -8,7 +8,9 @@
 
 ## 1. System Overview
 
-Shhh is a privacy-native, proximity-driven geosocial platform for adults. The backend is a monolithic Node.js (Express 4 + TypeScript) API designed for horizontal scaling, backed by PostgreSQL (with PostGIS for geospatial queries), Redis (caching, presence, OTP, rate limits, BullMQ job queue), and MongoDB (message storage with TTL). The admin dashboard is a React + Vite SPA; the primary client is a React Native + Expo 55 mobile app.
+Shhh is a privacy-native, proximity-driven geosocial platform for adults. The backend is a monolithic Node.js (Express 4 + TypeScript) API designed for horizontal scaling, backed by **PostgreSQL** (with PostGIS for geospatial queries), **Redis** (caching, presence, OTP, rate limits, BullMQ job queue), and **MongoDB** (message storage with TTL). The admin dashboard is a React + Vite SPA; the primary client is a React Native + Expo 55 mobile app.
+
+**Target production stack:** Supabase (Postgres + PostGIS) + Redis (Upstash/Redis Cloud) + MongoDB (Atlas). See **docs/SUPABASE_REDIS_MONGO_SETUP.md**.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -154,10 +156,11 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │   ├── errorHandler.ts       # Centralized error handler
 │   │   │   └── validation.ts         # Zod schema validation
 │   │   ├── modules/
-│   │   │   ├── auth/                 # Phone OTP, JWT, push tokens
-│   │   │   │   ├── auth.service.ts   # JWT, Argon2id, token rotation
+│   │   │   ├── auth/                 # Phone OTP, OAuth (Apple/Google/Snap), JWT, push tokens
+│   │   │   │   ├── auth.service.ts   # JWT, Argon2id, token rotation, loginOrRegisterWithOAuth
 │   │   │   │   ├── auth.controller.ts
 │   │   │   │   ├── auth.routes.ts
+│   │   │   │   ├── oauth.service.ts  # Apple/Google/Snap token verification
 │   │   │   │   ├── otp.service.ts    # OTP send/verify (Redis)
 │   │   │   │   └── push.service.ts   # Push token registration
 │   │   │   ├── users/                # Profiles, like/pass/block/report
@@ -266,7 +269,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │       ├── 024_profile_visibility_tier.sql
 │   │   │       ├── 025_content_slots_vibe_talk_first.sql
 │   │   │       ├── 026_stories_live_personas_crossing.sql
-│   │   │       └── 027_groups_tribes.sql
+│   │   │       ├── 027_groups_tribes.sql
+│   │   │       └── 028_oauth_accounts.sql
 │   │   ├── app.ts                    # Express app, route mounting
 │   │   └── index.ts                  # Server entry, attach Socket.io
 │   ├── tests/
@@ -317,6 +321,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | ioredis | Redis client (cache, OTP, BullMQ) |
 | mongoose | MongoDB ODM (messages, authSource=admin) |
 | jsonwebtoken | JWT creation/verification |
+| google-auth-library | Google OAuth id_token verification |
+| jwks-rsa | Apple OAuth id_token verification (JWKS) |
 | argon2 | Password hashing (Argon2id) |
 | zod | Request validation |
 | uuid | UUID generation |
@@ -371,9 +377,12 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
 | POST | `/v1/auth/phone/send-code` | No | — | Send OTP (rate limited; dev returns `devCode`) |
-| POST | `/v1/auth/phone/verify` | No | — | Verify OTP, returns tokens |
-| POST | `/v1/auth/register` | No | — | Register with phone |
-| POST | `/v1/auth/login` | No | — | Login with phone |
+| POST | `/v1/auth/phone/verify` | No | — | Verify OTP, returns `sessionToken` (required for register/login in prod) |
+| POST | `/v1/auth/register` | No | — | Register with phone + displayName (requires `sessionToken` in prod) |
+| POST | `/v1/auth/login` | No | — | Login with phone (requires `sessionToken` in prod) |
+| POST | `/v1/auth/oauth/apple` | No | — | Sign in with Apple (idToken, optional displayName) |
+| POST | `/v1/auth/oauth/google` | No | — | Sign in with Google (idToken, optional displayName) |
+| POST | `/v1/auth/oauth/snap` | No | — | Sign in with Snapchat (authCode, optional displayName) |
 | POST | `/v1/auth/refresh` | No | — | Refresh JWT tokens |
 | DELETE | `/v1/auth/logout` | Yes | 0 | Revoke all refresh tokens |
 | POST | `/v1/auth/push-token` | Yes | 0 | Register push token |
@@ -669,7 +678,7 @@ User                    API                    Database / Redis
  ├─ POST /auth/phone/   ─▶ Verify OTP             │
  │     verify            ├─ Create/load user      ─▶
  │  ◀─ {tokens, user}   ─┤                        │
- │  (Or POST /auth/register, POST /auth/login)   │
+ │  (Or POST /auth/register, POST /auth/login with sessionToken; or POST /auth/oauth/apple|google|snap) │
  │                       │                        │
  ├─ POST /verification/ ─▶ Generate pose challenge │
  │     photo             ├─ Store verification    ─▶
@@ -793,13 +802,13 @@ Self-destructing media uses two mechanisms:
 
 ## 6. Database Schema (ERD Summary)
 
-### PostgreSQL (45+ tables; migrations 001–027)
+### PostgreSQL (45+ tables; migrations 001–028)
 
 Core: `users`, `refresh_tokens`, `user_profiles`, `locations` (PostGIS, GIST), `blocks`, `user_interactions`, `reports`, `trust_scores`, `schema_migrations`.
 
 Auth & verification: `verifications`, `user_references`. Couples: `couples`. Discovery: (locations). Messaging: `conversations`, `conversation_participants` (012: retention_mode, archive_at, default_message_ttl_seconds, is_archived; worker archive-conversations every 1m). Events: `events`, `event_rsvps`, `venues`, `geofences`. Safety: `emergency_contacts`, `safety_checkins`. Compliance: `audit_logs`, `consent_records`, `data_deletion_requests` (worker processes pending requests every 5m: anonymize user + profile, then mark completed). Moderation: `moderation_queue`, `content_flags`.
 
-Added in later migrations: `push_tokens` (004), media/albums (003), `presence`, `personas`, `intent_flags`, `venue_accounts`, `venue_announcements`, `venue_checkins`, `venue_chat_rooms`, `photo_reveals` (005; 011 adds level, scope_type, scope_id), `subscriptions`, `screenshot_events` (008), `user_keys`, `prekey_bundles`, `conversation_keys` (006), `whispers`, onboarding/shield (007), `ad_placements`, `ad_impressions`, `ad_cadence_rules`, `ad_controls`, `venue_analytics`, `venue_staff`, `venue_reviews`, `venue_specials` (008), `admin_actions` (009), `bidirectional_preferences` (010). Album shares (013): `album_shares` gains share_target_type, share_target_id, watermark_mode, notify_on_view. Stealth: `user_profiles.preferences_json.neutral_notifications`; push.service uses it for generic title/body. Venue grid (014): `venue_checkins.anonymous_mode` (default true); GET /venues/:id/grid returns privacy-safe tiles. Event post prompts (015): `event_post_prompts` (event_id, user_id, prompt_type) avoids duplicate reference/keep_chatting pushes. Whispers (016): `whispers.category`, `whispers.reveal_policy`; unique index one pending per (from, to); max per day enforced. Events (017): `events.vibe_tag` optional. (019): door_code_hash, door_code_expires_at. (020): location_revealed_after_rsvp. (021): visibility_rule, visibility_tier_min, visibility_radius_km (open|tier_min|invite_only|attended_2_plus). Venues (018): verified_safe_at, verified_safe_metadata. (020): venue_type (physical|promoter|series). Phone/email hashing uses HMAC-SHA256 with `PHONE_HASH_PEPPER` (009). (022): event_series, user_series_follows, events.series_id. (023): user_profiles.primary_intent (social|curious|lifestyle|couple), user_profiles.discovery_visible_to (all|social_and_curious|same_intent). (024): user_profiles.profile_visibility_tier (all|after_reveal|after_match). (025): content_slots (key, title, body_md, link, locale); events.vibe_tag extended with talk_first. (026): stories, story_views; venue_checkins.live_until; personas.expires_at, is_burn; user_profiles.crossing_paths_visible. Messages (Mongo): viewOnce, ttlSeconds for ephemeral/photo reply. (027): groups, group_members, group_events.
+Added in later migrations: `push_tokens` (004), media/albums (003), `presence`, `personas`, `intent_flags`, `venue_accounts`, `venue_announcements`, `venue_checkins`, `venue_chat_rooms`, `photo_reveals` (005; 011 adds level, scope_type, scope_id), `subscriptions`, `screenshot_events` (008), `user_keys`, `prekey_bundles`, `conversation_keys` (006), `whispers`, onboarding/shield (007), `ad_placements`, `ad_impressions`, `ad_cadence_rules`, `ad_controls`, `venue_analytics`, `venue_staff`, `venue_reviews`, `venue_specials` (008), `admin_actions` (009), `bidirectional_preferences` (010). Album shares (013): `album_shares` gains share_target_type, share_target_id, watermark_mode, notify_on_view. Stealth: `user_profiles.preferences_json.neutral_notifications`; push.service uses it for generic title/body. Venue grid (014): `venue_checkins.anonymous_mode` (default true); GET /venues/:id/grid returns privacy-safe tiles. Event post prompts (015): `event_post_prompts` (event_id, user_id, prompt_type) avoids duplicate reference/keep_chatting pushes. Whispers (016): `whispers.category`, `whispers.reveal_policy`; unique index one pending per (from, to); max per day enforced. Events (017): `events.vibe_tag` optional. (019): door_code_hash, door_code_expires_at. (020): location_revealed_after_rsvp. (021): visibility_rule, visibility_tier_min, visibility_radius_km (open|tier_min|invite_only|attended_2_plus). Venues (018): verified_safe_at, verified_safe_metadata. (020): venue_type (physical|promoter|series). Phone/email hashing uses HMAC-SHA256 with `PHONE_HASH_PEPPER` (009). (022): event_series, user_series_follows, events.series_id. (023): user_profiles.primary_intent (social|curious|lifestyle|couple), user_profiles.discovery_visible_to (all|social_and_curious|same_intent). (024): user_profiles.profile_visibility_tier (all|after_reveal|after_match). (025): content_slots (key, title, body_md, link, locale); events.vibe_tag extended with talk_first. (026): stories, story_views; venue_checkins.live_until; personas.expires_at, is_burn; user_profiles.crossing_paths_visible. Messages (Mongo): viewOnce, ttlSeconds for ephemeral/photo reply. (027): groups, group_members, group_events. (028): `oauth_accounts` (provider, provider_user_id, user_id); `users.phone_hash` nullable for OAuth-only users.
 
 ### MongoDB
 
@@ -814,7 +823,7 @@ Added in later migrations: `push_tokens` (004), media/albums (003), `presence`, 
 | Layer | Implementation |
 |-------|----------------|
 | Transport | TLS 1.3 (in production) |
-| Auth | JWT (15min access, 7-day refresh rotation); phone OTP (Redis, rate limited) |
+| Auth | JWT (15min access, 7-day refresh rotation); phone OTP (Redis, rate limited); OAuth (Apple, Google, Snapchat) |
 | Password | Argon2id (64MB memory, 3 iterations, 4 parallelism) |
 | PII at rest | HMAC-SHA256 with pepper for phone/email (see `PHONE_HASH_PEPPER`) |
 | Rate limiting | 100 req/15min global, 5 req/15min auth |

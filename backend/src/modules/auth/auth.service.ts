@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { config } from '../../config';
 import { query } from '../../config/database';
 import { AuthPayload } from '../../middleware/auth';
-import { hashPhone, hashGeneric } from '../../utils/hash';
+import { hashPhone, hashGeneric, hashEmail } from '../../utils/hash';
+import type { OAuthUser } from './oauth.service';
 
 function hashValue(value: string): string {
   return hashGeneric(value);
@@ -80,6 +81,54 @@ export class AuthService {
     await query('UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1', [oldTokenId]);
 
     return this.generateTokens(userId, tier);
+  }
+
+  async loginOrRegisterWithOAuth(oauthUser: OAuthUser, displayName?: string) {
+    const { provider, providerUserId, email, displayName: oauthDisplayName } = oauthUser;
+    const name = displayName ?? oauthDisplayName ?? 'User';
+
+    const existing = await query(
+      `SELECT oa.user_id, u.verification_tier FROM oauth_accounts oa
+       JOIN users u ON u.id = oa.user_id
+       WHERE oa.provider = $1 AND oa.provider_user_id = $2 AND u.is_active = true AND u.deleted_at IS NULL`,
+      [provider, providerUserId]
+    );
+
+    if (existing.rows.length > 0) {
+      const { user_id: userId, verification_tier: tier } = existing.rows[0];
+      await query(
+        `INSERT INTO audit_logs (user_id, action, gdpr_category) VALUES ($1, 'user.login', 'account')`,
+        [userId]
+      );
+      const tokens = await this.generateTokens(userId, tier);
+      return { userId, ...tokens };
+    }
+
+    const emailHash = email ? hashEmail(email) : null;
+    const result = await query(
+      `INSERT INTO users (phone_hash, verification_tier) VALUES (NULL, 0) RETURNING id`,
+      []
+    );
+    const userId = result.rows[0].id;
+
+    await query(
+      `INSERT INTO user_profiles (user_id, display_name) VALUES ($1, $2)`,
+      [userId, name]
+    );
+
+    await query(
+      `INSERT INTO oauth_accounts (user_id, provider, provider_user_id, email_hash, display_name)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [userId, provider, providerUserId, emailHash, oauthDisplayName ?? name]
+    );
+
+    await query(
+      `INSERT INTO audit_logs (user_id, action, gdpr_category) VALUES ($1, 'user.registered', 'account')`,
+      [userId]
+    );
+
+    const tokens = await this.generateTokens(userId, 0);
+    return { userId, ...tokens };
   }
 
   async logout(userId: string) {

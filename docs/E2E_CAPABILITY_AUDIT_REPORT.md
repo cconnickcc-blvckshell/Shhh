@@ -34,8 +34,8 @@
 | (tabs)/messages | `app/(tabs)/messages.tsx` | **Messages:** conversation list, tap → chat. |
 | (tabs)/events | `app/(tabs)/events.tsx` | **Events:** nearby events, RSVP, tap → event detail. |
 | (tabs)/profile | `app/(tabs)/profile.tsx` | **Me:** profile hero, menu (status, edit, hosting, venues, albums, couple, verify, emergency, whispers, premium, privacy), Panic, Logout. |
-| (auth)/index | `app/(auth)/index.tsx` | **Login:** phone, login/OTP, link to register. |
-| (auth)/register | `app/(auth)/register.tsx` | **Register:** display name + phone, OTP → verify-code. |
+| (auth)/index | `app/(auth)/index.tsx` | **Login:** AuthOptions (phone, Apple, Google, Snap), OTP or OAuth flow, link to register. |
+| (auth)/register | `app/(auth)/register.tsx` | **Register:** AuthOptions (phone, Apple, Google, Snap), display name + phone or OAuth. |
 | (auth)/verify-code | `app/(auth)/verify-code.tsx` | **Verify code:** 6-digit OTP, verify and login/register, resend. |
 | (auth)/onboarding | `app/(auth)/onboarding.tsx` | **Onboarding:** 4 slides, Skip/Next → onboarding-intent. |
 | (auth)/onboarding-intent | `app/(auth)/onboarding-intent.tsx` | **Intent:** primary vibe + discovery visibility, PUT /v1/users/me → (tabs). |
@@ -57,7 +57,7 @@
 | chat/[id] | `app/chat/[id].tsx` | **Chat:** getMessages, sendMessage, TTL; block/report; camera button no handler. |
 | user/[id] | `app/user/[id].tsx` | **User profile:** GET profile, like, message, whisper, block, report. |
 | album/index | `app/album/index.tsx` | **Albums:** getMyAlbums, getShared, create, tabs Mine/Shared, tap → album/[id]. |
-| album/[id] | `app/album/[id].tsx` | **Album detail:** getAlbum, share, revokeShare; media grid **placeholder icons only** (no image URLs). |
+| album/[id] | `app/album/[id].tsx` | **Album detail:** getAlbum, share, revokeShare; media grid shows actual image URLs from backend. |
 | couple/index | `app/couple/index.tsx` | **Couple:** getMe, create, link, requestDissolution, confirmDissolution. |
 | verify/index | `app/verify/index.tsx` | **Verification:** GET status; photo submit **placeholder URL**; ID submit **demo hash**. |
 | whispers/index | `app/whispers/index.tsx` | **Whispers:** inbox/sent, respond, ignore, view profile. |
@@ -69,7 +69,7 @@
 
 ### 3.1 Fully implemented (real API, complete flow)
 
-- **Auth:** Login, register, verify-code, onboarding, onboarding-intent (intent + visibility).
+- **Auth:** Login, register (phone or OAuth: Apple, Google, Snapchat), verify-code, onboarding, onboarding-intent (intent + visibility).
 - **Tabs:** Discover (nearby, filters, whisper), Messages (conversation list), Events (list, RSVP), Me (menu, panic, logout).
 - **Profile:** Edit profile (form + photos), Emergency contacts, Privacy & data, Status (presence + intents), Hosting (list + create event), Venues (list + create venue), Create venue, Create event.
 - **Venue owner:** Venue dashboard, venue edit, add special, staff list, invite staff.
@@ -88,7 +88,7 @@
 | **Me** | Menu, panic, logout; profile load spinner (1.8) | Emergency and Privacy routes implemented. |
 | **Venue [id]** | GET full, check-in, about, specials, reviews, upcoming events; **upcoming tap → `/event/${ev.id}`** (0.5) | **Share and Review buttons have no handlers.** Venue grid (GET /v1/venues/:id/grid) **not shown**. |
 | **Chat [id]** | Load messages, send, self-destruct toggle, block/report; **WebSocket join, onNewMessage, leave** (1.11); loading + error UI (1.13) | **Camera button has no onPress.** Screenshot detection calls POST /v1/safety/screenshot (implemented). |
-| **Album [id]** | Album meta, share/revoke by userId | **Media grid shows placeholder icon only;** no actual image/thumbnail URLs rendered. Share options (watermarkMode, notifyOnView, share_target_type) not in UI. |
+| **Album [id]** | Album meta, share/revoke by userId; **media grid shows actual image URLs from backend** | Share options (watermarkMode, notifyOnView, share_target_type) not in UI. |
 | **Verify** | Status and history from API, tier progress | **Photo verification:** sends fixed `selfieUrl: 'https://placeholder.com/selfie.jpg'` (no camera/picker, no upload). **ID verification:** sends fixed `documentHash: 'demo_document_hash_12345'`. |
 | **Subscription** | GET subscription, POST checkout; **Linking.openURL** for checkout (1.18); **refetch tier on focus** (1.19) | Stripe webhook updates backend; app refetches on return. |
 

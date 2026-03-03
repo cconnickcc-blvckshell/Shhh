@@ -16,6 +16,9 @@ interface AuthState {
   verifyAndRegister: (phone: string, code: string, displayName: string) => Promise<void>;
   login: (phone: string) => Promise<void>;
   register: (phone: string, displayName: string) => Promise<void>;
+  oauthApple: (idToken: string, displayName?: string) => Promise<void>;
+  oauthGoogle: (idToken: string, displayName?: string) => Promise<void>;
+  oauthSnap: (authCode: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
   loadProfile: () => Promise<void>;
   setTokens: (token: string, refreshToken: string, userId: string) => void;
@@ -120,6 +123,45 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await authApi.register(phone, displayName);
+      get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
+      await get().loadProfile();
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+      throw err;
+    }
+  },
+
+  oauthApple: async (idToken, displayName) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await authApi.oauthApple(idToken, displayName);
+      get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
+      await get().loadProfile();
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+      throw err;
+    }
+  },
+
+  oauthGoogle: async (idToken, displayName) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await authApi.oauthGoogle(idToken, displayName);
+      get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
+      await get().loadProfile();
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+      throw err;
+    }
+  },
+
+  oauthSnap: async (authCode, displayName) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await authApi.oauthSnap(authCode, displayName);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(tabs)');

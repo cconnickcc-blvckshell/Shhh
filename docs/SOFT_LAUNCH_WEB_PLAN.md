@@ -3,9 +3,9 @@
 **Goal:** Soft-launch as a **visually stunning, million-dollar-feel website/web app** without rebuilding the existing product.  
 **Constraint:** Reuse backend, auth, API client, navigation, and all current screens; add **adaptive web layout, mandatory entry experience, and signature polish** so the same codebase feels inevitably premium on web.
 
-**Status:** In progress. Phase 1–4 implemented (layout, sidebar, grids, polish, entry shell, trust, env).  
+**Status:** In progress. Phase 1–4 implemented (layout, sidebar, grids, polish, entry shell, trust, env). PWA: manifest, theme-color, Add to Home Screen. Hero/logo from `mobile/public/` for Vercel.  
 **Execution plan:** **[FRONTEND_REFACTOR_STRATEGY.md](./FRONTEND_REFACTOR_STRATEGY.md)** — web authority first, one navigation authority, layout spine, flex hardening, blur invariant, SafeState, visual discipline. Do in order; no skipping.  
-**Brand assets:** `Shh.logo.on.black.png` (wordmark on black — header/footer); `shhh.hero.png` (hero image). Copy to `mobile/assets/images/` as `logo-wordmark.png` and `hero.png` for Entry Shell imagery when ready.
+**Brand assets:** `Shh.logo.on.black.png` (wordmark on black — header/footer); `shhh.hero.png` (hero image). Copy to `mobile/public/` for web build (hero.png, logo.png). PWA icons in `mobile/public/` (icon-192.png, icon-512.png).
 
 ---
 
@@ -32,7 +32,7 @@ The web soft launch is **the foundation**, not a compromise.
 | **Backend API** | Express, full REST + WebSocket | ✅ 100% |
 | **Mobile app** | Expo 55, React Native, expo-router | ✅ Same codebase |
 | **Web build** | `expo start --web` (react-native-web, Metro) | ✅ Already runs in browser |
-| **Auth** | Phone OTP, JWT, useAuthStore, AuthGuard | ✅ No change |
+| **Auth** | Phone OTP, OAuth (Apple, Google, Snapchat), JWT, useAuthStore, AuthGuard | ✅ AuthOptions (phone, Apple, Google, Snap) with pros/cons |
 | **API client** | Same for web (localhost or env API_BASE) | ✅ No change |
 | **Screens** | All 35+ routes (auth, tabs, chat, venue, album, etc.) | ✅ No new screens required for MVP web |
 | **Theme** | `theme.ts` (colors, spacing, fontSize, radii, shadows) | ✅ Extend, don’t replace |
