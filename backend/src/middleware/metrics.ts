@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Registry, Counter, Histogram } from 'prom-client';
+import { Registry, Counter, Histogram, Gauge } from 'prom-client';
 
 export const register = new Registry();
 
@@ -22,6 +22,26 @@ export const workerJobFailuresTotal = new Counter({
   name: 'worker_job_failures_total',
   help: 'Total worker job failures (after all retries)',
   labelNames: ['job'],
+  registers: [register],
+});
+
+export const wsConnectionsCurrent = new Gauge({
+  name: 'ws_connections_current',
+  help: 'Current WebSocket connections',
+  registers: [register],
+});
+
+export const workerQueueDepth = new Gauge({
+  name: 'worker_queue_depth',
+  help: 'BullMQ queue depth (waiting + active)',
+  labelNames: ['queue'],
+  registers: [register],
+});
+
+export const dlqDepth = new Gauge({
+  name: 'dlq_depth',
+  help: 'Dead-letter queue depth',
+  labelNames: ['queue'],
   registers: [register],
 });
 

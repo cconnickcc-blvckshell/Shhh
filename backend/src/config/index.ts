@@ -31,7 +31,11 @@ export const config = {
 
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+    maxRequests: parseInt(
+      process.env.RATE_LIMIT_MAX_REQUESTS ||
+        (process.env.TEST_MODE === 'true' || process.env.NODE_ENV === 'test' ? '100000' : '100'),
+      10
+    ),
   },
 
   geo: {

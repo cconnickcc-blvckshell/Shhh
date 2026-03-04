@@ -1,0 +1,76 @@
+name: Nightly Load Test
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  loadtest-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: shhh_dev
+          POSTGRES_PASSWORD: shhh_dev_password
+          POSTGRES_DB: shhh
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U shhh_dev -d shhh"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      mongodb:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: shhh_dev
+          MONGO_INITDB_ROOT_PASSWORD: shhh_dev_password
+          MONGO_INITDB_DATABASE: shhh_messages
+        ports: ['27017:27017']
+    env:
+      DATABASE_URL: postgresql://shhh_dev:shhh_dev_password@localhost:5432/shhh
+      REDIS_URL: redis://localhost:6379
+      MONGODB_URL: mongodb://shhh_dev:shhh_dev_password@localhost:27017/shhh_messages?authSource=admin
+      JWT_SECRET: nightly-test-jwt-secret
+      JWT_REFRESH_SECRET: nightly-test-refresh-secret
+      PHONE_HASH_PEPPER: nightly-test-pepper
+      CORS_ORIGINS: http://localhost:3000
+      NODE_ENV: test
+      TEST_MODE: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - uses: grafana/setup-k6-action@v0.3.1
+      - run: cd backend && npm ci && npm run migrate
+      - name: Start backend
+        run: |
+          cd backend && npm run build && node dist/index.js &
+          for i in $(seq 1 30); do curl -sf http://localhost:3000/health && break; sleep 2; done
+          curl -sf http://localhost:3000/health || exit 1
+      - name: Run k6 baseline
+        run: |
+          mkdir -p loadtest/reports
+          k6 run --out json=loadtest/reports/baseline-report.json --summary-trend-stats="avg,p(95),p(99)" loadtest/k6/suites/baseline_1000.js
+        env:
+          API_URL: http://localhost:3000
+          LOAD_TIER: baseline
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-baseline-report
+          path: loadtest/reports/
+          retention-days: 14

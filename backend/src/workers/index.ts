@@ -2,7 +2,7 @@ import { Queue, Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import { config } from '../config';
 import { logger } from '../config/logger';
-import { workerJobFailuresTotal } from '../middleware/metrics';
+import { workerJobFailuresTotal, workerQueueDepth, dlqDepth } from '../middleware/metrics';
 import { PresenceService } from '../modules/discovery/presence.service';
 import { IntentService } from '../modules/users/intent.service';
 import { ChatSessionService } from '../modules/messaging/session.service';
@@ -123,6 +123,24 @@ export async function startWorkers() {
   await cleanupQueue.upsertJobScheduler('process-deletions', { every: 300000 }, { name: 'process-deletions', ...jobOpts });
   await cleanupQueue.upsertJobScheduler('archive-conversations', { every: 60000 }, { name: 'archive-conversations', ...jobOpts });
   await cleanupQueue.upsertJobScheduler('process-missed-checkins', { every: 120000 }, { name: 'process-missed-checkins', ...jobOpts });
+
+  // Periodic queue depth metrics for load test / observability
+  const updateQueueMetrics = async () => {
+    try {
+      const [cleanupCounts, dlqCounts] = await Promise.all([
+        cleanupQueue.getJobCounts(),
+        dlq.getJobCounts(),
+      ]);
+      const cleanupTotal = (cleanupCounts.waiting ?? 0) + (cleanupCounts.active ?? 0) + (cleanupCounts.delayed ?? 0);
+      const dlqTotal = (dlqCounts.waiting ?? 0) + (dlqCounts.active ?? 0);
+      workerQueueDepth.set({ queue: 'cleanup' }, cleanupTotal);
+      dlqDepth.set({ queue: 'cleanup-dlq' }, dlqTotal);
+    } catch (err) {
+      logger.warn({ err }, 'Failed to update queue metrics');
+    }
+  };
+  setInterval(updateQueueMetrics, 15000);
+  updateQueueMetrics().catch(() => {});
 
   logger.info('Background workers started — presence (1m), intents (5m), sessions (5m), media (10m), whispers (5m), events (1m), deletions (5m), archive (1m), missed-checkins (2m)');
 }

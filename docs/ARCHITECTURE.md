@@ -304,7 +304,10 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── jest.config.ts
-├── loadtest/                         # k6 load tests (smoke.js, stress.js)
+├── loadtest/                         # k6 load tests (smoke, baseline, stress, soak, chaos)
+│   ├── k6/                           # Scenarios, suites, lib; reports/ (gitignored)
+│   ├── smoke.js                      # Legacy
+│   └── stress.js                     # Legacy
 ├── docker-compose.yml                # PostgreSQL+PostGIS, Redis, MongoDB
 ├── .env.example                      # Environment template
 ├── AGENTS.md                         # Cloud agent instructions

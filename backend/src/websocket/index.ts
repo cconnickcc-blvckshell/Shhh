@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { logger } from '../config/logger';
 import { AuthPayload } from '../middleware/auth';
+import { wsConnectionsCurrent } from '../middleware/metrics';
 
 let io: SocketServer | null = null;
 
@@ -35,6 +36,7 @@ export function setupWebSocket(httpServer: HttpServer): SocketServer {
   });
 
   io.on('connection', (socket: Socket) => {
+    wsConnectionsCurrent.inc();
     const userId = socket.data.user.userId;
     logger.info({ userId }, 'WebSocket connected');
 
@@ -72,6 +74,7 @@ export function setupWebSocket(httpServer: HttpServer): SocketServer {
     });
 
     socket.on('disconnect', () => {
+      wsConnectionsCurrent.dec();
       logger.info({ userId }, 'WebSocket disconnected');
     });
   });

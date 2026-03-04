@@ -1,0 +1,13 @@
+{
+  "name": "shhh-monorepo",
+  "private": true,
+  "description": "Shhh — geosocial networking",
+  "scripts": {
+    "loadtest:smoke": "k6 run loadtest/k6/suites/smoke_100.js",
+    "loadtest:baseline": "k6 run loadtest/k6/suites/baseline_1000.js",
+    "loadtest:stress": "k6 run loadtest/k6/suites/stress_10000.js",
+    "loadtest:soak": "k6 run loadtest/k6/suites/soak_4h.js",
+    "loadtest:chaos": "k6 run loadtest/k6/suites/chaos_redis_restart.js"
+  },
+  "devDependencies": {}
+}

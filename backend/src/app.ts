@@ -130,6 +130,12 @@ export function createApp() {
   // Billing
   app.use('/v1/billing', billingRoutes);
 
+  // Test-only routes (TEST_MODE or NODE_ENV=test)
+  if (process.env.TEST_MODE === 'true' || config.nodeEnv === 'test') {
+    const testRoutes = require('./modules/test/test.routes').default;
+    app.use('/v1/test', testRoutes);
+  }
+
   // Admin API
   app.use('/v1/admin', adminRoutes);
 
