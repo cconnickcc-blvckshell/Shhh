@@ -50,7 +50,7 @@ The smoke suite records status codes per endpoint and error class. At the end of
 - **PER-ENDPOINT SUMMARY** — pass rate, total, top 3 status codes with hints (auth missing, rate limit, validation, etc.)
 - **FAILURE PATTERN** — endpoints sorted by fail rate with likely cause (auth/tier gate, rate limit, validation, etc.)
 
-During the run, VU 1 logs failure samples: first 5 per endpoint (10 for create_conversation). Example: `[FAIL SAMPLE] create_conversation status=403 (auth_denied) body=...`
+During the run, VUs 1–10 each log their first failure per endpoint. Example: `[FAIL SAMPLE] create_conversation status=403 (auth_denied) vu=2 idemKey=k6-load-2-... body=...`
 
 Error classes: `auth_denied` (401/403), `conflict` (409), `validation` (400/422), `rate_limited` (429), `tier_gate_or_partial` (203), `server_error` (5xx).
 
