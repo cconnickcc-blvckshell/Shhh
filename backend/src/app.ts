@@ -137,13 +137,14 @@ export function createApp() {
     app.use('/v1/test', testRoutes);
   }
 
-  // Admin API
-  app.use('/v1/admin', adminRoutes);
-
-  // Extended Admin API
+  // Extended Admin API — must mount before base admin routes so that
+  // /users/list and /users/search match before /:userId
   // eslint-disable-next-line @typescript-eslint/no-var-requires -- conditional load for admin-extended
   const adminExtendedRoutes = require('./modules/admin/admin-extended.routes').default;
   app.use('/v1/admin', adminExtendedRoutes);
+
+  // Admin API (base routes with :userId params — after extended)
+  app.use('/v1/admin', adminRoutes);
 
   // Trust score endpoint on user routes
   const trustSvc = new TrustScoreService();
