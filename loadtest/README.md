@@ -21,11 +21,21 @@ cd backend && npm run migrate && TEST_MODE=true npm run dev
 npm run loadtest:smoke
 ```
 
+## Load Test Philosophies
+
+| Mode | Purpose | Rate limits | Success criteria |
+|------|---------|-------------|------------------|
+| **Capacity** | Test infra (can the server handle it?) | Relaxed (10000/min in test) | Low latency, low 5xx |
+| **Realistic** | Test real user experience | Prod limits | Obey retryAfter, client-like pacing |
+| **Abuse** | Test guardrails | Prod limits | Expect 429s for abusive traffic |
+
+CI smoke uses **capacity** mode (`DISCOVERY_RATE_LIMIT_PER_MIN=10000`) so infra is tested without policy friction. Use `smoke_realistic.js` (future) for client-like pacing.
+
 ## Tiers
 
 | Tier | Suite | VUs | Duration | Use |
 |------|-------|-----|----------|-----|
-| A (CI) | smoke_100 | 100 | ~2.5 min | PR gate |
+| A (CI) | smoke_100 | 100 | ~2.5 min | PR gate (capacity) |
 | B (Nightly) | baseline_1000 | 1000 | ~10 min | Regression |
 | C (AWS) | stress_10000 | 10k | ~30 min | On-demand |
 | Soak | soak_4h | 500 | 4h | Memory/leak |

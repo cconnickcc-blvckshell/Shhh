@@ -25,7 +25,7 @@ When `TEST_MODE=true` or `NODE_ENV=test`. **Never registered in production.**
 
 **k6 flow:** `checkTestHealth()` → `resetTestState()` → `seedUsers()` — never registers during load.
 
-**Other:** Checkout stub (returns fake URL when Stripe not configured); discovery rate limit 500/min in test mode.
+**Other:** Checkout stub; discovery rate limit: 500/min in test, 10000/min when `DISCOVERY_RATE_LIMIT_PER_MIN=10000` or `RATE_LIMIT_MODE=capacity` (CI smoke uses capacity).
 
 ## Response Classification & Status Histograms
 

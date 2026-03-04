@@ -151,7 +151,7 @@ jobs:
       CORS_ORIGINS: http://localhost:3000
       NODE_ENV: test
       TEST_MODE: "true"
-      DISCOVERY_RATE_LIMIT_PER_MIN: "500"
+      DISCOVERY_RATE_LIMIT_PER_MIN: "10000"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

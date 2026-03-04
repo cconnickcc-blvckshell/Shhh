@@ -26,10 +26,11 @@ export function chatSendRest(token, targetUserId) {
   } catch (_) {}
 
   if (!conversationId && targetUserId) {
+    const idemKey = 'k6-load-' + __VU + '-' + __ITER + '-' + (targetUserId || '');
     const createRes = http.post(
       `${BASE_URL}/v1/conversations`,
       JSON.stringify({ participantIds: [targetUserId] }),
-      { headers: authHeaders(token), tags: { name: 'create_conversation' } }
+      { headers: Object.assign({}, authHeaders(token), { 'Idempotency-Key': idemKey }), tags: { name: 'create_conversation' } }
     );
     recordResponse('create_conversation', createRes);
     if (check(createRes, { 'create 201': (r) => r.status === 201 })) {

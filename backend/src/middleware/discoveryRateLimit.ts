@@ -1,15 +1,19 @@
 /**
  * Per-user discovery rate limit — throttle GET /v1/discover to prevent abuse.
- * Default: 60 requests per minute per user. Configurable via DISCOVERY_RATE_LIMIT_PER_MIN.
+ * Configurable via DISCOVERY_RATE_LIMIT_PER_MIN.
+ * When RATE_LIMIT_MODE=capacity (test env), uses 10000/min to test infra without policy.
  */
 import { Request, Response, NextFunction } from 'express';
 import { getRedis } from '../config/redis';
 
-const LIMIT = parseInt(
-  process.env.DISCOVERY_RATE_LIMIT_PER_MIN ||
-    (process.env.TEST_MODE === 'true' || process.env.NODE_ENV === 'test' ? '500' : '60'),
-  10
-);
+function getLimit(): number {
+  const explicit = process.env.DISCOVERY_RATE_LIMIT_PER_MIN;
+  if (explicit) return parseInt(explicit, 10);
+  if (process.env.RATE_LIMIT_MODE === 'capacity') return 10000;
+  if (process.env.TEST_MODE === 'true' || process.env.NODE_ENV === 'test') return 500;
+  return 60;
+}
+const LIMIT = getLimit();
 const WINDOW_SEC = 60;
 const PREFIX = 'discovery_rate:';
 
