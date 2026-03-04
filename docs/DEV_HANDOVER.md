@@ -1,7 +1,7 @@
 # Shhh — Developer Handover Document
 
-> **Version**: 0.5.0 | **Last updated**: February 2026 | **Status**: Active development  
-> **Implementation status:** **docs/E2E_CAPABILITY_AUDIT_REPORT.md** (what's done vs partial vs missing), **docs/MASTER_IMPLEMENTATION_CHECKLIST.md** (single checklist), **docs/FRONTEND_REFACTOR_STRATEGY.md** (web authority, layout spine, SafeState, blur), **docs/SOFT_LAUNCH_WEB_PLAN.md** (web soft launch). Update the relevant §4.x and schema/API tables when adding or changing modules.
+> **Version**: 0.6.0 | **Last updated**: March 2026 | **Status**: Active development  
+> **Implementation status:** **docs/E2E_CAPABILITY_AUDIT_REPORT.md** (what's done vs partial vs missing), **docs/MASTER_IMPLEMENTATION_CHECKLIST.md** (single checklist; 51/72 done), **docs/FRONTEND_GAP_LIST.md** (gap-by-gap status), **docs/FRONTEND_REFACTOR_STRATEGY.md** (web authority, layout spine, SafeState, blur), **docs/SOFT_LAUNCH_WEB_PLAN.md** (web soft launch). Update the relevant §4.x and schema/API tables when adding or changing modules.
 
 ---
 

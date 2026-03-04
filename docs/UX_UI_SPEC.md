@@ -83,7 +83,7 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Layout** | AuthOptions first (phone, Apple, Google, Snap with pros/cons). Phone path: glow blob, logo, tagline, form (phone input), "Continue", link to register. KeyboardAvoidingView. |
 | **Components** | AuthOptions (reusable); inline Text, TextInput, TouchableOpacity, ActivityIndicator, Ionicons. |
 | **Interactions** | Select auth method; phone: enter phone (≥10 chars), tap Continue → send OTP and navigate; OAuth: tap provider → native flow → tokens. Tap Sign up → register. |
-| **States** | **Loading**: button shows ActivityIndicator. **Error**: error box with alert icon and store error. **Empty**: default; no empty list. **Offline**: NOT IMPLEMENTED — no network detection or retry UI. |
+| **States** | **Loading**: button shows ActivityIndicator. **Error**: error box with alert icon and store error (mapApiError). **Empty**: default; no empty list. **Offline**: OfflineBanner in root layout. |
 | **Edge cases** | Invalid phone length: button disabled. Rate limit (5/15min): error from API shown; no specific copy. Dev mode: devCode in alert. |
 | **Analytics events** | NOT IMPLEMENTED. Suggested (privacy-safe): screen_view login, action send_otp_request, action login_success / login_fallback_otp. |
 | **Accessibility** | Labels not wired to inputs (PHONE NUMBER is visual only). No accessibilityLabel on button/link. |

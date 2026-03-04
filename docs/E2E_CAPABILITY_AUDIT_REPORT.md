@@ -12,7 +12,7 @@
 | Area | Implemented | Partial / half-done | Not implemented / missing |
 |------|-------------|----------------------|----------------------------|
 | **Mobile screens** | ~28 screens with real API usage | 5 screens with stubs or broken flows | Stories, Tonight feed, Groups, Content/guides, several UX gaps |
-| **Mobile UX/UI** | Navigation, forms, lists, basic states; location/WebSocket/checkout per checklist | Error UI, loading UX, offline, a11y, analytics | Global blur/reveal, central error mapping |
+| **Mobile UX/UI** | Navigation, forms, lists, basic states; location/WebSocket/checkout; error UI, loading, offline, central error mapper, a11y (partial), analytics stub | — | Global blur/reveal |
 | **Admin Dashboard** | 11 pages, real API calls | Admin token in localStorage (XSS risk) | Per-screen spec and a11y not documented |
 | **Backend → frontend** | Most consumed routes; deletion worker; screenshot route; subscription/entitlements | Panic does not notify contacts; MongoDB purge gap for deleted users | Prod secret validation; OTP not enforced at API |
 | **Security & compliance** | Deletion worker, retention policy, incident plan, feature gating; OTP enforced; prod secret validation; CORS restricted | — | — |
@@ -118,9 +118,9 @@
 
 | Gap | Spec / doc | Current state |
 |-----|------------|----------------|
-| **Error UI** | UX_UI_SPEC: many screens “NOT IMPLEMENTED” error | Discover, Messages, Events, Me, Chat, User profile, Album list: load errors **swallowed** (catch empty or generic Alert). No retry, no inline error message. |
-| **Loading** | Expected per-screen | Many screens have **no initial loading indicator** (Discover, Messages, Events, Album index, Status); list appears when data arrives or stays blank. |
-| **Offline** | UX_UI §8.2 | **No NetInfo**, no offline banner, no queue for failed mutations, no cached reads. |
+| **Error UI** | UX_UI_SPEC: many screens “NOT IMPLEMENTED” error | **DONE.** Discover, Messages, Events, Chat, Album, User: SafeState or inline error + retry. Central error mapper maps API messages to user copy. |
+| **Loading** | Expected per-screen | **DONE.** Discover, Messages, Events, Album, Status, Chat, User: loading indicator. |
+| **Offline** | UX_UI §8.2 | **DONE.** NetInfo + OfflineBanner in root layout. No queue for mutations. |
 | **Verify-code params** | UX_UI §3.3 | **Done** (checklist 0.6). Guard when phone/mode missing. |
 
 ### 4.2 Auth and global behavior
@@ -129,7 +129,7 @@
 |------|--------|
 | **Auth route guard** | **Done.** AuthGuard + (tabs)/(auth) redirect by isAuthenticated. |
 | **401 handling** | **Done.** onUnauthorized → clearSession → redirect to (auth). No refresh-token retry. |
-| **Central error mapper** | **Missing.** No mapping of API codes (RATE_LIMIT, TIER_REQUIRED, INVALID_OTP) to user-facing copy. |
+| **Central error mapper** | **DONE.** `mobile/src/utils/errorMapper.ts` maps API messages (rate limit, tier, OTP, etc.) to user-facing copy. Used in Discover, Messages, Events, Chat, Album, User. |
 
 ### 4.3 Real-time and chat
 
@@ -151,8 +151,8 @@
 
 | Item | Status |
 |------|--------|
-| **Accessibility** | **Missing or partial.** Login/Register/Verify inputs and buttons lack accessibilityLabel; Discover tiles not labeled by name/role; conversation rows and tab bar need labels; Panic/Block/Report not clearly announced; headings/semantic structure missing on many screens. |
-| **Analytics** | **Not implemented.** No analytics SDK; no screen_view or action events. |
+| **Accessibility** | **Partial.** Auth: accessibilityLabel on inputs, buttons, links; error live region. Discover tiles: label with name + distance + hint. Panic: accessibilityHint. Chat menu: options button labeled. Tab bar and headings: not yet audited. |
+| **Analytics** | **DONE (stub).** `mobile/src/utils/analytics.ts` + `useScreenView` hook. screen_view on login, discover, messages, profile. No PII. Swap for real SDK when ready. |
 
 ---
 

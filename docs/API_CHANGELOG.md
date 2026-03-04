@@ -9,6 +9,7 @@
 
 ### Added
 
+- `PUT /v1/events/:id` — Update event (host only; title, description, venue, series, times, capacity, vibe, visibility)
 - OAuth sign-in: `POST /v1/auth/oauth/apple`, `POST /v1/auth/oauth/google`, `POST /v1/auth/oauth/snap` (idToken for Apple/Google, authCode for Snapchat)
 - OTP session token: `POST /v1/auth/phone/verify` returns `sessionToken`; register/login require it in production
 - PWA: `manifest.json`, theme-color meta, Add to Home Screen support for web build

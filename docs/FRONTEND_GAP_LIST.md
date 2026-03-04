@@ -28,10 +28,10 @@
 |---|-----|----------------|---------------|
 | 1.1 | **Event detail screen** | ARCH: GET `/v1/events/:id`; UX_UI §3.7: tap card → venue. | **DONE.** `app/event/[id].tsx` added; Events tab taps open event detail (title, date/time, venue, vibe tag, description, RSVP, venue link). |
 | 1.2 | **Events “don’t open”** | Same. | **DONE.** Tap event card → `/event/[id]` → event detail screen. |
-| 1.3 | **Host-specific experience** | ARCH: POST `/v1/events` (tier 2), PUT `/v1/events/:id/door-code`; GAME_CHANGER: create events under venue/promoter. | **PARTIAL.** Me tab shows “Hosting” (when `isHost`); Hosting screen lists “Events I’m hosting” (GET `/v1/events/my`) and “Create event.” Still missing: **edit event**, **door code** UI (PUT `/v1/events/:id/door-code`), create-under-venue/series in UI. |
-| 1.4 | **Create event (hosts)** | ARCH: POST `/v1/events` (tier 2). | **DONE (basic).** `profile/create-event.tsx`: title, description, start/end; calls POST `/v1/events`. Not yet: venue/series picker, vibe tag, visibility, location-revealed-after-RSVP. |
+| 1.3 | **Host-specific experience** | ARCH: POST `/v1/events` (tier 2), PUT `/v1/events/:id/door-code`; GAME_CHANGER: create events under venue/promoter. | **DONE.** Me → Hosting; Create event (venue picker, series ID, vibe, visibility); Edit event (`profile/event-edit/[id]`); Door code UI on event detail (host only). |
+| 1.4 | **Create event (hosts)** | ARCH: POST `/v1/events` (tier 2). | **DONE.** `profile/create-event.tsx`: title, description, start/end, venue picker (nearby + my venues), series ID, event type, vibe, visibility, location_revealed_after_rsvp. |
 | 1.5 | **Control host “page”** | UX expectation: event hosters have a different page (their events, controls). | **DONE.** Me → Hosting (host-only) → list of events I host + Create event. |
-| 1.6 | **Event vibe tags in UI** | UX_UI §7.2: eventsApi.nearby and GET /v1/events/this-week support vibe; UI does not filter or show tags. | Events list does not show vibe_tag (e.g. newbie_friendly, social_mix, talk_first) on cards; no filter chips. |
+| 1.6 | **Event vibe tags in UI** | UX_UI §7.2: eventsApi.nearby and GET /v1/events/this-week support vibe; UI does not filter or show tags. | **DONE.** Events list shows vibe_tag on cards; filter chips for vibe selection. |
 
 ---
 
@@ -39,9 +39,9 @@
 
 | # | Gap | Spec reference | Current state |
 |---|-----|----------------|---------------|
-| 2.1 | **Stories on Discover / home** | ARCH: GET `/v1/stories/nearby`, POST `/v1/stories`; GAME_CHANGER GC-5.1. | No stories row or circles on Explore. Backend has full stories API; mobile does not call it or show stories. |
-| 2.2 | **Create / view stories** | ARCH: POST `/v1/stories` (mediaId, venueId, ttlHours); GET `/v1/stories/:id/view`, `/viewers`. | No screen to create a story (pick media, optional venue). No story viewer (tap circle → view story, record view). |
-| 2.3 | **Venue stories** | ARCH: GET `/v1/venues/:id/stories`. | Venue detail does not show or link to venue stories. |
+| 2.1 | **Stories on Discover / home** | ARCH: GET `/v1/stories/nearby`, POST `/v1/stories`; GAME_CHANGER GC-5.1. | **DONE.** Explore has stories row (nearby circles + Add); `stories/create.tsx`, `stories/view/[id].tsx`. |
+| 2.2 | **Create / view stories** | ARCH: POST `/v1/stories` (mediaId, venueId, ttlHours); GET `/v1/stories/:id/view`, `/viewers`. | **DONE.** Create screen (pick/take photo); viewer records view; tap circle → view story. |
+| 2.3 | **Venue stories** | ARCH: GET `/v1/venues/:id/stories`. | **DONE.** Venue detail shows Stories section; `stories/venue/[id].tsx` for venue story viewer. |
 
 ---
 
@@ -52,8 +52,8 @@
 | 3.1 | **Duplicate key “hosting” (fixed)** | React list keys. | `profile.activeIntents` could contain duplicates (e.g. `hosting` twice), causing “two children with the same key” in UserDetailScreen. **Fixed** by rendering `[...new Set(profile.activeIntents)]`. |
 | 3.2 | **Blur/reveal per viewer** | UX_UI §1.3, §5.1: pass `canSeeUnblurred` from GET `/v1/photos/check/:userId` into ProfilePhoto. | ProfilePhoto accepts `blurred` but discovery and user profile do not pass reveal state. No call to blur-check API; blur not driven by consent. |
 | 3.3 | **Discovery filters** | UX_UI §7.2: primaryIntent, discovery_visible_to; ARCH: GET discover supports filters. | **DONE.** Explore passes `primaryIntent` from profile and `radius` (5/25/50 km); filter bar: radius chips, Verified toggle, “Nearest” / “Active now” sort. Location still hardcoded (see 3.5). |
-| 3.4 | **Discovery cap / empty state** | UX_UI §3.5: discovery cap (30/50) from API; UI does not show “cap reached”. | No message when at cap. Error state on load: NOT IMPLEMENTED (catch block empty). |
-| 3.5 | **Location** | UX_UI §3.5: useLocation hook exists but Discover does not use it. | Location hardcoded to 40.7128, -74.006 (NYC). |
+| 3.4 | **Discovery cap / empty state** | UX_UI §3.5: discovery cap (30/50) from API; UI does not show “cap reached”. | **DONE.** Cap banner when API returns at cap; error state + retry on load. |
+| 3.5 | **Location** | UX_UI §3.5: useLocation hook exists but Discover does not use it. | **DONE.** Discover and Events use useLocation(); device lat/lng. |
 
 ---
 
@@ -101,9 +101,9 @@
 | # | Gap | Spec reference | Current state |
 |---|-----|----------------|---------------|
 | 7.1 | **Blur/reveal check** | See §3.2. | ProfilePhoto not given canSeeUnblurred; no integration with `/v1/photos/check/:userId`. |
-| 7.2 | **Album media thumbnails** | UX_UI §3.15: media tiles show icon only; actual image thumbnails NOT IMPLEMENTED. | Album detail grid shows placeholder icon, not thumbnails. |
-| 7.3 | **Verification photo upload** | UX_UI §3.17: selfieUrl placeholder; real camera/picker and upload NOT IMPLEMENTED. | Verify screen uses placeholder URL. |
-| 7.4 | **API base for images** | Same as §4. | ProfilePhoto and API client hardcode port; should use same configurable base. |
+| 7.2 | **Album media thumbnails** | UX_UI §3.15: media tiles show icon only; actual image thumbnails NOT IMPLEMENTED. | **DONE.** Album grid uses actual URLs from backend (getMediaUrl). |
+| 7.3 | **Verification photo upload** | UX_UI §3.17: selfieUrl placeholder; real camera/picker and upload NOT IMPLEMENTED. | **DONE.** Verify screen: pick/take photo → upload → POST /v1/verification/photo. |
+| 7.4 | **API base for images** | Same as §4. | **DONE.** EXPO_PUBLIC_API_URL; ProfilePhoto uses getMediaUrl from client. |
 
 ---
 
@@ -112,16 +112,16 @@
 | # | Gap | Spec reference | Current state |
 |---|-----|----------------|---------------|
 | 8.0 | **Venue controls (owner/dashboard)** | ARCH: POST `/v1/venues`, GET `/v1/venues/:id/dashboard`, venue-identity (claim, announcements, checkin, grid, stats, stories, chat-rooms), venue-dashboard (analytics, staff, reviews, specials). | **DONE (mobile).** Me → Venues (when verificationTier ≥ 2): GET `/v1/venues/my`, list “Venues I manage,” Create venue (POST `/v1/venues`), Venue Dashboard (realtime, today, upcoming events, specials, reviews, ads, Manage staff). Dashboard and staff/analytics routes require owner or staff (requireVenueAccess). Seed: The Purple Room owned by Marcus & Nia (+15550000003). |
-| 8.1 | **Venue Share/Review** | UX_UI §3.13: Share/Review no-op. | Buttons do nothing. |
-| 8.2 | **Venue event card** | UX_UI §3.13: Event card → router.push('/events'). | Should go to event detail or at least events list with context. |
-| 8.3 | **Venue grid (GC-5.2)** | UX_UI §3.13: NOT IMPLEMENTED in venue screen. | GET `/v1/venues/:id/grid` exists; venue detail does not show grid. |
+| 8.1 | **Venue Share/Review** | UX_UI §3.13: Share/Review no-op. | **DONE.** Share uses native Share; Review navigates to `/venue/review/[id]`. |
+| 8.2 | **Venue event card** | UX_UI §3.13: Event card → router.push('/events'). | **DONE.** Tap → `/event/${ev.id}`. |
+| 8.3 | **Venue grid (GC-5.2)** | UX_UI §3.13: NOT IMPLEMENTED in venue screen. | **DONE.** Venue detail calls GET `/v1/venues/:id/grid`; renders grid section. |
 | 8.4 | **Un-RSVP** | UX_UI §3.7: no DELETE or “not_going” API call. | **DONE.** Event detail calls `eventsApi.rsvp(id, 'going'|'not_going')`; toggle reflects server state. |
 | 8.5 | **Couple dissolution confirm** | UX_UI §3.16: confirm dissolution NOT IMPLEMENTED. | **DONE.** Couple screen shows "Confirm dissolution" when dissolution requested; calls POST `/v1/couples/confirm-dissolution`. Both partners can confirm; after cooldown and both confirmed, link dissolves. |
 | 8.6 | **Stripe checkout in app** | UX_UI §3.18: opening Stripe URL in browser NOT IMPLEMENTED. | Upgrade shows Alert with URL only. |
-| 8.7 | **Ads in Discover** | UX_UI §5.2: VenueAdCard NOT REFERENCED. | Discover does not show ad placements. |
-| 8.8 | **Tonight feed** | ARCH: GET `/v1/tonight`. | No screen or tab for tonight aggregator (events + venues). |
-| 8.9 | **Groups (tribes)** | ARCH: GET/POST `/v1/groups`, join, events. | No groups UI in mobile. |
-| 8.10 | **Content (guides, norms)** | ARCH: GET `/v1/content/guides`, `/norms`. | No in-app guides or norms screen. |
+| 8.7 | **Ads in Discover** | UX_UI §5.2: VenueAdCard NOT REFERENCED. | **DONE.** Discover fetches ads/feed; VenueAdCard with impression tracking. |
+| 8.8 | **Tonight feed** | ARCH: GET `/v1/tonight`. | **DONE.** Events tab has Tonight section (horizontal scroll of events + venues). |
+| 8.9 | **Groups (tribes)** | ARCH: GET/POST `/v1/groups`, join, events. | **DONE.** `groups/index.tsx`, `groups/[id].tsx`; Me → Groups. |
+| 8.10 | **Content (guides, norms)** | ARCH: GET `/v1/content/guides`, `/norms`. | **DONE.** `content/guides.tsx`, `content/norms.tsx`; Me → Guides, Community Norms. |
 
 ---
 
@@ -129,12 +129,12 @@
 
 | # | Gap | Spec reference | Current state |
 |---|-----|----------------|---------------|
-| 9.1 | **A11Y labels** | UX_BEHAVIOR §6.1–6.3; UX_UI §8.5. | Login/Register/Verify inputs and buttons lack accessibilityLabel; Discover tiles not labeled by name/role; conversation rows and tab bar need labels; Panic/Block/Report must be clearly announced. |
-| 9.2 | **Error UI** | UX_UI: many screens have NOT IMPLEMENTED error (load catch empty). | Discover, Messages, Events, etc.: no error state or retry UI. |
-| 9.3 | **Offline** | UX_UI §8.2: no NetInfo or offline banner. | No detection or messaging. |
-| 9.4 | **Analytics** | UX_UI §8.6: no analytics SDK or events. | No screen_view or action events. |
-| 9.5 | **Central error mapper** | UX_UI §6.3: no central mapping of API codes to user-facing copy. | Each screen uses err.message or generic text. |
-| 9.6 | **at_event presence** | UX_UI §3.12: at_event not in PRESENCE_STATES list in UI; backend supports it. | Status screen does not show at_event option. |
+| 9.1 | **A11Y labels** | UX_BEHAVIOR §6.1–6.3; UX_UI §8.5. | **DONE (partial).** Auth: accessibilityLabel on inputs, buttons, links; error live region. Discover tiles: name + distance + hint. Panic: accessibilityHint. Chat menu: options button. Tab bar still needs labels. |
+| 9.2 | **Error UI** | UX_UI: many screens have NOT IMPLEMENTED error (load catch empty). | **DONE.** Discover, Messages, Events, Chat, Album, User: SafeState or inline error + retry. mapApiError for user copy. |
+| 9.3 | **Offline** | UX_UI §8.2: no NetInfo or offline banner. | **DONE.** NetInfo + OfflineBanner in root layout. |
+| 9.4 | **Analytics** | UX_UI §8.6: no analytics SDK or events. | **DONE (stub).** analytics.ts + useScreenView; screen_view on login, discover, messages, profile. No PII. |
+| 9.5 | **Central error mapper** | UX_UI §6.3: no central mapping of API codes to user-facing copy. | **DONE.** mobile/src/utils/errorMapper.ts; used in Discover, Messages, Events, Chat, Album, User. |
+| 9.6 | **at_event presence** | UX_UI §3.12: at_event not in PRESENCE_STATES list in UI; backend supports it. | **DONE.** Status screen includes at_event option. |
 
 ---
 
@@ -142,18 +142,19 @@
 
 - **Event detail**: GET `/v1/events/:id` — **DONE.** Event detail screen + RSVP.
 - **My hosted events**: GET `/v1/events/my` — **DONE.** Hosting screen.
-- **Create event**: POST `/v1/events` — **DONE (basic).** Create event form (title, description, start/end); no venue/series/vibe in UI yet.
-- **Door code**: PUT `/v1/events/:id/door-code` — no host UI in app.
-- **Venue owner / dashboard**: GET `/v1/venues/:id/dashboard` — **DONE.** Me → Venues → tap venue → dashboard (realtime, today, events, specials, reviews, ads, staff).
+- **Create event**: POST `/v1/events` — **DONE.** Create event form with venue picker, series, vibe, visibility, location_revealed_after_rsvp.
+- **Update event**: PUT `/v1/events/:id` — **DONE.** Edit event screen (host only).
+- **Door code**: PUT `/v1/events/:id/door-code` — **DONE.** Event detail (host only).
+- **Venue owner / dashboard**: GET `/v1/venues/:id/dashboard` — **DONE.** Me → Venues → tap venue → dashboard.
 - **Create venue**: POST `/v1/venues` — **DONE.** Me → Venues → Create venue.
 - **My venues**: GET `/v1/venues/my` — **DONE.** Me → Venues list (owner/staff).
-- **Stories**: POST/GET `/v1/stories`, GET nearby, view, viewers — no stories UI.
-- **Tonight**: GET `/v1/tonight` — no tonight feed.
-- **Groups**: GET/POST `/v1/groups`, join, events — no groups UI.
-- **Venue grid**: GET `/v1/venues/:id/grid` — not shown on venue screen.
-- **Venue stories**: GET `/v1/venues/:id/stories` — not shown.
-- **Blur check**: GET `/v1/photos/check/:userId` (or equivalent) — not used in ProfilePhoto.
-- **This week events**: GET `/v1/events/this-week` — events tab uses only nearby.
+- **Stories**: POST/GET `/v1/stories`, GET nearby, view, viewers — **DONE.** Stories row, create, viewer, venue stories.
+- **Tonight**: GET `/v1/tonight` — **DONE.** Tonight section in Events tab.
+- **Groups**: GET/POST `/v1/groups`, join, events — **DONE.** Groups list + detail.
+- **Venue grid**: GET `/v1/venues/:id/grid` — **DONE.** Venue detail grid section.
+- **Venue stories**: GET `/v1/venues/:id/stories` — **DONE.** Venue detail + stories/venue/[id].
+- **Blur check**: GET `/v1/photos/check/:userId` — **TODO.** Not yet used in ProfilePhoto.
+- **This week events**: GET `/v1/events/this-week` — **DONE.** Events tab filter.
 
 ---
 

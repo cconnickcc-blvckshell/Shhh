@@ -4,6 +4,18 @@ Step-by-step guide to connect the app to cloud databases and deploy it online.
 
 ---
 
+## Where Do Env Vars Go?
+
+| Service | Variables | Notes |
+|---------|-----------|-------|
+| **Backend** (Railway, Render) | `DATABASE_URL`, `REDIS_URL`, `MONGODB_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `PHONE_HASH_PEPPER`, `CORS_ORIGINS`, `TWILIO_*`, `STRIPE_*`, `GOOGLE_CLIENT_ID`, `APPLE_*`, `SNAP_*` | All secrets live here. Never in frontend. |
+| **Vercel** (mobile web) | `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_GOOGLE_CLIENT_ID`, `EXPO_PUBLIC_SNAP_CLIENT_ID` | Only `EXPO_PUBLIC_*` — exposed to browser. No secrets. |
+| **Supabase / Upstash / Atlas** | None | You copy connection strings from their dashboards into your **Backend** env vars. |
+
+**Database URLs (Supabase):** Use two URLs. `DATABASE_URL` = pooler (for app). `DATABASE_MIGRATION_URL` = direct (for migrations). See Part 3.
+
+---
+
 ## Prerequisites
 
 - GitHub repo pushed
@@ -71,19 +83,22 @@ Expected: `{"status":"ok",...}`
 
 ## Part 3: Run Migrations Against Supabase
 
-From project root, with `.env` containing your Supabase **direct** URL:
+Supabase has two connection modes. **Direct** (port 5432) works for migrations; **pooler** (port 6543) can block some DDL. Use `DATABASE_MIGRATION_URL` for migrations.
+
+From project root:
 
 ```bash
 cd backend
-DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres?sslmode=require" \
+DATABASE_MIGRATION_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres?sslmode=require" \
 DATABASE_SSL=true \
 npm run migrate
 ```
 
-Or add to `.env` temporarily:
+Or add to `.env` (migrations use `DATABASE_MIGRATION_URL`; app uses `DATABASE_URL`):
 
 ```env
-DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres?sslmode=require
+DATABASE_URL=postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require
+DATABASE_MIGRATION_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres?sslmode=require
 DATABASE_SSL=true
 ```
 
@@ -101,7 +116,8 @@ Then: `cd backend && npm run migrate`
 
    | Variable | Value |
    |----------|-------|
-   | `DATABASE_URL` | Supabase pooler URL |
+   | `DATABASE_URL` | Supabase **pooler** URL (for app) |
+   | `DATABASE_MIGRATION_URL` | Supabase **direct** URL (only if you run migrations from Railway; else run locally) |
    | `DATABASE_SSL` | `true` |
    | `REDIS_URL` | Upstash URL |
    | `MONGODB_URL` | Atlas URL |

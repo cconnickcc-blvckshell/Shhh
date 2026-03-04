@@ -187,7 +187,7 @@
 
 ## Implementation progress — full status (Tiers 0–7)
 
-**Done: 39 | Remaining: 33** (Tier 8 is deferred, not counted.)
+**Done: 51 | Remaining: 21** (Tier 8 is deferred, not counted.)
 
 | Tier | ID | Status | Notes |
 |------|----|--------|-------|
@@ -232,18 +232,18 @@
 | 3 | 3.1 | ⬜ Todo | Blur/reveal in discovery (photos/check + ProfilePhoto). |
 | 3 | 3.2 | ⬜ Todo | Blur/reveal on user profile. |
 | 3 | 3.3 | ⬜ Todo | Discovery grid thumbnails (API or ?w= param). |
-| 4 | 4.1 | ⬜ Todo | Stories (row, create, viewer). |
-| 4 | 4.2 | ⬜ Todo | Venue stories on venue detail. |
-| 4 | 4.3 | ⬜ Todo | Tonight feed (tab or section). |
-| 4 | 4.4 | ⬜ Todo | This-week events filter/section. |
-| 4 | 4.5 | ⬜ Todo | Event vibe tags on cards + filter chips. |
-| 4 | 4.6 | ⬜ Todo | at_event presence on Status screen. |
-| 4 | 4.7 | ⬜ Todo | Ads in Discover (VenueAdCard). |
-| 4 | 4.8 | Done | Event edit screen (host). |
-| 4 | 4.9 | Done | Door code UI (host). |
-| 4 | 4.10 | Done | Create event: venue/series/vibe/visibility. |
-| 4 | 4.11 | ⬜ Todo | Content (guides, norms) screen or modal. |
-| 4 | 4.12 | ⬜ Todo | Groups (tribes) UI. |
+| 4 | 4.1 | ✅ Done | Stories (row, create, viewer). |
+| 4 | 4.2 | ✅ Done | Venue stories on venue detail. |
+| 4 | 4.3 | ✅ Done | Tonight feed (tab or section). |
+| 4 | 4.4 | ✅ Done | This-week events filter/section. |
+| 4 | 4.5 | ✅ Done | Event vibe tags on cards + filter chips. |
+| 4 | 4.6 | ✅ Done | at_event presence on Status screen. |
+| 4 | 4.7 | ✅ Done | Ads in Discover (VenueAdCard). |
+| 4 | 4.8 | ✅ Done | Event edit screen (host). |
+| 4 | 4.9 | ✅ Done | Door code UI (host). |
+| 4 | 4.10 | ✅ Done | Create event: venue/series/vibe/visibility. |
+| 4 | 4.11 | ✅ Done | Content (guides, norms) screen or modal. |
+| 4 | 4.12 | ✅ Done | Groups (tribes) UI. |
 | 5 | 5.1 | ⬜ Todo | Admin: per-screen template (docs). |
 | 5 | 5.2 | ⬜ Todo | Admin: error and loading on each page. |
 | 5 | 5.3 | ⬜ Todo | Admin: accessibility. |

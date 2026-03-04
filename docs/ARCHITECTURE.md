@@ -99,7 +99,17 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   ├── venue/
 │   │   │   └── [id].tsx              # Venue detail
 │   │   ├── event/
-│   │   │   └── [id].tsx              # Event detail
+│   │   │   └── [id].tsx              # Event detail (RSVP, door code, edit for host)
+│   │   ├── stories/
+│   │   │   ├── create.tsx            # Create story (pick/take photo)
+│   │   │   ├── view/[id].tsx         # View single story
+│   │   │   └── venue/[id].tsx        # View venue stories
+│   │   ├── content/
+│   │   │   ├── guides.tsx            # Community guides (GET /v1/content/guides)
+│   │   │   └── norms.tsx             # Community norms (GET /v1/content/norms)
+│   │   ├── groups/
+│   │   │   ├── index.tsx             # Groups list (GET /v1/groups)
+│   │   │   └── [id].tsx              # Group detail + events (join/leave)
 │   │   ├── album/
 │   │   │   ├── index.tsx             # Album list
 │   │   │   └── [id].tsx              # Album detail
@@ -117,7 +127,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │       ├── emergency.tsx         # Emergency contacts
 │   │       ├── privacy.tsx          # Privacy & data
 │   │       ├── hosting.tsx           # Hosting
-│   │       ├── create-event.tsx     # Create event
+│   │       ├── create-event.tsx     # Create event (venue picker, vibe, visibility)
+│   │       ├── event-edit/[id].tsx  # Edit event (host only, PUT /v1/events/:id)
 │   │       ├── venues.tsx           # My venues
 │   │       ├── create-venue.tsx      # Create venue
 │   │       ├── venue-dashboard/[id].tsx
@@ -142,6 +153,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   ├── components/layout/       # PageShell, ContentColumn, Card (layout spine)
 │   │   ├── components/ui/SafeState.tsx # loading, empty, error, offline screen states
 │   │   ├── components/OfflineBanner.tsx # NetInfo-based offline banner (mounted in root layout)
+│   │   ├── components/VenueAdCard.tsx   # Ad placement card (impression/tap/dismiss)
 │   │   ├── components/AuthOptions.tsx # Phone, Apple, Google, Snap auth options (pros/cons)
 │   │   ├── components/WebSidebar.tsx # Desktop web sidebar nav (derives active from pathname)
 │   │   └── components/WebEntryShell.tsx # Web-only unauthenticated entry
@@ -492,6 +504,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | GET | `/v1/events/this-week?lat=&lng=&radius=&vibe=` | Yes | 0 | Events in the next 7 days (GC-6.2 home screen); same params as nearby. |
 | GET | `/v1/events/my` | Yes | 0 | Get events hosted by current user |
 | POST | `/v1/events` | Yes | 2 | Create event (optional seriesId, vibeTag, locationRevealedAfterRsvp, visibilityRule, visibilityTierMin, visibilityRadiusKm) |
+| PUT | `/v1/events/:id` | Yes | 2 | Update event (host only; title, description, venue, series, times, capacity, vibe, visibility) |
 | GET | `/v1/events/:id` | Yes | 0 | Get event details (visibility-checked; 403 if gated. Venue location redacted when location_revealed_after_rsvp until RSVP.) |
 | GET | `/v1/events/:id/attendees` | Yes | 0 | Privacy-safe attendee list (persona + badges) |
 | GET | `/v1/events/:id/chat-rooms` | Yes | 0 | Chat rooms linked to event |
