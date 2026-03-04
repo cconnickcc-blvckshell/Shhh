@@ -24,15 +24,15 @@ export class BlurRevealService {
       await query(
         `INSERT INTO photo_reveals (from_user_id, to_user_id, expires_at, level, scope_type, scope_id)
          VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT (from_user_id, to_user_id) DO UPDATE SET
-           revealed_at = NOW(), expires_at = $3, level = $4, scope_type = $5, scope_id = $6`,
+         ON CONFLICT (from_user_id, to_user_id, scope_type) DO UPDATE SET
+           revealed_at = NOW(), expires_at = $3, level = $4, scope_id = $6`,
         [fromUserId, toUserId, expiresAt, level, scopeType, scopeId]
       );
     } else {
       await query(
-        `INSERT INTO photo_reveals (from_user_id, to_user_id, expires_at)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (from_user_id, to_user_id) DO UPDATE SET
+        `INSERT INTO photo_reveals (from_user_id, to_user_id, expires_at, scope_type)
+         VALUES ($1, $2, $3, 'global')
+         ON CONFLICT (from_user_id, to_user_id, scope_type) DO UPDATE SET
            revealed_at = NOW(), expires_at = $3`,
         [fromUserId, toUserId, expiresAt]
       );

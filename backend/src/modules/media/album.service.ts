@@ -141,26 +141,17 @@ export class AlbumService {
       shareTargetId = target.coupleId;
     }
 
-    const hasNewColumns = await this.albumSharesHasNewColumns();
+    const targetType = shareTargetType || 'user';
     for (const uid of userIds) {
-      if (hasNewColumns) {
-        await query(
-          `INSERT INTO album_shares (album_id, shared_with_user_id, granted_by, can_download, expires_at, share_target_type, share_target_id, watermark_mode, notify_on_view)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-           ON CONFLICT (album_id, shared_with_user_id) DO UPDATE SET
-             revoked_at = NULL, can_download = $4, expires_at = $5, granted_at = NOW(),
-             share_target_type = $6, share_target_id = $7, watermark_mode = $8, notify_on_view = $9`,
-          [albumId, uid, ownerId, canDownload, expiresAt, shareTargetType, shareTargetId, watermarkMode, notifyOnView]
-        );
-      } else {
-        await query(
-          `INSERT INTO album_shares (album_id, shared_with_user_id, granted_by, can_download, expires_at)
-           VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (album_id, shared_with_user_id) DO UPDATE SET
-             revoked_at = NULL, can_download = $4, expires_at = $5, granted_at = NOW()`,
-          [albumId, uid, ownerId, canDownload, expiresAt]
-        );
-      }
+      const targetId = shareTargetId || uid;
+      await query(
+        `INSERT INTO album_shares (album_id, shared_with_user_id, granted_by, can_download, expires_at, share_target_type, share_target_id, watermark_mode, notify_on_view)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT (album_id, share_target_type, share_target_id) DO UPDATE SET
+           revoked_at = NULL, can_download = $4, expires_at = $5, granted_at = NOW(),
+           watermark_mode = $8, notify_on_view = $9`,
+        [albumId, uid, ownerId, canDownload, expiresAt, targetType, targetId, watermarkMode, notifyOnView]
+      );
     }
 
     return {
@@ -169,14 +160,6 @@ export class AlbumService {
       shareTargetType,
       expiresAt: expiresAt?.toISOString() ?? null,
     };
-  }
-
-  private async albumSharesHasNewColumns(): Promise<boolean> {
-    const r = await query(
-      `SELECT column_name FROM information_schema.columns
-       WHERE table_name = 'album_shares' AND column_name = 'share_target_type'`
-    );
-    return r.rows.length > 0;
   }
 
   async revokeAlbumShare(albumId: string, ownerId: string, targetUserId: string) {
