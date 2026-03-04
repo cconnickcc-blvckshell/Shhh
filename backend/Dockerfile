@@ -3,14 +3,14 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Dependencies
+# Dependencies (include dev for tsc build)
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Source and build
 COPY tsconfig.json ./
 COPY src ./src
-RUN npm run build
+RUN npm run build && npm prune --omit=dev
 
 # Production
 ENV NODE_ENV=production
