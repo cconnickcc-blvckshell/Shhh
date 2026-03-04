@@ -301,42 +301,34 @@ export default function DiscoverScreen() {
         </View>
       )}
 
-      {/* Desktop hero: brand + tagline (coming-soon style) */}
-      {showSidebar && (
-        <View style={s.hero}>
-          <BrandMark />
-          <Text style={s.heroTagline}>Where consent meets curiosity.</Text>
+      {/* Brand header */}
+      <View style={s.hero}>
+        <View style={s.heroLogo}>
+          <Text style={s.heroLogoText}>{'Shhh'}</Text>
         </View>
-      )}
+        <Text style={s.heroTagline}>{'Where consent meets curiosity.'}</Text>
+      </View>
 
-      {/* Filters */}
+      {/* Consolidated filter bar */}
       <View style={s.filterBar}>
-        <View style={s.radiusRow}>
-          {RADIUS_OPTIONS.map((r) => (
-            <TouchableOpacity
-              key={r}
-              style={[s.radiusChip, radiusKm === r && s.radiusChipActive]}
-              onPress={() => setRadiusKm(r)}
-              activeOpacity={0.8}
-            >
-              <Text style={[s.radiusChipText, radiusKm === r && s.radiusChipTextActive]}>{r} km</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <TouchableOpacity style={[s.toggleChip, verifiedOnly && s.toggleChipActive]} onPress={() => setVerifiedOnly((v) => !v)} activeOpacity={0.8}>
-          <Ionicons name="shield-checkmark" size={14} color={verifiedOnly ? colors.background : colors.textMuted} />
-          <Text style={[s.toggleChipText, verifiedOnly && s.toggleChipTextActive]}>Verified</Text>
-        </TouchableOpacity>
-        <View style={s.sortRow}>
-          <TouchableOpacity style={[s.sortChip, sortMode === 'nearest' && s.sortChipActive]} onPress={() => setSortMode('nearest')} activeOpacity={0.8}>
-            <Ionicons name="navigate" size={12} color={sortMode === 'nearest' ? colors.background : colors.textMuted} />
-            <Text style={[s.sortChipText, sortMode === 'nearest' && s.sortChipTextActive]}>Nearest</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterScroll}>
+          <TouchableOpacity style={[s.radiusChip, s.radiusChipActive]} onPress={() => setRadiusKm(radiusKm === 5 ? 25 : radiusKm === 25 ? 50 : 5)} activeOpacity={0.8}>
+            <Ionicons name="locate-outline" size={13} color="#B35CFF" />
+            <Text style={s.radiusChipTextActive}>{radiusKm}{' km'}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[s.sortChip, sortMode === 'active' && s.sortChipActive]} onPress={() => setSortMode('active')} activeOpacity={0.8}>
-            <Ionicons name="pulse" size={12} color={sortMode === 'active' ? colors.background : colors.textMuted} />
-            <Text style={[s.sortChipText, sortMode === 'active' && s.sortChipTextActive]}>Active now</Text>
+          <TouchableOpacity style={[s.radiusChip, sortMode === 'nearest' && s.radiusChipActive]} onPress={() => setSortMode('nearest')} activeOpacity={0.8}>
+            <Ionicons name="navigate-outline" size={13} color={sortMode === 'nearest' ? '#B35CFF' : 'rgba(255,255,255,0.35)'} />
+            <Text style={sortMode === 'nearest' ? s.radiusChipTextActive : s.radiusChipText}>{'Nearest'}</Text>
           </TouchableOpacity>
-        </View>
+          <TouchableOpacity style={[s.radiusChip, sortMode === 'active' && s.radiusChipActive]} onPress={() => setSortMode('active')} activeOpacity={0.8}>
+            <Ionicons name="pulse-outline" size={13} color={sortMode === 'active' ? '#B35CFF' : 'rgba(255,255,255,0.35)'} />
+            <Text style={sortMode === 'active' ? s.radiusChipTextActive : s.radiusChipText}>{'Active now'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[s.radiusChip, verifiedOnly && s.radiusChipActive]} onPress={() => setVerifiedOnly((v) => !v)} activeOpacity={0.8}>
+            <Ionicons name="shield-checkmark-outline" size={13} color={verifiedOnly ? '#B35CFF' : 'rgba(255,255,255,0.35)'} />
+            <Text style={verifiedOnly ? s.radiusChipTextActive : s.radiusChipText}>{'Verified'}</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
 
       <View style={s.storiesRow}>
@@ -413,36 +405,36 @@ export default function DiscoverScreen() {
 
 const s = StyleSheet.create({
   hero: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    marginBottom: 0,
+    paddingTop: 20,
+    paddingBottom: 8,
+  },
+  heroLogo: {
+    marginBottom: 4,
+  },
+  heroLogoText: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#B35CFF',
+    letterSpacing: -2,
   },
   heroTagline: {
     fontSize: 13,
-    color: 'rgba(179,92,255,0.6)',
-    letterSpacing: 1.5,
+    color: 'rgba(179,92,255,0.4)',
+    letterSpacing: 0.5,
     fontWeight: '500',
     fontStyle: 'italic',
   },
-  filterBar: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingHorizontal: spacing.lg, paddingVertical: 14, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(124,43,255,0.06)' },
-  radiusRow: { flexDirection: 'row', gap: 6 },
-  radiusChip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  filterBar: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(124,43,255,0.06)',
+    paddingVertical: 12,
+  },
+  filterScroll: { paddingHorizontal: spacing.lg, gap: 8 },
+  radiusChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
   radiusChipActive: { backgroundColor: 'rgba(124,43,255,0.15)', borderColor: 'rgba(179,92,255,0.3)' },
   radiusChipText: { color: 'rgba(255,255,255,0.35)', fontSize: 12, fontWeight: '600' },
-  radiusChipTextActive: { color: '#B35CFF' },
-  toggleChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: borderRadius.full, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  toggleChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  toggleChipText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: '600' },
-  toggleChipTextActive: { color: colors.textOnPrimary },
-  sortRow: { flexDirection: 'row', gap: 6, marginLeft: 'auto' },
-  sortChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 8, borderRadius: borderRadius.full, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  sortChipActive: { backgroundColor: colors.primaryLight, borderColor: colors.primaryLight },
-  sortChipText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: '600' },
-  sortChipTextActive: { color: colors.background },
+  radiusChipTextActive: { color: '#B35CFF', fontSize: 12, fontWeight: '600' },
   tile: { marginBottom: 0, overflow: 'hidden', position: 'relative', backgroundColor: '#0D0A14', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(124,43,255,0.08)' },
   presenceBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderTopLeftRadius: 16, borderBottomLeftRadius: 16, zIndex: 5 },
   topRow: { position: 'absolute', top: 6, left: 8, flexDirection: 'row', gap: 4, zIndex: 5 },

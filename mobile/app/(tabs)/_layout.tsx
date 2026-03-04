@@ -30,7 +30,7 @@ const TAB_OPTIONS = {
   },
   tabBarActiveTintColor: colors.primaryLight,
   tabBarInactiveTintColor: 'rgba(255,255,255,0.3)',
-  tabBarLabelStyle: { fontSize: 10, fontWeight: '700' as const, letterSpacing: 0.3 },
+  tabBarShowLabel: false,
 };
 
 export default function TabLayout() {
