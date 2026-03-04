@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { View, Image, StyleSheet, ImageStyle, ViewStyle } from 'react-native';
+import { View, Image, StyleSheet, ImageStyle, ViewStyle, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/theme';
 import { getMediaUrl, getThumbnailUrl } from '../api/client';
+
+const DEMON_AVATAR = Platform.OS === 'web' ? '/demon-avatar.png' : require('../../assets/images/demon-bg.png');
+const DEMONESS_AVATAR = Platform.OS === 'web' ? '/demoness-avatar.png' : require('../../assets/images/demon-girl.png');
 
 interface Props {
   storagePath?: string | null;
@@ -45,9 +48,17 @@ export function ProfilePhoto({ storagePath, photosJson, size, blurred, canSeeUnb
     canSeeUnblurred !== undefined ? (canSeeUnblurred !== true) : !!blurred;
 
   if (!photoUrl) {
+    const avatarIdx = Math.abs((size || 50) + (br ?? 0)) % 2;
+    const defaultSource = Platform.OS === 'web'
+      ? { uri: avatarIdx === 0 ? (DEMON_AVATAR as string) : (DEMONESS_AVATAR as string) }
+      : avatarIdx === 0 ? DEMON_AVATAR : DEMONESS_AVATAR;
     return (
       <View style={[styles.placeholder, containerStyle]}>
-        <Ionicons name="person" size={(size || 50) * 0.4} color={colors.textMuted} />
+        <Image
+          source={defaultSource as any}
+          style={[imageStyle, { opacity: 0.6 }]}
+          resizeMode="cover"
+        />
       </View>
     );
   }

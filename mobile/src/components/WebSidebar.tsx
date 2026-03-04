@@ -75,9 +75,10 @@ const styles = StyleSheet.create({
   sidebar: {
     width: layout.sidebarWidth,
     height: '100%',
-    backgroundColor: 'rgba(6,4,10,0.97)',
+    backgroundColor: '#050308',
+    backgroundImage: 'linear-gradient(180deg, rgba(124,43,255,0.04) 0%, transparent 40%, transparent 80%, rgba(124,43,255,0.02) 100%)',
     borderRightWidth: 1,
-    borderRightColor: 'rgba(124,43,255,0.08)',
+    borderRightColor: 'rgba(124,43,255,0.1)',
     paddingTop: 32,
     paddingBottom: 24,
     paddingHorizontal: 16,

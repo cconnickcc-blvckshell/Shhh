@@ -452,7 +452,7 @@ const s = StyleSheet.create({
   intentBadge: { position: 'absolute', top: 6, right: 6, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8, zIndex: 5 },
   intentText: { color: '#fff', fontSize: 9, fontWeight: '700' },
   presenceDot: { position: 'absolute', bottom: 44, right: 8, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#000', zIndex: 5 },
-  bottomInfo: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 12, paddingVertical: 10, borderBottomLeftRadius: 16, borderBottomRightRadius: 16 } as any,
+  bottomInfo: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 14, paddingVertical: 12, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, backgroundImage: 'linear-gradient(transparent, rgba(0,0,0,0.85))' } as any,
   tileName: { color: '#F7F2FF', fontSize: 14, fontWeight: '700', letterSpacing: -0.3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 1 },
   tileDist: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '600' },

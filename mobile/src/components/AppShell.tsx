@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
     minHeight: '100vh',
     marginLeft: layout.sidebarWidth,
     backgroundColor: colors.background,
+    backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,43,255,0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 90% 80%, rgba(124,43,255,0.04) 0%, transparent 50%)',
     ...(Platform.OS === 'web' && { overflowY: 'auto' as any, overflowX: 'hidden' as any }),
   } as any,
   contentWrapFull: {
