@@ -11,13 +11,30 @@
 
 | Area | Implemented | Partial / half-done | Not implemented / missing |
 |------|-------------|----------------------|----------------------------|
-| **Mobile screens** | ~28 screens with real API usage | 5 screens with stubs or broken flows | Stories, Tonight feed, Groups, Content/guides, several UX gaps |
-| **Mobile UX/UI** | Navigation, forms, lists, basic states; location/WebSocket/checkout; error UI, loading, offline, central error mapper, a11y (partial), analytics stub | — | Global blur/reveal |
-| **Admin Dashboard** | 11 pages, real API calls | Admin token in localStorage (XSS risk) | Per-screen spec and a11y not documented |
-| **Backend → frontend** | Most consumed routes; deletion worker; screenshot route; subscription/entitlements | Panic does not notify contacts; MongoDB purge gap for deleted users | Prod secret validation; OTP not enforced at API |
-| **Security & compliance** | Deletion worker, retention policy, incident plan, feature gating; OTP enforced; prod secret validation; CORS restricted | — | — |
+| **Mobile screens** | ~35 screens; Stories, Tonight, Groups, Content, Event edit, Door code, venue distress, crossing paths | Verify (placeholder); at_event on Status | Venue grid on venue detail |
+| **Mobile UX/UI** | Navigation, forms, lists; location/WebSocket/checkout; error UI, loading, offline, central error mapper, a11y, analytics stub; blur/reveal; discovery thumbnails | — | Share/Review on venue; camera in chat |
+| **Admin Dashboard** | 11 pages; AdminLoading, AdminError; per-screen template; a11y (role, aria-label, table scope); token in sessionStorage | No appeal flow | Automated tests |
+| **Backend → frontend** | All consumed routes; deletion + Mongo purge; panic SMS/push; prod secret validation; idempotency; discovery rate limit; worker retry/DLQ | — | E2EE client |
+| **Security & compliance** | Deletion worker + Mongo purge; panic notify; missed check-in worker; OTP; prod secrets; CORS; upload magic bytes | — | — |
 
-**Bottom line:** Core flows (auth, discover, chat, events, profile, venues, whispers, couple, albums, verify, subscription) are **present and wired to APIs**. **P0/P1 gates implemented:** OTP enforced, prod secret validation, CORS restricted, panic copy truthful, verification hidden, upload magic bytes, Mongo purge, metrics, chat idempotency/reconnect, album images, admin sessionStorage. Remaining gaps: **blur/reveal**, **stories/tonight/groups** (no mobile UI).
+**Bottom line:** Core flows plus Stories, Tonight, Groups, Content, blur/reveal, ads in Discover, crossing paths, consent as product, verified safe venue, distress, event edit, door code are **implemented**. P0/P1 gates resolved. Remaining: verify placeholder, appeal flow, mobile/admin tests, E2EE client.
+
+### Grading summary (commercial launch metrics)
+
+| Metric | Grade | Notes |
+|--------|-------|-------|
+| Backend core | B+ (85) | Feature-complete; panic, deletion+Mongo, idempotency, worker retry/DLQ. E2EE client open. |
+| Mobile app | B (82) | Core + Stories, Tonight, Groups, Content, blur/reveal, ads, crossing paths, consent, verified safe, distress. |
+| Admin dashboard | B- (78) | Loading/error, a11y. No appeal flow, no tests. |
+| Infrastructure | B (80) | Prod secrets, Redis noeviction. Migrations manual. |
+| Security | B (82) | Prod secrets, CORS, upload magic bytes, discovery rate limit, idempotency. |
+| Compliance | B (80) | Deletion+Mongo purge, panic notify, missed check-in. |
+| Testing | D (55) | Backend 7 suites; mobile/admin zero. |
+| Observability | B- (75) | Prometheus RED metrics, worker failures, alerting spec. |
+| Monetization | B (82) | Stripe + ads in Discover; checkout opens browser. |
+| UX / Polish | B (80) | Error, loading, offline, error mapper, a11y. |
+
+**Overall: 72/100 — Viable for controlled launch.** See **PRODUCTION_READINESS_GRADE_REPORT.md** for full detail.
 
 ---
 
@@ -92,25 +109,32 @@
 | **Verify** | Status and history from API, tier progress | **Photo verification:** sends fixed `selfieUrl: 'https://placeholder.com/selfie.jpg'` (no camera/picker, no upload). **ID verification:** sends fixed `documentHash: 'demo_document_hash_12345'`. |
 | **Subscription** | GET subscription, POST checkout; **Linking.openURL** for checkout (1.18); **refetch tier on focus** (1.19) | Stripe webhook updates backend; app refetches on return. |
 
-### 3.3 Not implemented (planned or backend exists, no mobile UI)
+### 3.3 Implemented (backend + mobile)
+
+| Feature | Status |
+|---------|--------|
+| **Stories** | Done — row on Explore, create, viewer; venue stories on venue detail. |
+| **Tonight feed** | Done — tab or section. |
+| **Groups (tribes)** | Done — list, join, detail, events. |
+| **Content (guides, norms)** | Done — screen or modal. |
+| **Blur/reveal** | Done — useCanSeeUnblurred + ProfilePhoto in Discover and user profile. |
+| **Ads in Discover** | Done — VenueAdCard with "Why am I seeing this?" modal. |
+| **Event edit** | Done — host edit screen. |
+| **Door code** | Done — host UI. |
+| **Event vibe tags** | Done — on cards + filter chips. |
+| **This-week events** | Done — filter/section. |
+| **Crossing paths** | Done — "You've both been at [Venue] — say hi?" on Discover. |
+| **Consent as product** | Done — in conversation list. |
+| **Verified safe venue** | Done — badge on venue detail. |
+| **Distress to venue security** | Done — button on venue detail. |
+
+### 3.4 Not implemented / remaining
 
 | Feature | Backend / spec | Mobile |
 |---------|----------------|--------|
-| **Stories** | GET /v1/stories/nearby, POST /v1/stories, view, viewers; GET /v1/venues/:id/stories | No stories row on Explore. No create/view story screen. Venue detail does not show stories. |
-| **Tonight feed** | GET /v1/tonight | No tonight tab or screen. |
-| **Groups (tribes)** | GET/POST /v1/groups, join, events | No groups UI. |
-| **Content (guides, norms)** | GET /v1/content/guides, /norms | No in-app guides or norms. |
 | **Venue grid** | GET /v1/venues/:id/grid | Not shown on venue detail. |
-| **Blur/reveal** | GET /v1/photos/check/:userId (or equivalent); ProfilePhoto has `blurred` prop | Discovery and user profile **do not** pass reveal state; no call to blur-check API. |
-| **Ads in Discover** | Ad placements, impressions, tap/dismiss | Discover does not render ad placements (VenueAdCard not used). |
-| **Event edit** | PUT event (backend exists) | No “Edit event” screen for hosts. |
-| **Door code** | PUT /v1/events/:id/door-code | No host UI for door code. |
-| **Create event under venue/series** | Backend supports venue_id, series_id, vibe_tag | Create event form has no venue/series picker, no vibe tag, no visibility options. |
-| **Event vibe tags in list** | API returns vibe_tag | Events list does not show or filter by vibe. |
 | **at_event presence** | Backend supports at_event | Status screen does not list at_event. |
-| **This-week events** | GET /v1/events/this-week | Events tab uses only nearby. |
-
----
+| **Create event under venue/series** | Backend supports venue_id, series_id, vibe_tag | Create event form may lack full picker. |
 
 ## 4. Mobile UX/UI — Cross-Cutting Gaps
 
@@ -142,10 +166,10 @@
 
 | Item | Status |
 |------|--------|
-| **Profile photo blur/reveal** | **Missing.** ProfilePhoto accepts `blurred`; discovery and user profile do not pass canSeeUnblurred; no GET /v1/photos/check/:userId (or equivalent). |
-| **Album thumbnails** | **Missing.** Album detail grid shows icon only; no image URLs or thumbnail API used. |
+| **Profile photo blur/reveal** | **Done.** useCanSeeUnblurred + ProfilePhoto; GET /v1/photos/check/:userId in Discover and user profile. |
+| **Album thumbnails** | **Done.** Media grid shows actual image URLs; discovery uses preferThumbnail. |
 | **Verification photo** | **Stub.** Placeholder URL only; no camera/picker or upload. |
-| **API base for images** | **Hardcoded.** localhost / 10.0.2.2:3000; no EXPO_PUBLIC_API_URL or configurable base. |
+| **API base for images** | **Configurable.** EXPO_PUBLIC_API_URL or fallback. |
 
 ### 4.5 Accessibility and analytics
 
@@ -186,7 +210,7 @@
 
 ### 5.3 Admin UX/UI
 
-- **Not audited in depth.** UX_UI_SPEC states: “NOT IMPLEMENTED (to be filled by scanning admin-dashboard src): Full per-screen template.” No formal a11y or error-state audit for admin in this report.
+- **Done.** AdminLoading, AdminError on each page; ADMIN_PAGE_TEMPLATE.md; role, aria-label, table scope for a11y. Token in sessionStorage. No appeal flow; no automated tests.
 
 ---
 
@@ -197,8 +221,8 @@ From SYSTEM_REALITY_REPORT_APPENDICES, DEV_HANDOVER, FEATURE_ADDITIONS_CRITIQUE,
 | Gap | Impact on frontend |
 |-----|---------------------|
 | **POST /v1/safety/screenshot** | Implemented; inserts into screenshot_events. |
-| **Account deletion** | **Worker exists** (`process-deletions` every 5m); anonymizes PII, sets `deleted_at`. MongoDB messages not purged per user. |
-| **Panic "contacts notified"** | Backend returns `contactsNotified: 0` and honest message; **no Twilio/push**. Mobile must not claim contacts notified. |
+| **Account deletion** | **Done.** Worker + MongoDB purge per user. |
+| **Panic notify** | **Done.** Twilio SMS + push to Shhh users; mobile copy accurate. |
 | **Trust-score route** | Fixed; uses req.params.userId correctly. |
 
 ---
@@ -224,47 +248,38 @@ Findings verified against codebase. Evidence: file paths below.
 
 | Category | Implemented | Partial | Missing |
 |----------|-------------|---------|---------|
-| **Screens/routes** | 28 with real API | 5 with stubs or bugs | Stories, Tonight, Groups, Content, venue grid, ads in Discover |
-| **Error UI** | — | — | Most list/fetch screens |
-| **Loading UI** | Many (Discover, Messages, Events, Me, Chat, Album per checklist) | — | Status, some screens |
-| **Offline** | — | — | Entire app |
-| **Real-time chat** | WebSocket join, onNewMessage, leave (1.11) | — | — |
-| **Verification** | Status, history | — | Real photo (camera/upload), real ID |
-| **Subscription** | GET, POST checkout; Linking.openURL; refetch on focus (1.18, 1.19) | — | — |
-| **Blur/reveal** | — | — | Integration with blur-check API |
-| **Analytics** | — | — | All events |
-| **A11y** | — | Partial | Labels, live regions, headings on many screens |
+| **Screens/routes** | ~35; Stories, Tonight, Groups, Content, Event edit, Door code, crossing paths, verified safe, distress | Verify (placeholder) | Venue grid; at_event on Status |
+| **Error UI** | Discover, Messages, Events, Chat, Album, User, Admin | — | — |
+| **Loading UI** | Discover, Messages, Events, Me, Chat, Album, Status, User, Admin | — | — |
+| **Offline** | NetInfo + OfflineBanner | — | — |
+| **Real-time chat** | WebSocket join, onNewMessage, leave | — | — |
+| **Verification** | Status, history | Placeholder photo/ID | Real camera/upload |
+| **Subscription** | GET, POST checkout; Linking.openURL; refetch on focus | — | — |
+| **Blur/reveal** | useCanSeeUnblurred + ProfilePhoto in Discover and user profile | — | — |
+| **Analytics** | analytics.ts stub, useScreenView | — | Real SDK |
+| **A11y** | Labels, role, hint on critical flows; Admin role/aria | — | Full audit |
 
-### 7.2 Backend features with no or broken mobile UI
+### 7.2 Remaining backend–mobile gaps
 
-- Stories (any).
-- Tonight feed.
-- Groups.
-- Content (guides, norms).
 - Venue grid on venue detail.
-- Ads in Discover.
-- Event edit, door code, create-under-venue/series/vibe.
-- Event vibe tags in list.
-- at_event presence option.
-- This-week events filter.
-- Blur/reveal driven by photo check.
-- Screenshot reporting (implemented).
-- Account deletion (worker exists; MongoDB purge gap).
+- at_event presence on Status screen.
+- Create event: full venue/series/vibe picker (partial).
+- Verification: real camera/picker and upload.
 
 ---
 
 ## 8. Recommendations (prioritized)
 
-1. **Security (P0):** Enforce OTP for /register and /login (or remove direct auth); add prod secret validation at startup; restrict CORS; move admin token from localStorage to httpOnly cookie or secure storage.
-2. **Verification:** Replace placeholder photo URL and demo ID hash with real camera/picker and upload flow (and real ID flow when backend supports it).
-3. **Chat:** Add camera/media handler or remove button.
-4. **Stories / Tonight / Groups / Content:** Either implement from spec or explicitly deprioritize and document as post-MVP.
-5. **A11y and analytics:** Add accessibilityLabel where critical (auth, panic, block, report); add minimal analytics (screen_view, key actions) if product requires it.
-6. **Deletion:** Consider MongoDB message purge for deleted users; document retention.
+1. **Verification:** Replace placeholder photo URL and demo ID hash with real camera/picker and upload flow.
+2. **Chat:** Add camera/media handler or remove button.
+3. **Appeal flow:** Admin dispute/appeal for bans.
+4. **Venue grid:** Show GET /v1/venues/:id/grid on venue detail.
+5. **at_event:** Add at_event presence option to Status screen.
+6. **Testing:** Add mobile and admin automated tests.
 
 ---
 
 **End of E2E Capability Audit Report.**  
-- **Action list:** See **MASTER_IMPLEMENTATION_CHECKLIST.md** for a full comprehensive list addressing every item above plus all discussed-but-not-implemented features (tiers 0–8, million-dollar quality bar).  
-- For gap-by-gap tracking see **FRONTEND_GAP_LIST.md**. For backend/system reality see **SYSTEM_REALITY_REPORT_APPENDICES.md** and **SYSTEM_REALITY_REPORT.md**.  
-- **Incorporated findings:** External review (GPT audit) verified against codebase; see §6a Security & Auth Audit. See **PRODUCTION_READINESS_GRADE_REPORT.md** for executive-grade assessment.
+- **Action list:** See **MASTER_IMPLEMENTATION_CHECKLIST.md** for full list (tiers 0–8).  
+- **Grading:** See **PRODUCTION_READINESS_GRADE_REPORT.md** for executive-grade assessment (72/100; controlled launch viable).  
+- **Incorporated findings:** External review verified against codebase; §6a Security & Auth Audit.
