@@ -54,7 +54,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - uses: grafana/setup-k6-action@v0.3.1
+      - uses: grafana/setup-k6-action@v1
       - run: cd backend && npm ci && npm run migrate
       - name: Start backend
         run: |
