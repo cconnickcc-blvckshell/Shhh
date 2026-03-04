@@ -96,23 +96,26 @@ export function runMix(data) {
 }
 
 /**
- * Extract tagged metric counts. Handles k6 metric formats: {endpoint=X,status=Y} or nested.
- * Supports multiple key formats to avoid "unknown" in output.
+ * Extract tagged metric counts. k6 stores tagged submetrics as separate entries:
+ * "http_status_by_endpoint{endpoint=discover,status=200}". Parent metric has values.count/rate.
  */
-function extractTaggedCounts(metric, isErrorClass) {
+function extractTaggedCounts(metrics, metricPrefix) {
   const byKey = {};
-  if (!metric || !metric.values) return byKey;
-  for (const [key, val] of Object.entries(metric.values)) {
-    const count = typeof val === 'object' && val !== null && 'count' in val ? val.count : (typeof val === 'number' ? val : 0);
+  if (!metrics) return byKey;
+  for (const [fullKey, metric] of Object.entries(metrics)) {
+    if (fullKey.indexOf(metricPrefix) !== 0 || fullKey.indexOf('{') === -1) continue;
+    const tagPart = fullKey.slice(fullKey.indexOf('{'));
+    const vals = metric && metric.values ? metric.values : null;
+    let count = 0;
+    if (vals && typeof vals.count === 'number') count = vals.count;
+    else if (typeof vals === 'number') count = vals;
+    else if (vals && typeof vals === 'object' && !Array.isArray(vals)) count = vals.count || vals.rate || 0;
     if (count <= 0) continue;
-    const epMatch = key.match(/endpoint["']?\s*[:=]\s*["']?([^"',}\s]+)/) || key.match(/endpoint=([^,}]+)/);
-    const statusMatch = key.match(/status["']?\s*[:=]\s*["']?([^"',}\s]+)/) || key.match(/status=([^,}]+)/);
-    const classMatch = key.match(/error_class["']?\s*[:=]\s*["']?([^"',}\s]+)/) || key.match(/error_class=([^,}]+)/);
-    let ep = epMatch ? epMatch[1].trim() : null;
-    let tag2 = statusMatch ? statusMatch[1].trim() : (classMatch ? classMatch[1].trim() : null);
-    if (!ep && key.indexOf('{') === -1) ep = key;
-    if (!ep) ep = 'unknown';
-    if (!tag2) tag2 = '?';
+    const epMatch = tagPart.match(/endpoint[=:]([^,}]+)/);
+    const statusMatch = tagPart.match(/status[=:]([^,}]+)/);
+    const classMatch = tagPart.match(/error_class[=:]([^,}]+)/);
+    const ep = epMatch ? epMatch[1] : 'unknown';
+    const tag2 = statusMatch ? statusMatch[1] : (classMatch ? classMatch[1] : '?');
     const k = ep + '|' + tag2;
     byKey[k] = (byKey[k] || 0) + count;
   }
@@ -128,8 +131,7 @@ export function handleSummary(data) {
   lines.push('=== STATUS HISTOGRAMS BY ENDPOINT ===');
 
   const metrics = data.metrics || {};
-  const statusMetric = metrics['http_status_by_endpoint'];
-  const statusCounts = extractTaggedCounts(statusMetric, false);
+  const statusCounts = extractTaggedCounts(metrics, 'http_status_by_endpoint');
 
   if (Object.keys(statusCounts).length > 0) {
     const byEndpoint = {};
@@ -144,14 +146,14 @@ export function handleSummary(data) {
       lines.push('  ' + ep + ': ' + parts.join(', '));
     }
   } else {
-    lines.push('  (no status data)');
+    const sampleKeys = Object.keys(metrics || {}).filter(function (k) { return k.indexOf('http_status') !== -1; }).slice(0, 5);
+    lines.push('  (no tagged submetrics; sample keys: ' + (sampleKeys.length ? sampleKeys.join(', ') : 'none') + ')');
   }
 
   lines.push('');
   lines.push('=== ERROR CLASS BY ENDPOINT (non-2xx) ===');
 
-  const errorMetric = metrics['error_class_by_endpoint'];
-  const errorCounts = extractTaggedCounts(errorMetric, true);
+  const errorCounts = extractTaggedCounts(metrics, 'error_class_by_endpoint');
 
   if (Object.keys(errorCounts).length > 0) {
     const byEndpoint = {};
