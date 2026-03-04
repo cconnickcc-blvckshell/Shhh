@@ -33,6 +33,22 @@ export function getMediaUrl(storagePath: string): string {
   return `${API_BASE}/uploads${path}`;
 }
 
+/**
+ * Returns thumbnail URL for discovery grid when storage follows convention:
+ * /photos/hash.jpg -> /photos/thumbs/thumb_hash.jpg
+ * Returns null for non-matching paths (e.g. external URLs).
+ */
+export function getThumbnailUrl(storagePath: string | null | undefined): string | null {
+  if (!storagePath) return null;
+  const p = storagePath.startsWith('/') ? storagePath : `/${storagePath}`;
+  const match = p.match(/^\/([^/]+)\/(.+)$/);
+  if (!match) return null;
+  const [, category, filename] = match;
+  const stem = filename.replace(/\.[^.]+$/, '');
+  if (!stem) return null;
+  return `${API_BASE}/uploads/${category}/thumbs/thumb_${stem}.jpg`;
+}
+
 export interface ApiError extends Error {
   code?: string;
   cap?: number;

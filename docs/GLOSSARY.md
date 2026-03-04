@@ -28,7 +28,7 @@
 | **Verification** | Photo and/or ID verification to increase tier. Admin approves/rejects. |
 | **Trust score** | Computed metric for user reputation (reports, interactions, verification). Used in moderation. |
 | **Safety check-in** | User sets an expected return time; if missed, alert can be sent (worker not implemented). |
-| **Panic** | Emergency action that records to DB and audit; intended to notify emergency contacts (SMS/push not implemented). |
+| **Panic** | Emergency action that records to DB and audit; notifies emergency contacts via SMS (Twilio) and push (if contact is Shhh user). |
 | **Venue distress** | User signals distress at a venue; notifies active venue staff via WebSocket. |
 | **Screenshot report** | Client detects screenshot in chat; reports to backend. Inserts into `screenshot_events` for moderation. |
 

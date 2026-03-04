@@ -10,6 +10,7 @@ import { WhisperService } from '../modules/discovery/whisper.service';
 import { EventLifecycleService } from '../modules/events/lifecycle.service';
 import { ComplianceService } from '../modules/compliance/compliance.service';
 import { MessagingService } from '../modules/messaging/messaging.service';
+import { SafetyService } from '../modules/safety/safety.service';
 
 const connection = new IORedis(config.redis.url, { maxRetriesPerRequest: null });
 
@@ -21,6 +22,7 @@ const whisperSvc = new WhisperService();
 const lifecycleSvc = new EventLifecycleService();
 const complianceSvc = new ComplianceService();
 const messagingSvc = new MessagingService();
+const safetySvc = new SafetyService();
 
 // Cleanup queue — runs scheduled jobs
 const cleanupQueue = new Queue('cleanup', { connection });
@@ -70,6 +72,11 @@ export async function startWorkers() {
         logger.info({ count, duration: Date.now() - start }, 'Conversations archived');
         break;
       }
+      case 'process-missed-checkins': {
+        const count = await safetySvc.processMissedCheckins(20);
+        logger.info({ count, duration: Date.now() - start }, 'Missed check-in alerts sent');
+        break;
+      }
     }
   }, { connection, concurrency: 2 });
 
@@ -86,6 +93,7 @@ export async function startWorkers() {
   await cleanupQueue.upsertJobScheduler('event-lifecycle', { every: 60000 }, { name: 'event-lifecycle' });
   await cleanupQueue.upsertJobScheduler('process-deletions', { every: 300000 }, { name: 'process-deletions' });
   await cleanupQueue.upsertJobScheduler('archive-conversations', { every: 60000 }, { name: 'archive-conversations' });
+  await cleanupQueue.upsertJobScheduler('process-missed-checkins', { every: 120000 }, { name: 'process-missed-checkins' });
 
-  logger.info('Background workers started — presence (1m), intents (5m), sessions (5m), media (10m), whispers (5m), events (1m), deletions (5m), archive (1m)');
+  logger.info('Background workers started — presence (1m), intents (5m), sessions (5m), media (10m), whispers (5m), events (1m), deletions (5m), archive (1m), missed-checkins (2m)');
 }

@@ -339,8 +339,13 @@ async function seed() {
   }
 
   // Emergency contacts (for panic flow test — first user has 2 contacts)
-  const emergencyPhoneHash = createHash('sha256').update('+15559990001').digest('hex');
-  await query(`INSERT INTO emergency_contacts (user_id, name, phone_hash, relationship) SELECT $1, 'Seed Emergency', $2, 'friend' WHERE NOT EXISTS (SELECT 1 FROM emergency_contacts WHERE user_id = $1 AND name = 'Seed Emergency')`, [userIds[0], emergencyPhoneHash]).catch(() => {});
+  const emergencyPhone = '+15559990001';
+  const emergencyPhoneHash = createHash('sha256').update(emergencyPhone).digest('hex');
+  await query(
+    `INSERT INTO emergency_contacts (user_id, name, phone_hash, relationship, phone)
+     SELECT $1, $2, $3, $4, $5 WHERE NOT EXISTS (SELECT 1 FROM emergency_contacts WHERE user_id = $1 AND name = 'Seed Emergency')`,
+    [userIds[0], 'Seed Emergency', emergencyPhoneHash, 'friend', emergencyPhone]
+  ).catch(() => {});
 
   // Venue reviews (so venue detail shows review summary)
   if (venueIds[0]) {

@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Alert, TextInput, Vibration, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Alert, TextInput, Vibration, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { discoverApi, api } from '../../src/api/client';
+import { discoverApi, api, adsApi, storiesApi } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { useAuthStore } from '../../src/stores/auth';
 import { useLocation } from '../../src/hooks/useLocation';
@@ -17,6 +17,7 @@ import { SafeState } from '../../src/components/ui';
 import { mapApiError } from '../../src/utils/errorMapper';
 import { useScreenView } from '../../src/hooks/useScreenView';
 import { useDiscoverFiltersStore } from '../../src/stores/discoverFilters';
+import { VenueAdCard } from '../../src/components/VenueAdCard';
 
 const HOVER_DURATION_MS = 160;
 const HOVER_EASING = Easing.out(Easing.ease);
@@ -132,7 +133,7 @@ function DiscoverTile({
       accessibilityHint="Double tap to view profile. Long press to whisper."
     >
       <Animated.View style={[isWeb ? animatedStyle : undefined, { flex: 1 }]}>
-      <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} canSeeUnblurred={canSeeUnblurred ?? undefined} />
+      <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} canSeeUnblurred={canSeeUnblurred ?? undefined} preferThumbnail />
       {presenceColor && <View style={[presenceBar, { backgroundColor: presenceColor }]} />}
       <View style={topRow}>
         {item.isHost && <View style={hostBadge}><Ionicons name="home" size={8} color="#000" /><Text style={hostText}>HOST</Text></View>}
@@ -191,6 +192,8 @@ export default function DiscoverScreen() {
   const setFilterContext = useDiscoverFiltersStore((s) => s.setFilterContext);
 
   const [atDiscoveryCap, setAtDiscoveryCap] = useState(false);
+  const [discoverAd, setDiscoverAd] = useState<any>(null);
+  const [nearbyStories, setNearbyStories] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -204,6 +207,8 @@ export default function DiscoverScreen() {
       setFilterContext({ radius: radiusKm, primaryIntent: primaryIntent ?? '', verifiedOnly, sortMode });
       const cap = res.discoveryCap ?? 30;
       if (res.count >= cap) setAtDiscoveryCap(true);
+      adsApi.getFeed(lat, lng).then((r) => setDiscoverAd(r.data)).catch(() => setDiscoverAd(null));
+      storiesApi.nearby(lat, lng, radiusKm).then((r) => setNearbyStories(r.data || [])).catch(() => setNearbyStories([]));
     } catch (err: any) {
       setLoadError(mapApiError(err));
       setUsers([]);
@@ -218,7 +223,11 @@ export default function DiscoverScreen() {
       load();
     }
   }, [load, location.loading]);
-  const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); setRefreshing(false); };
+
+  useEffect(() => {
+    if (discoverAd?.id) adsApi.recordImpression(discoverAd.id, 'discover_feed').catch(() => {});
+  }, [discoverAd?.id]);
+  const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); adsApi.getFeed(lat, lng).then((r) => setDiscoverAd(r.data)).catch(() => {}); storiesApi.nearby(lat, lng, radiusKm).then((r) => setNearbyStories(r.data || [])).catch(() => {}); setRefreshing(false); };
 
   const sortedUsers = useMemo(() => {
     if (sortMode === 'active') {
@@ -328,6 +337,27 @@ export default function DiscoverScreen() {
         </View>
       </View>
 
+      <View style={s.storiesRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.storiesScroll}>
+          <TouchableOpacity style={s.storyAddCircle} onPress={() => router.push('/stories/create')}>
+            <Ionicons name="add" size={28} color={colors.primaryLight} />
+            <Text style={s.storyAddLabel}>Add</Text>
+          </TouchableOpacity>
+          {nearbyStories.slice(0, 11).map((st: any) => (
+            <TouchableOpacity key={st.id} style={s.storyCircle} onPress={() => router.push(`/stories/view/${st.id}`)}>
+              <ProfilePhoto photosJson={st.media_storage_path ? [st.media_storage_path] : []} size={56} borderRadius={28} canSeeUnblurred={true} />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+      {discoverAd && (
+        <View style={s.adWrap}>
+          <VenueAdCard
+            ad={{ id: discoverAd.id, venue_id: discoverAd.venue_id || '', headline: discoverAd.headline || 'Promoted', body: discoverAd.body, venue_name: discoverAd.venue_name }}
+            onDismiss={() => { adsApi.dismiss(discoverAd.id).catch(() => {}); setDiscoverAd(null); }}
+          />
+        </View>
+      )}
       {atDiscoveryCap && users.length > 0 && (
         <View style={s.capBanner}>
           <Ionicons name="information-circle" size={18} color={colors.host} />
@@ -412,4 +442,10 @@ const s = StyleSheet.create({
   emptyWrap: { flex: 1, paddingVertical: 80 },
   capBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: spacing.md, paddingVertical: 10, backgroundColor: 'rgba(251,191,36,0.12)', borderBottomWidth: 0.5, borderBottomColor: 'rgba(251,191,36,0.2)' },
   capBannerText: { flex: 1, color: colors.text, fontSize: fontSize.sm },
+  adWrap: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  storiesRow: { paddingVertical: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  storiesScroll: { paddingHorizontal: spacing.md, gap: 12, flexDirection: 'row', alignItems: 'center' },
+  storyAddCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: colors.primaryLight, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
+  storyAddLabel: { color: colors.primaryLight, fontSize: 10, fontWeight: '600', marginTop: 2 },
+  storyCircle: { width: 60, height: 60, borderRadius: 30, overflow: 'hidden', borderWidth: 2, borderColor: colors.primaryLight },
 });

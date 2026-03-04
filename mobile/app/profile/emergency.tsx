@@ -74,7 +74,7 @@ export default function EmergencyContactsScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={s.title}>Emergency Contacts</Text>
-        <Text style={s.subtitle}>These contacts will be notified when you use Panic Alert (notification feature coming soon).</Text>
+        <Text style={s.subtitle}>These contacts will be notified when you use Panic Alert.</Text>
       </View>
 
       {loading ? (

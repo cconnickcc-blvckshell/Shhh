@@ -2,7 +2,7 @@
 
 **Purpose:** Single comprehensive list to address everything in **E2E_CAPABILITY_AUDIT_REPORT.md** and all further capability/features discussed but not yet implemented across the docs.  
 **Standard:** Production-grade (“million-dollar app”) — no school-project shortcuts.  
-**Sources:** E2E_CAPABILITY_AUDIT_REPORT.md, FRONTEND_GAP_LIST.md, UX_UI_SPEC.md, UX_BEHAVIOR_SPEC.md, GAME_CHANGER_ROADMAP.md, ENHANCEMENT_ROADMAP.md, FEATURE_ADDITIONS_CRITIQUE.md, SYSTEM_REALITY_REPORT.md, SYSTEM_REALITY_REPORT_APPENDICES.md, ARCHITECTURE.md, DEV_HANDOVER.md.
+**Sources:** E2E_CAPABILITY_AUDIT_REPORT.md, FRONTEND_GAP_LIST.md, UX_UI_SPEC.md, UX_BEHAVIOR_SPEC.md, GAME_CHANGER_ROADMAP.md, ENHANCEMENT_ROADMAP.md, FEATURE_ADDITIONS_CRITIQUE.md, SYSTEM_REALITY_REPORT.md, SYSTEM_REALITY_REPORT_APPENDICES.md, ARCHITECTURE.md, DEV_HANDOVER.md, ADVERSARIAL_AUDIT_VERIFICATION.md.
 
 ---
 
@@ -29,10 +29,11 @@
 |----|--------|--------|-------|
 | 0.1 | **Fix trust-score route param** — Use `req.params.userId` only in `GET /v1/users/:userId/trust-score` (not `req.params.id`). | SYSTEM_REALITY_REPORT, APPENDICES D, E2E Audit §6 | `backend/src/app.ts` |
 | 0.2 | **Implement or document POST /v1/safety/screenshot** — Add route and handler that writes to `screenshot_events`; or document no-op and update mobile to not rely on it. | E2E Audit §6, FRONTEND_GAP, SYSTEM_REALITY | Mobile `useScreenshotDetection` calls it; 404 today. |
-| 0.3 | **Deletion worker** — Process `data_deletion_requests`: anonymize then hard delete; set `users.deleted_at`. No consumer exists today. | E2E Audit §6, ENHANCEMENT Phase 0, SYSTEM_REALITY | compliance.service.ts inserts only. |
+| 0.3 | **Deletion worker** — Process `data_deletion_requests`: anonymize then hard delete; set `users.deleted_at`. | E2E Audit §6, ENHANCEMENT Phase 0, SYSTEM_REALITY | workers/index.ts process-deletions (every 5 min). |
 | 0.4 | **Panic: notify contacts or fix copy** — Either implement SMS/push to emergency contacts when panic is triggered, or change response/copy so we never say “contacts notified” until true. | E2E Audit §6, UX_BEHAVIOR §3.5, APPENDICES C/D | safety.service.ts returns contactsNotified but does not send. |
 | 0.5 | **Venue detail: fix upcoming event tap** — Change `router.push('/events')` to `router.push(\`/event/${ev.id}\`)` on venue [id] upcoming event card. | E2E Audit §3.2, FRONTEND_GAP 8.2 | mobile/app/venue/[id].tsx |
 | 0.6 | **Verify-code: guard missing params** — When `phone` or `mode` is missing (e.g. direct deep link), redirect or show error instead of crashing. | E2E Audit §4.1, UX_UI §3.3, FRONTEND_GAP 6.7 | mobile (auth)/verify-code |
+| 0.7 | **Panic: implement SMS/push to emergency contacts** — When panic is triggered, send alert (SMS or push) to each emergency contact. Set `contactsNotified` and update copy when live. | ADVERSARIAL_AUDIT_VERIFICATION, Safety §5 | safety.service.ts; copy currently truthful ("not yet active") |
 
 ---
 
@@ -131,6 +132,9 @@
 | 6.4 | **Observability** — Metrics (e.g. Prometheus) and/or tracing (OpenTelemetry); SLOs and alerting. | SYSTEM_REALITY_REPORT | backend |
 | 6.5 | **Worker retry/DLQ** — Retry policy and dead-letter handling for BullMQ workers. | SYSTEM_REALITY_REPORT Capability Matrix | backend/src/workers |
 | 6.6 | **Upload security** — File-type allowlist or magic-bytes check for uploads. | APPENDICES C, FEATURE_ADDITIONS_CRITIQUE | media.routes / multer |
+| 6.7 | **Missed check-in alerts worker** — Add job that calls `safety.service.getMissedCheckins()`; send push/SMS to user (or contacts); set `alert_sent`. | ADVERSARIAL_AUDIT_VERIFICATION, SYSTEM_REALITY | workers/index.ts |
+| 6.8 | **Alerting** — Wire Prometheus metrics to Alertmanager or PagerDuty; define alert rules for error rate, latency, job failures. | ADVERSARIAL_AUDIT_VERIFICATION | backend; metrics exist at /metrics |
+| 6.9 | **Per-user discovery rate limit** — Optional: throttle discovery per user (e.g. N/min) to prevent abuse. Add if abuse observed. | ADVERSARIAL_AUDIT_VERIFICATION | discovery.routes.ts |
 
 ---
 
@@ -159,7 +163,7 @@
 |----|------|--------|---------|
 | 8.1 | E2EE on wire (client encrypt/decrypt) | SYSTEM_REALITY, FEATURE_ADDITIONS | Defer; server-side keys exist, client not wired. |
 | 8.2 | Refresh token retry on 401 | UX_UI §6.2 | Optional; redirect to login is done. |
-| 8.3 | Missed check-in alerts worker | SYSTEM_REALITY | No worker calls getMissedCheckins or sends alerts. |
+| 8.3 | Missed check-in alerts worker | SYSTEM_REALITY | Moved to Tier 6.7. |
 | 8.4 | Voice drops | GAME_CHANGER, ENHANCEMENT | Defer. |
 | 8.5 | Burner/relay number | GAME_CHANGER GC-7.7 | Defer. |
 | 8.6 | Revenue share / attribution; white-label | GAME_CHANGER GC-1.6 | Defer. |
@@ -171,32 +175,33 @@
 
 | Tier | Description | Count |
 |------|-------------|-------|
-| 0 | Critical bugs & backend gaps | 6 |
+| 0 | Critical bugs & backend gaps | 7 |
 | 1 | Mobile fix broken/partial | 22 |
 | 2 | Mobile cross-cutting UX | 10 |
 | 3 | Mobile blur/reveal & media | 3 |
 | 4 | Mobile new features (backend exists) | 12 |
 | 5 | Admin dashboard | 3 |
-| 6 | Backend-only | 6 |
+| 6 | Backend-only | 9 |
 | 7 | Game-changer / roadmap | 10 |
 | 8 | Deferred (record only) | 7 |
 
-**Total actionable (Tiers 0–7):** 72 items.
+**Total actionable (Tiers 0–7):** 76 items.
 
 ---
 
 ## Implementation progress — full status (Tiers 0–7)
 
-**Done: 51 | Remaining: 21** (Tier 8 is deferred, not counted.)
+**Done: 63 | Remaining: 13** (Tier 8 is deferred, not counted.)
 
 | Tier | ID | Status | Notes |
 |------|----|--------|-------|
 | 0 | 0.1 | ✅ Done | Trust-score already used `userId` in app.ts. |
 | 0 | 0.2 | ✅ Done | POST /v1/safety/screenshot exists (safety.routes.ts). |
-| 0 | 0.3 | ⬜ Todo | Deletion worker (process data_deletion_requests). |
+| 0 | 0.3 | ✅ Done | Deletion worker runs every 5 min (workers/index.ts). |
 | 0 | 0.4 | ✅ Done | Panic copy + success message; no “contacts notified” until true. |
 | 0 | 0.5 | ✅ Done | Venue upcoming event tap → `/event/${ev.id}`. |
 | 0 | 0.6 | ✅ Done | Verify-code guard when phone/mode missing. |
+| 0 | 0.7 | ✅ Done | Panic: SMS via Twilio + push to Shhh users; contactsNotified; copy updated. |
 | 1 | 1.1 | ✅ Done | Discover: useLocation(); device lat/lng. |
 | 1 | 1.2 | ✅ Done | Discover: loading + error UI with retry. |
 | 1 | 1.3 | ✅ Done | Discover: discovery cap message when API at cap. |
@@ -229,9 +234,9 @@
 | 2 | 2.8 | ✅ Done | Accessibility: headings (venue, profile, settings). |
 | 2 | 2.9 | ✅ Done | Analytics (analytics.ts + useScreenView). |
 | 2 | 2.10 | ✅ Done | API base URL from env (ProfilePhoto uses getMediaUrl). |
-| 3 | 3.1 | ⬜ Todo | Blur/reveal in discovery (photos/check + ProfilePhoto). |
-| 3 | 3.2 | ⬜ Todo | Blur/reveal on user profile. |
-| 3 | 3.3 | ⬜ Todo | Discovery grid thumbnails (API or ?w= param). |
+| 3 | 3.1 | ✅ Done | Blur/reveal in discovery (useCanSeeUnblurred + ProfilePhoto). |
+| 3 | 3.2 | ✅ Done | Blur/reveal on user profile (useCanSeeUnblurred). |
+| 3 | 3.3 | ✅ Done | Discovery grid thumbnails (getThumbnailUrl + preferThumbnail). |
 | 4 | 4.1 | ✅ Done | Stories (row, create, viewer). |
 | 4 | 4.2 | ✅ Done | Venue stories on venue detail. |
 | 4 | 4.3 | ✅ Done | Tonight feed (tab or section). |
@@ -244,15 +249,18 @@
 | 4 | 4.10 | ✅ Done | Create event: venue/series/vibe/visibility. |
 | 4 | 4.11 | ✅ Done | Content (guides, norms) screen or modal. |
 | 4 | 4.12 | ✅ Done | Groups (tribes) UI. |
-| 5 | 5.1 | ⬜ Todo | Admin: per-screen template (docs). |
-| 5 | 5.2 | ⬜ Todo | Admin: error and loading on each page. |
-| 5 | 5.3 | ⬜ Todo | Admin: accessibility. |
-| 6 | 6.1 | ⬜ Todo | Production secret validation (startup). |
-| 6 | 6.2 | ⬜ Todo | Redis eviction policy (noeviction). |
+| 5 | 5.1 | ✅ Done | Admin: per-screen template (ADMIN_PAGE_TEMPLATE.md). |
+| 5 | 5.2 | ✅ Done | Admin: error and loading on each page (AdminLoading, AdminError). |
+| 5 | 5.3 | ✅ Done | Admin: accessibility (role, aria-label, table scope). |
+| 6 | 6.1 | ✅ Done | Production secret validation at startup (index.ts). |
+| 6 | 6.2 | ✅ Done | Redis eviction policy (noeviction in docker-compose). |
 | 6 | 6.3 | ⬜ Todo | Idempotency keys (optional). |
-| 6 | 6.4 | ⬜ Todo | Observability (metrics/tracing). |
+| 6 | 6.4 | ⬜ Todo | Observability (metrics exist; add alerting, tracing). |
 | 6 | 6.5 | ⬜ Todo | Worker retry/DLQ. |
-| 6 | 6.6 | ⬜ Todo | Upload security (allowlist/magic-bytes). |
+| 6 | 6.6 | ✅ Done | Upload security (magic bytes + mimetype in media.routes). |
+| 6 | 6.7 | ✅ Done | Missed check-in alerts worker (process-missed-checkins every 2m). |
+| 6 | 6.8 | ⬜ Todo | Alerting (wire Prometheus to Alertmanager). |
+| 6 | 6.9 | ⬜ Todo | Per-user discovery rate limit (optional). |
 | 7 | 7.1 | ⬜ Todo | Crossing paths nudge UI. |
 | 7 | 7.2 | ⬜ Todo | Consent as product in chat/list. |
 | 7 | 7.3 | ⬜ Todo | Series and recurring events UI. |
@@ -274,10 +282,10 @@
 4. **Tier 3** — Blur/reveal and thumbnails.
 5. **Tier 4** — Stories, Tonight, events filters, ads, event edit/door code, create-event expansion, content, groups.
 6. **Tier 5** — Admin polish and a11y.
-7. **Tier 6** — Backend hardening (secrets, Redis, idempotency, observability, workers, upload security).
+7. **Tier 6** — Backend hardening (secrets ✅, Redis, idempotency, observability, workers, upload security ✅, missed-check-in worker, alerting, per-user discovery limit).
 8. **Tier 7** — Game-changer UI (crossing paths, consent, series, gated events, badges, density, two-layer profile, persona expiry, ad explainer, venue distress).
 
 ---
 
 **End of Master Implementation Checklist.**  
-For current system state see **E2E_CAPABILITY_AUDIT_REPORT.md**. For gap-by-gap tracking see **FRONTEND_GAP_LIST.md**. For backend reality see **SYSTEM_REALITY_REPORT.md** and **SYSTEM_REALITY_REPORT_APPENDICES.md**.
+For current system state see **E2E_CAPABILITY_AUDIT_REPORT.md**. For gap-by-gap tracking see **FRONTEND_GAP_LIST.md**. For backend reality see **SYSTEM_REALITY_REPORT.md** and **SYSTEM_REALITY_REPORT_APPENDICES.md**. For adversarial audit verification see **ADVERSARIAL_AUDIT_VERIFICATION.md**.

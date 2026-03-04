@@ -1,18 +1,28 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { AdminLoading, AdminError } from '../components/AdminPageState';
 
 export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [health, setHealth] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    adminApi.getOverview().then(r => setData(r.data)).catch(() => {
-      adminApi.getStats().then(r => setData({ users: r.data.users, safety: r.data.reports, revenue: {}, content: {}, system: {} })).catch(() => {});
-    });
+  const load = () => {
+    setError(null);
+    adminApi.getOverview()
+      .then(r => { setData(r.data); setError(null); })
+      .catch(() => {
+        adminApi.getStats()
+          .then(r => setData({ users: r.data.users, safety: r.data.reports, revenue: {}, content: {}, system: {} }))
+          .catch(() => setError('Failed to load dashboard. Check API connection.'));
+      });
     adminApi.getHealth().then(setHealth).catch(() => {});
-  }, []);
+  };
 
-  if (!data) return <div style={{ color: '#888', padding: 20 }}>Loading...</div>;
+  useEffect(load, []);
+
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (!data) return <AdminLoading />;
 
   const u = data.users || {};
   const r = data.revenue || {};
@@ -35,8 +45,8 @@ export default function Dashboard() {
   ];
 
   return (
-    <div>
-      <h2 style={{ color: '#fff', marginBottom: 20 }}>Command Center</h2>
+    <div role="main" aria-label="Command Center">
+      <h2 style={{ color: '#fff', marginBottom: 20 }} id="dashboard-title">Command Center</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 24 }}>
         {cards.map(c => (

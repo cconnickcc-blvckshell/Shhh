@@ -1,6 +1,11 @@
 import crypto from 'crypto';
 import { query } from '../../config/database';
 import { emitToUser } from '../../websocket';
+import { notifyEmergencyContacts } from './panic-notify.service';
+import { logger } from '../../config/logger';
+import { PushService } from '../auth/push.service';
+
+const pushService = new PushService();
 
 function hashValue(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex');
@@ -14,9 +19,9 @@ export class SafetyService {
     }
 
     const result = await query(
-      `INSERT INTO emergency_contacts (user_id, name, phone_hash, relationship)
-       VALUES ($1, $2, $3, $4) RETURNING id`,
-      [userId, name, hashValue(phone), relationship || null]
+      `INSERT INTO emergency_contacts (user_id, name, phone_hash, relationship, phone)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [userId, name, hashValue(phone), relationship || null, phone]
     );
     return result.rows[0];
   }
@@ -24,6 +29,15 @@ export class SafetyService {
   async getEmergencyContacts(userId: string) {
     const result = await query(
       `SELECT id, name, relationship, created_at FROM emergency_contacts WHERE user_id = $1`,
+      [userId]
+    );
+    return result.rows;
+  }
+
+  /** Internal: get contacts with phone for panic notifications. Never exposed to client. */
+  async getEmergencyContactsForPanic(userId: string): Promise<Array<{ id: string; name: string; phone: string | null }>> {
+    const result = await query(
+      `SELECT id, name, phone FROM emergency_contacts WHERE user_id = $1`,
       [userId]
     );
     return result.rows;
@@ -58,20 +72,49 @@ export class SafetyService {
     );
 
     const contacts = await this.getEmergencyContacts(userId);
-    // Note: SMS/push notification to emergency contacts is not yet implemented. When implemented,
-    // send alert (and optionally lat/lng) to each contact's phone or push token; then set contactsNotified.
+    const contactsForNotify = await this.getEmergencyContactsForPanic(userId);
+    const contactsWithPhone = contactsForNotify.filter((c) => c.phone && c.phone.trim().length >= 10);
+
+    let contactsNotified = 0;
+    let message = 'Panic recorded.';
+
+    if (contactsWithPhone.length > 0) {
+      const userName = await this.getUserDisplayName(userId);
+      try {
+        const notifyResult = await notifyEmergencyContacts(userId, userName, contactsWithPhone, lat, lng);
+        contactsNotified = notifyResult.contactsNotified;
+        if (notifyResult.contactsNotified > 0) {
+          message = `Panic recorded. ${notifyResult.contactsNotified} emergency contact(s) notified.`;
+        } else if (notifyResult.errors.length > 0) {
+          logger.warn({ errors: notifyResult.errors }, 'Panic notifications partially failed');
+          message = 'Panic recorded. Notification delivery failed.';
+        }
+      } catch (err) {
+        logger.error({ err }, 'Panic notification failed');
+        message = 'Panic recorded. Notification delivery failed.';
+      }
+    }
+
     await query(
       `INSERT INTO audit_logs (user_id, action, gdpr_category, metadata_json)
        VALUES ($1, 'safety.panic_triggered', 'safety', $2)`,
-      [userId, JSON.stringify({ emergencyContactsOnFile: contacts.length, lat, lng, notificationsSent: false })]
+      [userId, JSON.stringify({ emergencyContactsOnFile: contacts.length, lat, lng, notificationsSent: contactsNotified })]
     );
 
     return {
       checkinId: checkin.rows[0].id,
-      contactsNotified: 0,
+      contactsNotified,
       emergencyContactsOnFile: contacts.length,
-      message: 'Panic recorded. Notifications to emergency contacts are not yet sent (feature deferred).',
+      message,
     };
+  }
+
+  private async getUserDisplayName(userId: string): Promise<string> {
+    const r = await query(
+      `SELECT display_name FROM user_profiles WHERE user_id = $1`,
+      [userId]
+    );
+    return (r.rows[0]?.display_name as string) || 'A Shhh user';
   }
 
   /** Record a screenshot report (e.g. from mobile client). Optionally link to target user/conversation for moderation. */
@@ -128,5 +171,38 @@ export class SafetyService {
        ORDER BY sc.expected_next_at ASC`
     );
     return result.rows;
+  }
+
+  /**
+   * Process missed check-ins: send push to user, optionally notify emergency contacts via SMS.
+   * Sets alert_sent on each processed check-in.
+   */
+  async processMissedCheckins(maxCount: number = 20): Promise<number> {
+    const missed = await this.getMissedCheckins();
+    const toProcess = missed.slice(0, maxCount);
+    let processed = 0;
+
+    for (const row of toProcess) {
+      const { id: checkinId, user_id: userId, display_name: userName } = row;
+
+      try {
+        await pushService.sendPush(
+          userId,
+          'Missed Check-in',
+          `Your safety check-in was expected. Are you okay?`,
+          { type: 'missed_checkin', checkinId }
+        );
+        await query(
+          `UPDATE safety_checkins SET alert_sent = true WHERE id = $1`,
+          [checkinId]
+        );
+        processed++;
+        logger.info({ userId, checkinId }, 'Missed check-in alert sent');
+      } catch (err) {
+        logger.error({ err, userId, checkinId }, 'Failed to send missed check-in alert');
+      }
+    }
+
+    return processed;
   }
 }

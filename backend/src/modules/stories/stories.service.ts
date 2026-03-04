@@ -17,9 +17,10 @@ export class StoriesService {
   async getNearby(lat: number, lng: number, radiusKm: number = 50, limit: number = 30) {
     const radiusM = radiusKm * 1000;
     const result = await query(
-      `SELECT s.*, s.user_id as author_id, v.name as venue_name,
+      `SELECT s.*, s.user_id as author_id, v.name as venue_name, m.storage_path as media_storage_path,
               (SELECT COUNT(*) FROM story_views sv WHERE sv.story_id = s.id)::int as view_count
        FROM stories s
+       LEFT JOIN media m ON m.id = s.media_id AND m.deleted_at IS NULL
        LEFT JOIN venues v ON s.venue_id = v.id
        LEFT JOIN locations l ON l.user_id = s.user_id
        WHERE s.expires_at > NOW()
@@ -44,9 +45,10 @@ export class StoriesService {
 
   async getByVenue(venueId: string) {
     const result = await query(
-      `SELECT s.*, s.user_id as author_id,
+      `SELECT s.*, s.user_id as author_id, m.storage_path as media_storage_path,
               (SELECT COUNT(*) FROM story_views sv WHERE sv.story_id = s.id)::int as view_count
        FROM stories s
+       LEFT JOIN media m ON m.id = s.media_id AND m.deleted_at IS NULL
        WHERE s.venue_id = $1 AND s.expires_at > NOW()
        ORDER BY s.created_at DESC`,
       [venueId]
@@ -76,7 +78,11 @@ export class StoriesService {
 
   async getStory(storyId: string) {
     const result = await query(
-      `SELECT s.*, v.name as venue_name FROM stories s LEFT JOIN venues v ON s.venue_id = v.id WHERE s.id = $1 AND s.expires_at > NOW()`,
+      `SELECT s.*, v.name as venue_name, m.storage_path as media_storage_path
+       FROM stories s
+       LEFT JOIN venues v ON s.venue_id = v.id
+       LEFT JOIN media m ON m.id = s.media_id AND m.deleted_at IS NULL
+       WHERE s.id = $1 AND s.expires_at > NOW()`,
       [storyId]
     );
     return result.rows[0] || null;

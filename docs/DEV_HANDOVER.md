@@ -758,7 +758,7 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | POST | `/v1/safety/contacts` | Yes | 0 | Add emergency contact |
 | DELETE | `/v1/safety/contacts/:id` | Yes | 0 | Remove emergency contact |
 | POST | `/v1/safety/checkin` | Yes | 0 | Safety check-in |
-| POST | `/v1/safety/panic` | Yes | 0 | Trigger panic (recorded; notifications to contacts not yet sent) |
+| POST | `/v1/safety/panic` | Yes | 0 | Trigger panic (recorded; SMS + push to emergency contacts when configured) |
 | POST | `/v1/safety/screenshot` | Yes | 0 | Record screenshot report (body: optional targetUserId, conversationId) |
 | POST | `/v1/safety/venue-distress` | Yes | 0 | Signal distress to venue security (body: venueId). User must be checked in; notifies active venue staff via WebSocket. |
 
@@ -1893,7 +1893,7 @@ The `useScreenshotDetection` hook:
 - Users add contacts with name, phone (hashed), and relationship
 - Contacts are listed via `GET /v1/safety/contacts`
 - When a panic event occurs, the system records which contacts should be notified
-- **Future:** SMS/push notifications to emergency contacts (Twilio integration pending)
+- **Implemented:** SMS (Twilio) and push (Expo) to emergency contacts when panic triggered; requires `emergency_contacts.phone` (migration 029)
 
 ### 11.7 Check-In System
 
@@ -1904,7 +1904,7 @@ Safety check-ins (`POST /v1/safety/checkin`) record:
 - `alert_sent`: whether a missed-checkin alert was triggered
 
 **Missed check-in flow (planned):**
-- If `expected_next_at` passes without a new check-in, the system should alert emergency contacts
+- If `expected_next_at` passes without a new check-in, the worker `process-missed-checkins` (every 2m) sends push to the user and sets `alert_sent`
 - Currently the `responded_at` and `alert_sent` columns exist but the alert worker is not yet built
 
 ---
@@ -2308,7 +2308,7 @@ The mobile app's API client uses `window.localStorage` for token persistence on 
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| SMS notifications to emergency contacts | Schema ready, integration pending | Twilio SDK imported but not called on panic |
+| SMS notifications to emergency contacts | Implemented | panic-notify.service.ts; Twilio for SMS; PushService for Shhh users |
 | Missed check-in alerts | Schema ready, worker not built | `expected_next_at` and `alert_sent` columns exist |
 | Push notification delivery | Infrastructure ready | Uses Expo push API; needs EAS project setup |
 | Photo moderation | Schema ready, auto-approve | `moderation_status` defaults to `auto_approved`; no AI moderation |

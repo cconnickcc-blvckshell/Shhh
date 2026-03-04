@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { AdminLoading, AdminError } from '../components/AdminPageState';
 
 interface Report {
   id: string;
@@ -14,12 +15,22 @@ interface Report {
 export default function Reports() {
   const [reports, setReports] = useState<Report[]>([]);
   const [filter, setFilter] = useState('pending');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = () => {
-    adminApi.getReports(filter).then(r => setReports(r.data as Report[])).catch(() => {});
+    setLoading(true);
+    setError(null);
+    adminApi.getReports(filter)
+      .then(r => { setReports(r.data as Report[]); setError(null); })
+      .catch(() => setError('Failed to load reports.'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(load, [filter]);
+
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (loading && reports.length === 0) return <AdminLoading />;
 
   const resolve = async (id: string, status: string) => {
     await adminApi.resolveReport(id, status);
@@ -27,8 +38,8 @@ export default function Reports() {
   };
 
   return (
-    <div>
-      <h2 style={{ color: '#fff', marginBottom: '1rem' }}>Reports</h2>
+    <div role="main" aria-label="Content reports">
+      <h2 style={{ color: '#fff', marginBottom: '1rem' }} id="reports-title">Reports</h2>
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
         {['pending', 'reviewing', 'resolved', 'dismissed'].map(s => (
           <button key={s} onClick={() => setFilter(s)}

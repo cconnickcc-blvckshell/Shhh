@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { AdminLoading, AdminError } from '../components/AdminPageState';
 
 interface LogEntry {
   id: string;
@@ -11,20 +12,32 @@ interface LogEntry {
 
 export default function AuditLog() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    adminApi.getAuditLogs(100).then(r => setLogs(r.data as LogEntry[])).catch(() => {});
-  }, []);
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    adminApi.getAuditLogs(100)
+      .then(r => { setLogs(r.data as LogEntry[]); setError(null); })
+      .catch(() => setError('Failed to load audit log.'))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (loading && logs.length === 0) return <AdminLoading />;
 
   return (
-    <div>
-      <h2 style={{ color: '#fff', marginBottom: '1rem' }}>Audit Log</h2>
+    <div role="main" aria-label="Audit log">
+      <h2 style={{ color: '#fff', marginBottom: '1rem' }} id="audit-title">Audit Log</h2>
       <div style={{ background: '#1a1a2e', borderRadius: '12px', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }} role="grid" aria-label="Audit log entries">
           <thead>
             <tr style={{ borderBottom: '1px solid #333' }}>
               {['Time', 'User', 'Action', 'Category'].map(h => (
-                <th key={h} style={{ padding: '12px', textAlign: 'left', color: '#aaa', fontSize: '0.75rem', textTransform: 'uppercase' }}>{h}</th>
+                <th key={h} scope="col" style={{ padding: '12px', textAlign: 'left', color: '#aaa', fontSize: '0.75rem', textTransform: 'uppercase' }}>{h}</th>
               ))}
             </tr>
           </thead>

@@ -349,7 +349,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | multer | Multipart uploads |
 | sharp | Image processing (thumbnails, etc.) |
 | stripe | Billing / subscriptions |
-| twilio | SMS OTP (optional) |
+| twilio | SMS OTP (optional); panic notifications to emergency contacts |
 | tweetnacl, tweetnacl-util | E2EE (e.g. key exchange) |
 | pino / pino-pretty | Structured logging |
 | http-errors | HTTP error creation |
@@ -776,11 +776,11 @@ Total: 0–100 → Badge:
 User                    API                    System
  │                       │                        │
  ├─ POST /safety/panic ─▶ Create panic checkin    │
- │   {lat, lng}          ├─ Get emergency contacts│
+ │   {lat, lng}          ├─ Get emergency contacts (with phone) │
+ │                       ├─ For each contact: SMS (Twilio) + push (if Shhh user) │
  │                       ├─ Audit log (safety)    │
- │  ◀─ {checkinId,       │  Notifications to     │
- │      contactsNotified:0, emergencyContactsOnFile}  contacts deferred   │
- │                       │  (SMS/push not yet implemented).               │
+ │  ◀─ {checkinId,       │  contactsNotified, message │
+ │      contactsNotified, emergencyContactsOnFile} │
 ```
 
 ### 5.6 Private Album Sharing Flow
@@ -952,6 +952,7 @@ Deletion, retention, anonymization, and TTL behavior across stores:
 | **refresh tokens** | Postgres | Until revocation or 7d expiry; logout revokes. |
 | **push tokens** | Postgres | Until unregister; deletion should revoke. |
 | **OTP codes** | Redis | 5 min TTL. |
+| **Redis eviction** | noeviction | Do not evict auth/OTP keys; returns error when full. See docker-compose. |
 | **user PII** | Postgres | Deletion worker anonymizes (phone_hash, profile); sets `deleted_at`. |
 
 **Gap:** MongoDB messages for deleted users are not purged. Deletion worker only handles Postgres.

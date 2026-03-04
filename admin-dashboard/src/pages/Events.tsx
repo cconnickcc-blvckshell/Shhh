@@ -1,15 +1,31 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { AdminLoading, AdminError } from '../components/AdminPageState';
 
 export default function Events() {
   const [events, setEvents] = useState<any[]>([]);
-  useEffect(() => { adminApi.listEvents().then(r => setEvents(r.data)).catch(() => {}); }, []);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    adminApi.listEvents()
+      .then(r => { setEvents(r.data); setError(null); })
+      .catch(() => setError('Failed to load events.'))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (loading && events.length === 0) return <AdminLoading />;
 
   const phaseColors: Record<string, string> = { discovery: '#60A5FA', upcoming: '#818CF8', live: '#34D399', winding_down: '#FBBF24', post: '#888', archived: '#555' };
 
   return (
-    <div>
-      <h2 style={{ color: '#fff', marginBottom: 20 }}>Events ({events.length})</h2>
+    <div role="main" aria-label="Events management">
+      <h2 style={{ color: '#fff', marginBottom: 20 }} id="events-title">Events ({events.length})</h2>
       <div style={{ display: 'grid', gap: 10 }}>
         {events.map(e => (
           <div key={e.id} style={{ background: '#1a1a2e', borderRadius: 12, padding: 16, borderLeft: `3px solid ${phaseColors[e.phase || e.status] || '#555'}` }}>

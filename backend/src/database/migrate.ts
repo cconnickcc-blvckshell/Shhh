@@ -1,10 +1,22 @@
 import fs from 'fs';
 import path from 'path';
-import { getPool, closePool } from '../config/database';
+import { Pool } from 'pg';
+import { config } from '../config';
 import { logger } from '../config/logger';
 
+/** Uses DATABASE_MIGRATION_URL (direct) if set, else DATABASE_URL. Supabase: use direct for migrations. */
+function getMigrationPool(): Pool {
+  const url = config.database.migrationUrl;
+  const needsSsl = process.env.DATABASE_SSL === 'true' || url?.includes('sslmode=require');
+  return new Pool({
+    connectionString: url,
+    max: 1,
+    ...(needsSsl && { ssl: { rejectUnauthorized: true } }),
+  });
+}
+
 async function migrate() {
-  const pool = getPool();
+  const pool = getMigrationPool();
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -53,7 +65,7 @@ async function migrate() {
   }
 
   logger.info('All migrations applied');
-  await closePool();
+  await pool.end();
 }
 
 migrate().catch((err) => {

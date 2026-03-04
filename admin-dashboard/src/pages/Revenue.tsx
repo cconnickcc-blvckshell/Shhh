@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { AdminLoading, AdminError } from '../components/AdminPageState';
 
 export default function Revenue() {
   const [revenue, setRevenue] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { adminApi.getRevenue().then(r => setRevenue(r.data)).catch(() => {}); }, []);
+  const load = () => {
+    setError(null);
+    adminApi.getRevenue()
+      .then(r => { setRevenue(r.data); setError(null); })
+      .catch(() => setError('Failed to load revenue data.'));
+  };
 
-  if (!revenue) return <div style={{ color: '#888', padding: 20 }}>Loading...</div>;
+  useEffect(load, []);
+
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (!revenue) return <AdminLoading />;
 
   const mrr = (revenue.mrr?.mrr_cents || 0) / 100;
   const adRev = (revenue.adRevenue?.total_ad_revenue || 0) / 100;
@@ -22,8 +32,8 @@ export default function Revenue() {
   ];
 
   return (
-    <div>
-      <h2 style={{ color: '#fff', marginBottom: 20 }}>Revenue</h2>
+    <div role="main" aria-label="Revenue dashboard">
+      <h2 style={{ color: '#fff', marginBottom: 20 }} id="revenue-title">Revenue</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
         {cards.map(c => (

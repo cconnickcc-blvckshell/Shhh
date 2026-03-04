@@ -24,5 +24,6 @@ router.post('/', authenticate, validate(createStorySchema), controller.create);
 router.get('/nearby', authenticate, validate(nearbyQuerySchema, 'query'), controller.getNearby);
 router.get('/:id/view', authenticate, controller.view);
 router.get('/:id/viewers', authenticate, controller.getViewers);
+router.get('/:id', authenticate, controller.getOne);
 
 export default router;

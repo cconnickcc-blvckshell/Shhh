@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { AdminLoading, AdminError } from '../components/AdminPageState';
 
 export default function Safety() {
   const [alerts, setAlerts] = useState<any>(null);
-  useEffect(() => { adminApi.getSafetyAlerts().then(r => setAlerts(r.data)).catch(() => {}); }, []);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!alerts) return <div style={{ color: '#888', padding: 20 }}>Loading...</div>;
+  const load = () => {
+    setError(null);
+    adminApi.getSafetyAlerts()
+      .then(r => { setAlerts(r.data); setError(null); })
+      .catch(() => setError('Failed to load safety alerts.'));
+  };
+
+  useEffect(load, []);
+
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (!alerts) return <AdminLoading />;
 
   return (
-    <div>
-      <h2 style={{ color: '#fff', marginBottom: 20 }}>Safety Center</h2>
+    <div role="main" aria-label="Safety center">
+      <h2 style={{ color: '#fff', marginBottom: 20 }} id="safety-title">Safety Center</h2>
 
       {/* Panic Alerts */}
       <div style={{ marginBottom: 24 }}>

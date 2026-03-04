@@ -11,6 +11,7 @@ const PRESENCE_STATES = [
   { key: 'browsing', label: 'Browsing', icon: 'compass', desc: '15 min', color: colors.primaryLight },
   { key: 'open_to_chat', label: 'Open', icon: 'chatbubble', desc: '60 min', color: '#34D399' },
   { key: 'at_venue', label: 'At Venue', icon: 'business', desc: '2 hrs', color: '#FBBF24' },
+  { key: 'at_event', label: 'At Event', icon: 'calendar', desc: '4 hrs', color: '#F472B6' },
   { key: 'paused', label: 'Paused', icon: 'pause-circle', desc: '30 min', color: 'rgba(255,255,255,0.35)' },
 ];
 

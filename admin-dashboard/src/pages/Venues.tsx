@@ -1,13 +1,29 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { AdminLoading, AdminError } from '../components/AdminPageState';
 
 export default function Venues() {
   const [venues, setVenues] = useState<any[]>([]);
-  useEffect(() => { adminApi.listVenues().then(r => setVenues(r.data)).catch(() => {}); }, []);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    adminApi.listVenues()
+      .then(r => { setVenues(r.data); setError(null); })
+      .catch(() => setError('Failed to load venues.'))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (loading && venues.length === 0) return <AdminLoading />;
 
   return (
-    <div>
-      <h2 style={{ color: '#fff', marginBottom: 20 }}>Venues ({venues.length})</h2>
+    <div role="main" aria-label="Venues management">
+      <h2 style={{ color: '#fff', marginBottom: 20 }} id="venues-title">Venues ({venues.length})</h2>
       <div style={{ display: 'grid', gap: 12 }}>
         {venues.map(v => (
           <div key={v.id} style={{ background: '#1a1a2e', borderRadius: 12, padding: 16 }}>

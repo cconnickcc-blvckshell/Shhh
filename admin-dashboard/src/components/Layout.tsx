@@ -25,7 +25,7 @@ export default function Layout() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a0f' }}>
-      <nav style={{ width: 200, background: '#0e0b16', padding: '16px 0', borderRight: '1px solid #1a1a2e', flexShrink: 0 }}>
+      <nav style={{ width: 200, background: '#0e0b16', padding: '16px 0', borderRight: '1px solid #1a1a2e', flexShrink: 0 }} role="navigation" aria-label="Admin navigation">
         <div style={{ padding: '0 16px', marginBottom: 20 }}>
           <h1 style={{ color: '#A855F7', fontSize: 18, margin: 0, fontWeight: 800 }}>Shhh</h1>
           <div style={{ color: '#555', fontSize: 10, marginTop: 2, textTransform: 'uppercase', letterSpacing: 1 }}>Command Center</div>
@@ -33,7 +33,7 @@ export default function Layout() {
         {navItems.map(item => {
           const isActive = location.pathname === item.path;
           return (
-            <Link key={item.path} to={item.path}
+            <Link key={item.path} to={item.path} aria-current={isActive ? 'page' : undefined} aria-label={item.label}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
                 color: isActive ? '#A855F7' : '#888', textDecoration: 'none', fontSize: 13, fontWeight: isActive ? 700 : 500,

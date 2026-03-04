@@ -1,24 +1,39 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { AdminLoading, AdminError } from '../components/AdminPageState';
 
 export default function Settings() {
   const [adSettings, setAdSettings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { adminApi.getAdSettings().then(r => setAdSettings(r.data)).catch(() => {}); }, []);
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    adminApi.getAdSettings()
+      .then(r => { setAdSettings(r.data); setError(null); })
+      .catch(() => setError('Failed to load settings.'))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
 
   const toggleAds = async () => {
     const global = adSettings.find(s => s.id === 'global');
     if (!global) return;
     const current = global.value?.enabled ?? true;
     await adminApi.updateAdSetting('global', { ...global.value, enabled: !current });
-    adminApi.getAdSettings().then(r => setAdSettings(r.data));
+    load();
   };
 
   const globalConfig = adSettings.find(s => s.id === 'global')?.value || {};
 
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (loading && adSettings.length === 0) return <AdminLoading />;
+
   return (
-    <div>
-      <h2 style={{ color: '#fff', marginBottom: 20 }}>System Settings</h2>
+    <div role="main" aria-label="System settings">
+      <h2 style={{ color: '#fff', marginBottom: 20 }} id="settings-title">System Settings</h2>
 
       <div style={{ background: '#1a1a2e', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <h3 style={{ color: '#fff', fontSize: 15, marginBottom: 12 }}>Ad Controls</h3>

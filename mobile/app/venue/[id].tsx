@@ -10,6 +10,7 @@ export default function VenueDetailScreen() {
   const [venue, setVenue] = useState<any>(null);
   const [grid, setGrid] = useState<any[]>([]);
   const [gridLoading, setGridLoading] = useState(false);
+  const [venueStories, setVenueStories] = useState<any[]>([]);
   const { width } = useWindowDimensions();
 
   useEffect(() => {
@@ -20,6 +21,11 @@ export default function VenueDetailScreen() {
     if (!id) return;
     setGridLoading(true);
     venuesApi.getGrid(id).then(r => { setGrid(r.data || []); }).catch(() => setGrid([])).finally(() => setGridLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    venuesApi.getStories(id).then(r => setVenueStories(r.data || [])).catch(() => setVenueStories([]));
   }, [id]);
 
   const handleShare = async () => {
@@ -77,6 +83,21 @@ export default function VenueDetailScreen() {
             <Text style={s.actionText}>Review</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Venue stories */}
+        {venueStories.length > 0 && (
+          <View style={s.section} accessibilityRole="none">
+            <Text style={s.sectionTitle} accessibilityRole="header">STORIES</Text>
+            <TouchableOpacity style={s.storiesRow} onPress={() => router.push(`/stories/venue/${id}`)}>
+              {venueStories.slice(0, 5).map((st: any, i: number) => (
+                <View key={st.id} style={[s.storyCircle, i > 0 && { marginLeft: -8 }]}>
+                  <Ionicons name="camera" size={16} color="rgba(255,255,255,0.6)" />
+                </View>
+              ))}
+              <Text style={s.storiesLabel}>View stories</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Who's here (grid) */}
         {(grid.length > 0 || gridLoading) && (
@@ -220,4 +241,7 @@ const s = StyleSheet.create({
   gridRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   gridTile: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' },
   gridTileName: { color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '600', maxWidth: 52 },
+  storiesRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  storyCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(147,51,234,0.2)', borderWidth: 2, borderColor: 'rgba(147,51,234,0.3)', alignItems: 'center', justifyContent: 'center' },
+  storiesLabel: { color: colors.primaryLight, fontSize: 13, fontWeight: '600', marginLeft: 12 },
 });

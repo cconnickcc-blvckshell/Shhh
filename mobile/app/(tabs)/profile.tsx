@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/auth';
 import { safetyApi } from '../../src/api/client';
+import { useLocation } from '../../src/hooks/useLocation';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 import { PageShell, ContentColumn, Card } from '../../src/components/layout';
@@ -58,15 +59,18 @@ export default function ProfileScreen() {
     );
   }
 
-  const handlePanic = () => Alert.alert('Emergency Alert', 'Record a panic alert with your location? (Emergency contact notification is not yet active.)', [
+  const location = useLocation();
+  const handlePanic = () => Alert.alert('Emergency Alert', 'Record a panic alert with your location? Your emergency contacts will be notified when possible.', [
     { text: 'Cancel', style: 'cancel' },
     {
       text: 'SEND ALERT',
       style: 'destructive',
       onPress: async () => {
         try {
-          const res = await safetyApi.panic(40.7128, -74.006) as { data?: { message?: string; contactsNotified?: number } };
-          const msg = res?.data?.message || 'Alert recorded. Emergency contact notification is not yet active.';
+          const lat = location?.coords?.latitude;
+          const lng = location?.coords?.longitude;
+          const res = await safetyApi.panic(lat, lng) as { data?: { message?: string; contactsNotified?: number } };
+          const msg = res?.data?.message || 'Alert recorded.';
           Alert.alert('Alert Recorded', msg);
         } catch {
           Alert.alert('Error', 'Could not send alert. Try again.');
@@ -136,9 +140,15 @@ export default function ProfileScreen() {
         <View style={styles.div} />
         <MenuItem icon="ear-outline" label="Whispers" onPress={() => router.push('/whispers')} />
         <View style={styles.div} />
+        <MenuItem icon="people" label="Groups" onPress={() => router.push('/groups')} />
+        <View style={styles.div} />
         <MenuItem icon="diamond-outline" label="Premium" onPress={() => router.push('/subscription')} badge={undefined} />
         <View style={styles.div} />
         <MenuItem icon="lock-closed-outline" label="Privacy & Data" onPress={() => router.push('/profile/privacy')} />
+        <View style={styles.div} />
+        <MenuItem icon="book-outline" label="Guides" onPress={() => router.push('/content/guides')} />
+        <View style={styles.div} />
+        <MenuItem icon="hand-left-outline" label="Community Norms" onPress={() => router.push('/content/norms')} />
       </Card>
 
       {/* Safety */}

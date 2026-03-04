@@ -10,6 +10,8 @@ export const config = {
 
   database: {
     url: process.env.DATABASE_URL || 'postgresql://shhh_dev:shhh_dev_password@localhost:5432/shhh',
+    /** Optional. Use for migrations when pooler blocks DDL (e.g. Supabase). Falls back to DATABASE_URL. */
+    migrationUrl: process.env.DATABASE_MIGRATION_URL || process.env.DATABASE_URL || 'postgresql://shhh_dev:shhh_dev_password@localhost:5432/shhh',
   },
 
   redis: {

@@ -16,6 +16,19 @@ export class StoriesController {
     }
   }
 
+  async getOne(req: Request, res: Response, next: NextFunction) {
+    try {
+      const story = await storiesService.getStory(req.params.id as string);
+      if (!story) {
+        res.status(404).json({ error: { message: 'Story not found or expired' } });
+        return;
+      }
+      res.json({ data: story });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getNearby(req: Request, res: Response, next: NextFunction) {
     try {
       const lat = parseFloat(req.query.lat as string);

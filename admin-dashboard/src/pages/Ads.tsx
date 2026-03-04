@@ -1,14 +1,29 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { AdminLoading, AdminError } from '../components/AdminPageState';
 
 export default function Ads() {
   const [ads, setAds] = useState<any[]>([]);
-  const load = () => adminApi.listAds().then(r => setAds(r.data)).catch(() => {});
-  useEffect(() => { load(); }, []);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    adminApi.listAds()
+      .then(r => { setAds(r.data); setError(null); })
+      .catch(() => setError('Failed to load ad placements.'))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (loading && ads.length === 0) return <AdminLoading />;
 
   return (
-    <div>
-      <h2 style={{ color: '#fff', marginBottom: 20 }}>Ad Placements</h2>
+    <div role="main" aria-label="Ad placements">
+      <h2 style={{ color: '#fff', marginBottom: 20 }} id="ads-title">Ad Placements</h2>
       <div style={{ background: '#1a1a2e', borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr style={{ borderBottom: '1px solid #333' }}>
