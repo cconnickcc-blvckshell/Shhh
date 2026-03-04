@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server as SocketServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
+import { query } from '../config/database';
 import { logger } from '../config/logger';
 import { AuthPayload } from '../middleware/auth';
 import { wsConnectionsCurrent } from '../middleware/metrics';
@@ -42,9 +43,22 @@ export function setupWebSocket(httpServer: HttpServer): SocketServer {
 
     socket.join(`user:${userId}`);
 
-    socket.on('join_conversation', (conversationId: string) => {
-      socket.join(`conversation:${conversationId}`);
-      logger.debug({ userId, conversationId }, 'Joined conversation room');
+    socket.on('join_conversation', async (conversationId: string) => {
+      try {
+        const { rows } = await query(
+          'SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2',
+          [conversationId, userId],
+        );
+        if (rows.length === 0) {
+          socket.emit('error', { message: 'Not a participant in this conversation' });
+          return;
+        }
+        socket.join(`conversation:${conversationId}`);
+        logger.debug({ userId, conversationId }, 'Joined conversation room');
+      } catch (err) {
+        logger.error({ err, userId, conversationId }, 'Failed to verify conversation membership');
+        socket.emit('error', { message: 'Failed to join conversation' });
+      }
     });
 
     socket.on('leave_conversation', (conversationId: string) => {
@@ -52,6 +66,7 @@ export function setupWebSocket(httpServer: HttpServer): SocketServer {
     });
 
     socket.on('typing', (data: { conversationId: string }) => {
+      if (!socket.rooms.has(`conversation:${data.conversationId}`)) return;
       socket.to(`conversation:${data.conversationId}`).emit('user_typing', {
         userId,
         conversationId: data.conversationId,
@@ -59,6 +74,7 @@ export function setupWebSocket(httpServer: HttpServer): SocketServer {
     });
 
     socket.on('stop_typing', (data: { conversationId: string }) => {
+      if (!socket.rooms.has(`conversation:${data.conversationId}`)) return;
       socket.to(`conversation:${data.conversationId}`).emit('user_stop_typing', {
         userId,
         conversationId: data.conversationId,
@@ -66,6 +82,7 @@ export function setupWebSocket(httpServer: HttpServer): SocketServer {
     });
 
     socket.on('message_read', (data: { conversationId: string; messageId: string }) => {
+      if (!socket.rooms.has(`conversation:${data.conversationId}`)) return;
       socket.to(`conversation:${data.conversationId}`).emit('message_read', {
         userId,
         conversationId: data.conversationId,
