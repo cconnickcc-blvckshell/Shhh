@@ -124,8 +124,8 @@ export default function MessagesScreen() {
 const styles = StyleSheet.create({
   column: { flex: 1 },
   emptyWrap: { flex: 1, paddingVertical: 80 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: 14 },
-  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md, position: 'relative' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xl, paddingVertical: 16 },
+  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(124,43,255,0.08)', alignItems: 'center', justifyContent: 'center', marginRight: spacing.md, position: 'relative', borderWidth: 1, borderColor: 'rgba(124,43,255,0.15)' },
   onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.online, borderWidth: 2, borderColor: colors.background },
   mid: { flex: 1, minWidth: 0 },
   topLine: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -135,5 +135,5 @@ const styles = StyleSheet.create({
   consentHint: { color: colors.textMuted, fontSize: 10, marginTop: 2, opacity: 0.8 },
   badge: { backgroundColor: colors.primary, borderRadius: borderRadius.full, minWidth: 22, height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, marginLeft: spacing.sm },
   badgeText: { color: '#fff', fontSize: fontSize.xxs, fontWeight: '800' },
-  sep: { height: 0.5, backgroundColor: colors.border, marginLeft: 82 },
+  sep: { height: 1, backgroundColor: 'rgba(255,255,255,0.03)', marginLeft: 82 },
 });

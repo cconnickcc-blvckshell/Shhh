@@ -12,26 +12,24 @@ const NAV_ITEMS: { tab: DesktopTabId; label: string; icon: keyof typeof Ionicons
   { tab: 'profile', label: 'Me', icon: 'person-circle', iconOutline: 'person-circle-outline' },
 ];
 
-/**
- * Desktop web sidebar. Active tab derived from pathname; onSelectTab triggers router.replace only.
- * @see docs/FRONTEND_REFACTOR_STRATEGY.md §1 Navigation
- */
 export function WebSidebar({ activeTab, onSelectTab }: { activeTab: DesktopTabId; onSelectTab: (tab: DesktopTabId) => void }) {
   return (
     <View style={styles.sidebar} role="navigation" aria-label="Main navigation">
       <View style={styles.brandWrap}>
         <BrandMark compact />
       </View>
-      {NAV_ITEMS.map((item) => (
-        <SidebarItem
-          key={item.tab}
-          item={item}
-          active={activeTab === item.tab}
-          onPress={() => onSelectTab(item.tab)}
-        />
-      ))}
+      <View style={styles.navGroup}>
+        {NAV_ITEMS.map((item) => (
+          <SidebarItem
+            key={item.tab}
+            item={item}
+            active={activeTab === item.tab}
+            onPress={() => onSelectTab(item.tab)}
+          />
+        ))}
+      </View>
       <View style={styles.trustWrap}>
-        <Text style={styles.trustText}>Private · Verified · Safe</Text>
+        <Text style={styles.trustText}>{'Private \u00B7 Verified \u00B7 Safe'}</Text>
       </View>
     </View>
   );
@@ -64,10 +62,11 @@ function SidebarItem({
     >
       <Ionicons
         name={active ? item.icon : item.iconOutline}
-        size={22}
-        color={active ? colors.primaryLight : colors.textSecondary}
+        size={20}
+        color={active ? '#B35CFF' : 'rgba(255,255,255,0.4)'}
       />
       <Text style={[styles.label, active && styles.labelActive]}>{item.label}</Text>
+      {active && <View style={styles.activeIndicator} />}
     </Pressable>
   );
 }
@@ -76,52 +75,72 @@ const styles = StyleSheet.create({
   sidebar: {
     width: layout.sidebarWidth,
     height: '100%',
-    backgroundColor: 'rgba(8,5,14,0.95)',
+    backgroundColor: 'rgba(6,4,10,0.97)',
     borderRightWidth: 1,
-    borderRightColor: colors.border,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.sm,
+    borderRightColor: 'rgba(124,43,255,0.08)',
+    paddingTop: 32,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    justifyContent: 'flex-start',
   } as any,
-  brandWrap: { paddingHorizontal: spacing.sm, marginBottom: spacing.md },
+  brandWrap: {
+    paddingHorizontal: 4,
+    marginBottom: 40,
+  },
+  navGroup: {
+    gap: 4,
+  },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: 14,
-    marginBottom: spacing.xs,
-  },
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    position: 'relative',
+  } as any,
   itemActive: {
-    backgroundColor: colors.primarySoft,
+    backgroundColor: 'rgba(124,43,255,0.1)',
   },
   itemPressed: {
-    opacity: 0.85,
+    opacity: 0.8,
   },
   itemFocus: {
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderRadius: 14,
-  },
+    outlineWidth: 2,
+    outlineColor: colors.primary,
+    outlineStyle: 'solid',
+    borderRadius: 12,
+  } as any,
   label: {
-    color: colors.textSecondary,
-    fontSize: fontSize.md,
-    fontWeight: '600',
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 15,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   labelActive: {
-    color: colors.primaryLight,
+    color: '#E8D5FF',
+    fontWeight: '600',
   },
+  activeIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: '25%',
+    bottom: '25%',
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: '#B35CFF',
+  } as any,
   trustWrap: {
     marginTop: 'auto',
-    paddingTop: spacing.lg,
-    paddingHorizontal: spacing.sm,
+    paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: 'rgba(255,255,255,0.04)',
   },
   trustText: {
     fontSize: 10,
-    color: colors.textMuted,
-    letterSpacing: 0.5,
+    color: 'rgba(255,255,255,0.15)',
+    letterSpacing: 1,
     textAlign: 'center',
+    textTransform: 'uppercase',
   },
 });

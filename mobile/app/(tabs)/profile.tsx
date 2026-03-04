@@ -37,11 +37,11 @@ function MenuItem({ icon, label, onPress, badge, accent }: { icon: string; label
   );
 }
 const mStyles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 16 },
-  iconBox: { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
-  label: { flex: 1, color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: '500' },
-  badge: { backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, marginRight: 8 },
-  badgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 20 },
+  iconBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: 'rgba(124,43,255,0.06)', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  label: { flex: 1, color: 'rgba(255,255,255,0.75)', fontSize: 15, fontWeight: '500', letterSpacing: 0.1 },
+  badge: { backgroundColor: 'rgba(124,43,255,0.8)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3, marginRight: 10 },
+  badgeText: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
 });
 
 export default function ProfileScreen() {
@@ -168,20 +168,20 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1 },
-  heroCard: { alignItems: 'center', paddingTop: 30, paddingBottom: 24, marginTop: spacing.sm, marginBottom: spacing.md },
-  name: { color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 16, letterSpacing: -0.5 },
-  bio: { color: 'rgba(255,255,255,0.55)', fontSize: 14, marginTop: 6, textAlign: 'center', maxWidth: 260, lineHeight: 20 },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 18 },
-  section: { paddingHorizontal: 20, paddingVertical: 16, marginBottom: spacing.md },
-  sectionHeader: { color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 8 },
+  scroll: { flex: 1, paddingHorizontal: spacing.lg },
+  heroCard: { alignItems: 'center', paddingTop: 40, paddingBottom: 28, marginTop: spacing.lg, marginBottom: spacing.lg, backgroundColor: 'rgba(11,7,18,0.6)', borderColor: 'rgba(124,43,255,0.1)' },
+  name: { color: '#F7F2FF', fontSize: 26, fontWeight: '800', marginTop: 18, letterSpacing: -0.5 },
+  bio: { color: 'rgba(255,255,255,0.45)', fontSize: 14, marginTop: 8, textAlign: 'center', maxWidth: 280, lineHeight: 22 },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 20 },
+  section: { paddingHorizontal: 20, paddingVertical: 18, marginBottom: spacing.md },
+  sectionHeader: { color: 'rgba(179,92,255,0.5)', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 10, textTransform: 'uppercase' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: { backgroundColor: 'rgba(147,51,234,0.12)', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 0.5, borderColor: 'rgba(147,51,234,0.25)' },
   tagText: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
-  menuCard: { marginBottom: spacing.md },
-  div: { height: 0.5, backgroundColor: 'rgba(255,255,255,0.06)', marginLeft: 64 },
-  panicBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#DC2626', marginHorizontal: 16, padding: 16, borderRadius: 14, marginBottom: 10 },
-  panicText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  logoutBtn: { backgroundColor: colors.surface, marginHorizontal: 16, padding: 16, borderRadius: 14, alignItems: 'center' },
-  logoutText: { color: 'rgba(255,255,255,0.4)', fontSize: 15, fontWeight: '600' },
+  menuCard: { marginBottom: spacing.lg, backgroundColor: 'rgba(11,7,18,0.5)', borderColor: 'rgba(124,43,255,0.06)' },
+  div: { height: 1, backgroundColor: 'rgba(255,255,255,0.03)', marginLeft: 64 },
+  panicBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: 'rgba(220,38,38,0.9)', padding: 18, borderRadius: 14, marginBottom: 12 },
+  panicText: { color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: 0.3 },
+  logoutBtn: { backgroundColor: 'rgba(255,255,255,0.03)', padding: 18, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)' },
+  logoutText: { color: 'rgba(255,255,255,0.3)', fontSize: 15, fontWeight: '600' },
 });
