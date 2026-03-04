@@ -134,10 +134,21 @@ export const messagingApi = {
 };
 
 export const eventsApi = {
-  nearby: (lat: number, lng: number) =>
-    api<{ data: any[] }>(`/v1/events/nearby?lat=${lat}&lng=${lng}`),
+  nearby: (lat: number, lng: number, radius?: number, vibe?: string) => {
+    let url = `/v1/events/nearby?lat=${lat}&lng=${lng}`;
+    if (radius != null) url += `&radius=${radius}`;
+    if (vibe) url += `&vibe=${encodeURIComponent(vibe)}`;
+    return api<{ data: any[] }>(url);
+  },
+  thisWeek: (lat: number, lng: number, radius?: number, vibe?: string) => {
+    let url = `/v1/events/this-week?lat=${lat}&lng=${lng}`;
+    if (radius != null) url += `&radius=${radius}`;
+    if (vibe) url += `&vibe=${encodeURIComponent(vibe)}`;
+    return api<{ data: any[] }>(url);
+  },
   getMyHosted: () => api<{ data: any[]; count: number }>('/v1/events/my'),
   create: (data: any) => api<{ data: any }>('/v1/events', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => api<{ data: any }>(`/v1/events/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   get: (id: string) => api<{ data: any }>(`/v1/events/${id}`),
   rsvp: (id: string, status: string) =>
     api<{ data: any }>(`/v1/events/${id}/rsvp`, { method: 'POST', body: JSON.stringify({ status }) }),
@@ -146,12 +157,18 @@ export const eventsApi = {
 };
 
 export const venuesApi = {
+  getNearby: (lat: number, lng: number, radius?: number) => {
+    let url = `/v1/venues/nearby?lat=${lat}&lng=${lng}`;
+    if (radius != null) url += `&radius=${radius}`;
+    return api<{ data: any[]; count: number }>(url);
+  },
   getMyVenues: () => api<{ data: any[]; count: number }>('/v1/venues/my'),
   getDashboard: (venueId: string) => api<{ data: any }>(`/v1/venues/${venueId}/dashboard`),
   getAnalytics: (venueId: string, days = 30) => api<{ data: any[] }>(`/v1/venues/${venueId}/analytics?days=${days}`),
   getStaff: (venueId: string) => api<{ data: any[] }>(`/v1/venues/${venueId}/staff`),
   get: (id: string) => api<{ data: any }>(`/v1/venues/${id}`),
   getGrid: (venueId: string) => api<{ data: any[]; count: number }>(`/v1/venues/${venueId}/grid`),
+  getStories: (venueId: string) => api<{ data: any[]; count: number }>(`/v1/venues/${venueId}/stories`),
   create: (data: { name: string; description?: string; lat: number; lng: number; type?: string; capacity?: number; amenities?: string[] }) =>
     api<{ data: any }>('/v1/venues', { method: 'POST', body: JSON.stringify(data) }),
   updateProfile: (venueId: string, data: Record<string, unknown>) =>
@@ -187,6 +204,55 @@ export const couplesApi = {
   link: (inviteCode: string) => api('/v1/couples/link', { method: 'POST', body: JSON.stringify({ inviteCode }) }),
   requestDissolution: () => api('/v1/couples/dissolve', { method: 'POST', body: JSON.stringify({}) }),
   confirmDissolution: () => api<{ data: { dissolved?: boolean; confirmations?: number; required?: number; cooldownExpires?: string } }>('/v1/couples/confirm-dissolution', { method: 'POST', body: JSON.stringify({}) }),
+};
+
+export const storiesApi = {
+  nearby: (lat: number, lng: number, radius?: number) => {
+    let url = `/v1/stories/nearby?lat=${lat}&lng=${lng}`;
+    if (radius != null) url += `&radius=${radius}`;
+    return api<{ data: any[]; count: number }>(url);
+  },
+  get: (id: string) => api<{ data: any }>(`/v1/stories/${id}`),
+  create: (mediaId: string, venueId?: string, ttlHours?: number) =>
+    api<{ data: any }>('/v1/stories', {
+      method: 'POST',
+      body: JSON.stringify({ mediaId, ...(venueId && { venueId }), ...(ttlHours && { ttlHours }) }),
+    }),
+  view: (id: string) => api<{ data: { viewed: boolean } }>(`/v1/stories/${id}/view`),
+};
+
+export const tonightApi = {
+  getFeed: (lat: number, lng: number, date?: string, radius?: number) => {
+    let url = `/v1/tonight?lat=${lat}&lng=${lng}`;
+    if (date) url += `&date=${date}`;
+    if (radius != null) url += `&radius=${radius}`;
+    return api<{ data: { events: any[]; venues: any[]; date: string } }>(url);
+  },
+};
+
+export const adsApi = {
+  getFeed: (lat?: number, lng?: number) => {
+    let url = '/v1/ads/feed';
+    if (lat != null && lng != null) url += `?lat=${lat}&lng=${lng}`;
+    return api<{ data: any | null }>(url);
+  },
+  recordImpression: (id: string, surface?: string) =>
+    api(`/v1/ads/${id}/impression`, { method: 'POST', body: JSON.stringify({ surface: surface || 'discover_feed' }) }),
+  tap: (id: string) => api(`/v1/ads/${id}/tap`, { method: 'POST' }),
+  dismiss: (id: string) => api(`/v1/ads/${id}/dismiss`, { method: 'POST' }),
+};
+
+export const contentApi = {
+  getGuides: () => api<{ data: { key: string; title: string | null; bodyMd: string | null; link: string | null; locale: string } }>('/v1/content/guides'),
+  getNorms: () => api<{ data: { key: string; title: string | null; bodyMd: string | null; link: string | null; locale: string } }>('/v1/content/norms'),
+};
+
+export const groupsApi = {
+  list: () => api<{ data: any[] }>('/v1/groups'),
+  get: (id: string) => api<{ data: any }>(`/v1/groups/${id}`),
+  join: (id: string) => api(`/v1/groups/${id}/join`, { method: 'POST' }),
+  leave: (id: string) => api(`/v1/groups/${id}/leave`, { method: 'DELETE' }),
+  getEvents: (id: string) => api<{ data: any[] }>(`/v1/groups/${id}/events`),
 };
 
 export const albumsApi = {

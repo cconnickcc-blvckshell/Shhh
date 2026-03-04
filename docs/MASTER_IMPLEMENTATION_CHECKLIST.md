@@ -187,7 +187,7 @@
 
 ## Implementation progress — full status (Tiers 0–7)
 
-**Done: 37 | Remaining: 35** (Tier 8 is deferred, not counted.)
+**Done: 39 | Remaining: 33** (Tier 8 is deferred, not counted.)
 
 | Tier | ID | Status | Notes |
 |------|----|--------|-------|
@@ -239,9 +239,9 @@
 | 4 | 4.5 | ⬜ Todo | Event vibe tags on cards + filter chips. |
 | 4 | 4.6 | ⬜ Todo | at_event presence on Status screen. |
 | 4 | 4.7 | ⬜ Todo | Ads in Discover (VenueAdCard). |
-| 4 | 4.8 | ⬜ Todo | Event edit screen (host). |
-| 4 | 4.9 | ⬜ Todo | Door code UI (host). |
-| 4 | 4.10 | ⬜ Todo | Create event: venue/series/vibe/visibility. |
+| 4 | 4.8 | Done | Event edit screen (host). |
+| 4 | 4.9 | Done | Door code UI (host). |
+| 4 | 4.10 | Done | Create event: venue/series/vibe/visibility. |
 | 4 | 4.11 | ⬜ Todo | Content (guides, norms) screen or modal. |
 | 4 | 4.12 | ⬜ Todo | Groups (tribes) UI. |
 | 5 | 5.1 | ⬜ Todo | Admin: per-screen template (docs). |

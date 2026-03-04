@@ -1,15 +1,21 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { eventsApi, venuesApi } from '../../src/api/client';
-import { useLocation } from '../../src/hooks/useLocation';
-import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
-import { PremiumDarkBackground } from '../../src/components/Backgrounds';
-import { mapApiError } from '../../src/utils/errorMapper';
-
-const FALLBACK_LAT = 40.7128;
-const FALLBACK_LNG = -74.006;
+import { eventsApi } from '../../../src/api/client';
+import { useAuthStore } from '../../../src/stores/auth';
+import { colors, spacing, fontSize, borderRadius } from '../../../src/constants/theme';
+import { PremiumDarkBackground } from '../../../src/components/Backgrounds';
+import { mapApiError } from '../../../src/utils/errorMapper';
 
 const VIBE_OPTIONS = [
   { key: 'social_mix', label: 'Social mix' },
@@ -27,102 +33,97 @@ const VISIBILITY_OPTIONS = [
   { key: 'attended_2_plus', label: '2+ events attended' },
 ];
 
-const EVENT_TYPES = [
-  { key: 'party', label: 'Party' },
-  { key: 'club_night', label: 'Club night' },
-  { key: 'hotel_takeover', label: 'Hotel takeover' },
-  { key: 'travel_meetup', label: 'Travel meetup' },
-];
-
-export default function CreateEventScreen() {
-  const location = useLocation();
-  const lat = location.loading ? FALLBACK_LAT : location.latitude;
-  const lng = location.loading ? FALLBACK_LNG : location.longitude;
-
+export default function EventEditScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const userId = useAuthStore((s) => s.userId);
+  const [event, setEvent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startsAt, setStartsAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
-  const [venueId, setVenueId] = useState<string | null>(null);
-  const [seriesId, setSeriesId] = useState('');
-  const [type, setType] = useState('party');
   const [capacity, setCapacity] = useState('');
   const [vibeTag, setVibeTag] = useState<string | null>(null);
-  const [visibilityRule, setVisibilityRule] = useState('open');
+  const [visibilityRule, setVisibilityRule] = useState<string>('open');
   const [visibilityTierMin, setVisibilityTierMin] = useState('');
   const [visibilityRadiusKm, setVisibilityRadiusKm] = useState('');
   const [locationRevealedAfterRsvp, setLocationRevealedAfterRsvp] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [venues, setVenues] = useState<any[]>([]);
-  const [venuesLoading, setVenuesLoading] = useState(false);
 
   useEffect(() => {
-    setVenuesLoading(true);
-    Promise.all([
-      venuesApi.getNearby(lat, lng, 50),
-      venuesApi.getMyVenues().catch(() => ({ data: [] })),
-    ])
-      .then(([nearbyRes, myRes]) => {
-        const nearby = nearbyRes.data || [];
-        const my = myRes.data || [];
-        const seen = new Set<string>();
-        const combined: any[] = [];
-        for (const v of my) {
-          if (v.id && !seen.has(v.id)) {
-            seen.add(v.id);
-            combined.push({ ...v, _source: 'mine' });
-          }
+    if (!id) return;
+    eventsApi
+      .get(id)
+      .then((r) => {
+        const e = r.data;
+        setEvent(e);
+        if (e.host_user_id !== userId) {
+          Alert.alert('', 'Only the host can edit this event.', [{ text: 'OK', onPress: () => router.back() }]);
+          return;
         }
-        for (const v of nearby) {
-          if (v.id && !seen.has(v.id)) {
-            seen.add(v.id);
-            combined.push({ ...v, _source: 'nearby' });
-          }
-        }
-        setVenues(combined);
+        setTitle(e.title || '');
+        setDescription(e.description || '');
+        setStartsAt(e.starts_at ? new Date(e.starts_at).toISOString().replace('Z', '').slice(0, 16) : '');
+        setEndsAt(e.ends_at ? new Date(e.ends_at).toISOString().replace('Z', '').slice(0, 16) : '');
+        setCapacity(e.capacity != null ? String(e.capacity) : '');
+        setVibeTag(e.vibe_tag || null);
+        setVisibilityRule(e.visibility_rule || 'open');
+        setVisibilityTierMin(e.visibility_tier_min != null ? String(e.visibility_tier_min) : '');
+        setVisibilityRadiusKm(e.visibility_radius_km != null ? String(e.visibility_radius_km) : '');
+        setLocationRevealedAfterRsvp(!!e.location_revealed_after_rsvp);
       })
-      .catch(() => setVenues([]))
-      .finally(() => setVenuesLoading(false));
-  }, [lat, lng]);
+      .catch(() => router.back())
+      .finally(() => setLoading(false));
+  }, [id, userId]);
 
-  const handleCreate = async () => {
-    if (!title.trim()) {
-      Alert.alert('Error', 'Enter a title');
+  const handleSave = async () => {
+    if (!id || !title.trim()) {
+      Alert.alert('', 'Enter a title');
       return;
     }
-    const start = startsAt ? new Date(startsAt) : new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const end = endsAt ? new Date(endsAt) : new Date(start.getTime() + 4 * 60 * 60 * 1000);
+    const start = startsAt ? new Date(startsAt.includes('T') ? startsAt : `${startsAt}T00:00:00`) : new Date();
+    const end = endsAt ? new Date(endsAt.includes('T') ? endsAt : `${endsAt}T23:59:59`) : new Date(start.getTime() + 4 * 60 * 60 * 1000);
     if (end <= start) {
-      Alert.alert('Error', 'End time must be after start time');
+      Alert.alert('', 'End time must be after start time');
       return;
     }
     setSaving(true);
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         title: title.trim(),
-        description: description.trim() || undefined,
+        description: description.trim() || null,
         startsAt: start.toISOString(),
         endsAt: end.toISOString(),
-        type,
-        venueId: venueId || undefined,
-        seriesId: seriesId.trim() || undefined,
-        capacity: capacity ? parseInt(capacity, 10) : undefined,
-        vibeTag: vibeTag || undefined,
-        locationRevealedAfterRsvp,
+        capacity: capacity ? parseInt(capacity, 10) : null,
+        vibeTag: vibeTag || null,
         visibilityRule,
-        visibilityTierMin: visibilityRule === 'tier_min' && visibilityTierMin ? parseInt(visibilityTierMin, 10) : undefined,
-        visibilityRadiusKm: visibilityRadiusKm ? parseInt(visibilityRadiusKm, 10) : undefined,
+        visibilityTierMin: visibilityRule === 'tier_min' && visibilityTierMin ? parseInt(visibilityTierMin, 10) : null,
+        visibilityRadiusKm: visibilityRadiusKm ? parseInt(visibilityRadiusKm, 10) : null,
+        locationRevealedAfterRsvp,
       };
-      const res = await eventsApi.create(payload);
-      Alert.alert('Created', 'Event created successfully.', [
-        { text: 'OK', onPress: () => router.replace(`/event/${res.data.id}`) },
-      ]);
+      await eventsApi.update(id, payload);
+      Alert.alert('Saved', 'Event updated.', [{ text: 'OK', onPress: () => router.replace(`/event/${id}`) }]);
     } catch (e: any) {
-      Alert.alert('Error', mapApiError(e));
+      Alert.alert('', mapApiError(e));
     } finally {
       setSaving(false);
     }
   };
+
+  if (loading || !event) {
+    return (
+      <PremiumDarkBackground style={styles.container}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={colors.primaryLight} />
+          <Text style={styles.loadingText}>Loading…</Text>
+        </View>
+      </PremiumDarkBackground>
+    );
+  }
+
+  if (event.host_user_id !== userId) {
+    return null;
+  }
 
   return (
     <PremiumDarkBackground style={styles.container}>
@@ -130,7 +131,7 @@ export default function CreateEventScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Create event</Text>
+        <Text style={styles.title}>Edit event</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -141,7 +142,7 @@ export default function CreateEventScreen() {
             style={styles.input}
             value={title}
             onChangeText={setTitle}
-            placeholder="e.g. Friday Night Social"
+            placeholder="Event title"
             placeholderTextColor={colors.textMuted}
           />
 
@@ -156,68 +157,21 @@ export default function CreateEventScreen() {
             numberOfLines={3}
           />
 
-          <Text style={styles.label}>Venue (optional)</Text>
-          {venuesLoading ? (
-            <ActivityIndicator size="small" color={colors.primaryLight} style={{ marginBottom: spacing.lg }} />
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.venueScroll} contentContainerStyle={styles.venueScrollContent}>
-              <TouchableOpacity
-                style={[styles.venueChip, !venueId && styles.venueChipActive]}
-                onPress={() => setVenueId(null)}
-              >
-                <Text style={[styles.venueChipText, !venueId && styles.venueChipTextActive]}>None</Text>
-              </TouchableOpacity>
-              {venues.map((v) => (
-                <TouchableOpacity
-                  key={v.id}
-                  style={[styles.venueChip, venueId === v.id && styles.venueChipActive]}
-                  onPress={() => setVenueId(v.id)}
-                >
-                  <Text style={[styles.venueChipText, venueId === v.id && styles.venueChipTextActive]} numberOfLines={1}>
-                    {v.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-
-          <Text style={styles.label}>Series ID (optional)</Text>
-          <TextInput
-            style={styles.input}
-            value={seriesId}
-            onChangeText={setSeriesId}
-            placeholder="Link to a series"
-            placeholderTextColor={colors.textMuted}
-          />
-
-          <Text style={styles.label}>Event type</Text>
-          <View style={styles.chipRow}>
-            {EVENT_TYPES.map((t) => (
-              <TouchableOpacity
-                key={t.key}
-                style={[styles.chip, type === t.key && styles.chipActive]}
-                onPress={() => setType(t.key)}
-              >
-                <Text style={[styles.chipText, type === t.key && styles.chipTextActive]}>{t.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.label}>Start (ISO or leave blank for in 2 hours)</Text>
+          <Text style={styles.label}>Start</Text>
           <TextInput
             style={styles.input}
             value={startsAt}
             onChangeText={setStartsAt}
-            placeholder="2026-03-01T19:00:00.000Z"
+            placeholder="YYYY-MM-DDTHH:mm"
             placeholderTextColor={colors.textMuted}
           />
 
-          <Text style={styles.label}>End (ISO or leave blank for start + 4h)</Text>
+          <Text style={styles.label}>End</Text>
           <TextInput
             style={styles.input}
             value={endsAt}
             onChangeText={setEndsAt}
-            placeholder="2026-03-02T00:00:00.000Z"
+            placeholder="YYYY-MM-DDTHH:mm"
             placeholderTextColor={colors.textMuted}
           />
 
@@ -286,15 +240,11 @@ export default function CreateEventScreen() {
             onPress={() => setLocationRevealedAfterRsvp(!locationRevealedAfterRsvp)}
           >
             <Text style={styles.toggleLabel}>Reveal location only after RSVP</Text>
-            <Ionicons
-              name={locationRevealedAfterRsvp ? 'checkmark-circle' : 'ellipse-outline'}
-              size={24}
-              color={locationRevealedAfterRsvp ? colors.primaryLight : colors.textMuted}
-            />
+            <Ionicons name={locationRevealedAfterRsvp ? 'checkmark-circle' : 'ellipse-outline'} size={24} color={locationRevealedAfterRsvp ? colors.primaryLight : colors.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.createBtn, saving && styles.createBtnDisabled]} onPress={handleCreate} disabled={saving}>
-            <Text style={styles.createBtnText}>{saving ? 'Creating…' : 'Create event'}</Text>
+          <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
+            <Text style={styles.saveBtnText}>{saving ? 'Saving…' : 'Save changes'}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -304,6 +254,8 @@ export default function CreateEventScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 120 },
+  loadingText: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing.md },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.md },
   backBtn: { padding: spacing.sm },
   title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
@@ -313,12 +265,6 @@ const styles = StyleSheet.create({
   label: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '600', marginBottom: 6 },
   input: { backgroundColor: colors.card, borderRadius: borderRadius.md, padding: 14, color: colors.text, fontSize: fontSize.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
-  venueScroll: { marginBottom: spacing.lg },
-  venueScrollContent: { flexDirection: 'row', gap: 8 },
-  venueChip: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: borderRadius.full, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-  venueChipActive: { backgroundColor: colors.primarySoft, borderColor: colors.borderGlow },
-  venueChipText: { color: colors.textSecondary, fontSize: fontSize.sm },
-  venueChipTextActive: { color: colors.primaryLight, fontWeight: '600' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.lg },
   chip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: borderRadius.full, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
   chipActive: { backgroundColor: colors.primarySoft, borderColor: colors.borderGlow },
@@ -327,7 +273,7 @@ const styles = StyleSheet.create({
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
   toggleRowActive: { borderColor: colors.borderGlow },
   toggleLabel: { color: colors.text, fontSize: fontSize.md },
-  createBtn: { backgroundColor: colors.primary, paddingVertical: 16, borderRadius: borderRadius.lg, alignItems: 'center', marginTop: spacing.md },
-  createBtnDisabled: { opacity: 0.6 },
-  createBtnText: { color: '#fff', fontSize: fontSize.md, fontWeight: '700' },
+  saveBtn: { backgroundColor: colors.primary, paddingVertical: 16, borderRadius: borderRadius.lg, alignItems: 'center', marginTop: spacing.md },
+  saveBtnDisabled: { opacity: 0.6 },
+  saveBtnText: { color: '#fff', fontSize: fontSize.md, fontWeight: '700' },
 });

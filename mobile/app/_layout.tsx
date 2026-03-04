@@ -31,6 +31,7 @@ export default function RootLayout() {
         <Stack.Screen name="profile/privacy" />
         <Stack.Screen name="profile/hosting" />
         <Stack.Screen name="profile/create-event" />
+        <Stack.Screen name="profile/event-edit/[id]" />
         <Stack.Screen name="profile/venues" />
         <Stack.Screen name="profile/create-venue" />
         <Stack.Screen name="profile/venue-dashboard/[id]" />

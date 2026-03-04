@@ -113,6 +113,15 @@ export class EventsController {
     }
   }
 
+  async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const event = await eventsService.updateEvent(req.params.id as string, req.user!.userId, req.body);
+      res.json({ data: event });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async setDoorCode(req: Request, res: Response, next: NextFunction) {
     try {
       const event = await eventsService.setDoorCode(

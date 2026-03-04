@@ -306,6 +306,64 @@ export class EventsService {
   }
 
   /** Validate door code and grant in-app access (RSVP + check-in). Rate-limit caller. */
+  /** Update event (host only). */
+  async updateEvent(eventId: string, hostUserId: string, data: {
+    title?: string;
+    description?: string;
+    venueId?: string | null;
+    seriesId?: string | null;
+    startsAt?: string;
+    endsAt?: string;
+    type?: string;
+    capacity?: number | null;
+    isPrivate?: boolean;
+    vibeTag?: VibeTag | null;
+    locationRevealedAfterRsvp?: boolean;
+    visibilityRule?: 'open' | 'tier_min' | 'invite_only' | 'attended_2_plus';
+    visibilityTierMin?: number | null;
+    visibilityRadiusKm?: number | null;
+  }) {
+    const event = await query(`SELECT id, host_user_id FROM events WHERE id = $1`, [eventId]);
+    if (event.rows.length === 0) throw Object.assign(new Error('Event not found'), { statusCode: 404 });
+    if (event.rows[0].host_user_id !== hostUserId) {
+      throw Object.assign(new Error('Only the host can edit this event'), { statusCode: 403 });
+    }
+    const [hasVibe, hasLocationRevealed, hasVisibility, hasSeriesId] = await Promise.all([
+      query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'vibe_tag'`),
+      query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'location_revealed_after_rsvp'`),
+      query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'visibility_rule'`),
+      query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'series_id'`),
+    ]);
+    const updates: string[] = [];
+    const vals: unknown[] = [];
+    let idx = 1;
+    if (data.title !== undefined) { updates.push(`title = $${idx++}`); vals.push(data.title); }
+    if (data.description !== undefined) { updates.push(`description = $${idx++}`); vals.push(data.description); }
+    if (data.venueId !== undefined) { updates.push(`venue_id = $${idx++}`); vals.push(data.venueId); }
+    if (data.startsAt !== undefined) { updates.push(`starts_at = $${idx++}`); vals.push(data.startsAt); }
+    if (data.endsAt !== undefined) { updates.push(`ends_at = $${idx++}`); vals.push(data.endsAt); }
+    if (data.type !== undefined) { updates.push(`type = $${idx++}`); vals.push(data.type); }
+    if (data.capacity !== undefined) { updates.push(`capacity = $${idx++}`); vals.push(data.capacity); }
+    if (data.isPrivate !== undefined) { updates.push(`is_private = $${idx++}`); vals.push(data.isPrivate); }
+    if (hasVibe.rows.length > 0 && data.vibeTag !== undefined) { updates.push(`vibe_tag = $${idx++}`); vals.push(data.vibeTag); }
+    if (hasLocationRevealed.rows.length > 0 && data.locationRevealedAfterRsvp !== undefined) {
+      updates.push(`location_revealed_after_rsvp = $${idx++}`); vals.push(data.locationRevealedAfterRsvp);
+    }
+    if (hasVisibility.rows.length > 0) {
+      if (data.visibilityRule !== undefined) { updates.push(`visibility_rule = $${idx++}`); vals.push(data.visibilityRule); }
+      if (data.visibilityTierMin !== undefined) { updates.push(`visibility_tier_min = $${idx++}`); vals.push(data.visibilityTierMin); }
+      if (data.visibilityRadiusKm !== undefined) { updates.push(`visibility_radius_km = $${idx++}`); vals.push(data.visibilityRadiusKm); }
+    }
+    if (hasSeriesId.rows.length > 0 && data.seriesId !== undefined) { updates.push(`series_id = $${idx++}`); vals.push(data.seriesId); }
+    if (updates.length === 0) return this.getEvent(eventId);
+    vals.push(eventId);
+    await query(
+      `UPDATE events SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${idx}`,
+      vals
+    );
+    return this.getEvent(eventId);
+  }
+
   async validateDoorCode(eventId: string, code: string, userId: string) {
     const hasCol = await query(
       `SELECT 1 FROM information_schema.columns WHERE table_name = 'events' AND column_name = 'door_code_hash'`

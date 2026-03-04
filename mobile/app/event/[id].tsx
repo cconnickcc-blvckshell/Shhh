@@ -7,10 +7,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Vibration,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { eventsApi } from '../../src/api/client';
+import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 import { BannerImage } from '../../src/components/Backgrounds';
 
@@ -25,10 +28,14 @@ const VIBE_LABELS: Record<string, string> = {
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const userId = useAuthStore((s) => s.userId);
   const [event, setEvent] = useState<any>(null);
   const [attending, setAttending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [rsvpLoading, setRsvpLoading] = useState(false);
+  const [doorCode, setDoorCode] = useState('');
+  const [doorCodeSaving, setDoorCodeSaving] = useState(false);
+  const isHost = event?.host_user_id === userId;
 
   useEffect(() => {
     if (!id) return;
@@ -41,6 +48,23 @@ export default function EventDetailScreen() {
       .catch(() => router.back())
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleSetDoorCode = async () => {
+    if (!id || !doorCode.trim() || doorCode.length < 4) {
+      Alert.alert('', 'Enter a code (4–32 characters)');
+      return;
+    }
+    setDoorCodeSaving(true);
+    try {
+      await eventsApi.setDoorCode(id, doorCode.trim());
+      Alert.alert('Set', 'Door code has been set.');
+      setDoorCode('');
+    } catch (e: any) {
+      Alert.alert('', e?.message || 'Failed to set door code');
+    } finally {
+      setDoorCodeSaving(false);
+    }
+  };
 
   const handleRsvp = async () => {
     if (!id || rsvpLoading) return;
@@ -134,6 +158,40 @@ export default function EventDetailScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Edit (host only) */}
+        {isHost && (
+          <TouchableOpacity
+            style={s.editBtn}
+            onPress={() => router.push(`/profile/event-edit/${id}`)}
+            accessibilityLabel="Edit event"
+            accessibilityRole="button"
+          >
+            <Ionicons name="pencil" size={18} color={colors.primaryLight} />
+            <Text style={s.editBtnText}>Edit event</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Door code (host only) */}
+        {isHost && (
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>DOOR CODE</Text>
+            <View style={s.doorCodeRow}>
+              <TextInput
+                style={s.doorCodeInput}
+                value={doorCode}
+                onChangeText={setDoorCode}
+                placeholder="Enter code for attendees"
+                placeholderTextColor="rgba(255,255,255,0.3)"
+                maxLength={32}
+                secureTextEntry
+              />
+              <TouchableOpacity style={[s.doorCodeBtn, doorCodeSaving && { opacity: 0.5 }]} onPress={handleSetDoorCode} disabled={doorCodeSaving}>
+                <Text style={s.doorCodeBtnText}>{doorCodeSaving ? '…' : 'Set'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Description */}
         {event.description && (
@@ -256,6 +314,19 @@ const s = StyleSheet.create({
   stat: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   statText: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '600' },
 
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  editBtnText: { color: colors.primaryLight, fontSize: fontSize.md, fontWeight: '600' },
   section: { marginBottom: spacing.xl },
   sectionTitle: {
     color: colors.textMuted,
@@ -264,6 +335,10 @@ const s = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: spacing.sm,
   },
+  doorCodeRow: { flexDirection: 'row', gap: 8 },
+  doorCodeInput: { flex: 1, backgroundColor: colors.surface, color: colors.text, padding: 14, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, fontSize: fontSize.md },
+  doorCodeBtn: { backgroundColor: colors.primary, paddingHorizontal: 20, borderRadius: borderRadius.md, alignItems: 'center', justifyContent: 'center' },
+  doorCodeBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
   desc: { color: colors.textSecondary, fontSize: fontSize.md, lineHeight: 24 },
 
   rsvpBtn: {

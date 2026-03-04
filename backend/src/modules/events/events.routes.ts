@@ -20,6 +20,23 @@ const vibeTagEnum = z.enum(['social_mix', 'lifestyle', 'kink', 'couples_only', '
 
 const visibilityRuleEnum = z.enum(['open', 'tier_min', 'invite_only', 'attended_2_plus']);
 
+const updateEventSchema = z.object({
+  title: z.string().min(3).max(200).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  venueId: z.string().uuid().optional().nullable(),
+  seriesId: z.string().uuid().optional().nullable(),
+  startsAt: z.string().datetime().optional(),
+  endsAt: z.string().datetime().optional(),
+  type: z.enum(['party', 'club_night', 'hotel_takeover', 'travel_meetup']).optional(),
+  capacity: z.number().positive().optional().nullable(),
+  isPrivate: z.boolean().optional(),
+  vibeTag: vibeTagEnum.optional().nullable(),
+  locationRevealedAfterRsvp: z.boolean().optional(),
+  visibilityRule: visibilityRuleEnum.optional(),
+  visibilityTierMin: z.number().int().min(0).max(3).optional().nullable(),
+  visibilityRadiusKm: z.number().int().positive().optional().nullable(),
+});
+
 const createEventSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().max(2000).optional(),
@@ -62,6 +79,7 @@ router.get('/nearby', authenticate, validate(nearbyQuerySchema, 'query'), contro
 router.get('/this-week', authenticate, validate(nearbyQuerySchema, 'query'), controller.getThisWeek);
 router.get('/my', authenticate, controller.getMyHosted);
 router.post('/', authenticate, requireTier(2), validate(createEventSchema), controller.create);
+router.put('/:id', authenticate, requireTier(2), validate(updateEventSchema), controller.update);
 router.post('/validate-door-code', authenticate, doorCodeValidateLimiter, validate(validateDoorCodeSchema), controller.validateDoorCode);
 router.get('/:id', authenticate, controller.getOne);
 router.get('/:id/attendees', authenticate, controller.getAttendees);
