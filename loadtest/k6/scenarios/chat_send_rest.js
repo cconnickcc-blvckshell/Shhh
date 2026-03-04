@@ -33,7 +33,7 @@ export function chatSendRest(token, targetUserId) {
       { headers: Object.assign({}, authHeaders(token), { 'Idempotency-Key': idemKey }), tags: { name: 'create_conversation' } }
     );
     recordResponse('create_conversation', createRes, { idempotencyKey: idemKey });
-    if (check(createRes, { 'create 201': (r) => r.status === 201 })) {
+    if (check(createRes, { 'create 2xx': (r) => r.status === 200 || r.status === 201 })) {
       conversationId = createRes.json('data.id') || createRes.json('data.conversationId');
     }
   }
