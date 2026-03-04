@@ -1894,6 +1894,9 @@ The `useScreenshotDetection` hook:
 - Contacts are listed via `GET /v1/safety/contacts`
 - When a panic event occurs, the system records which contacts should be notified
 - **Implemented:** SMS (Twilio) and push (Expo) to emergency contacts when panic triggered; requires `emergency_contacts.phone` (migration 029)
+- **Workers:** Retry (3 attempts, exponential backoff), DLQ (`cleanup-dlq`) for exhausted jobs; `worker_job_failures_total` metric
+- **Idempotency:** `Idempotency-Key` header on POST /conversations, POST /billing/checkout
+- **Discovery rate limit:** 60 req/min per user (configurable)
 
 ### 11.7 Check-In System
 

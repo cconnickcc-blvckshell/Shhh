@@ -183,7 +183,7 @@ export class SafetyService {
     let processed = 0;
 
     for (const row of toProcess) {
-      const { id: checkinId, user_id: userId, display_name: userName } = row;
+      const { id: checkinId, user_id: userId } = row;
 
       try {
         await pushService.sendPush(

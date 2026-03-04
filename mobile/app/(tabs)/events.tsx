@@ -83,6 +83,7 @@ export default function EventsScreen() {
   const renderEvent = ({ item }: { item: any }) => {
     const d = new Date(item.starts_at);
     const isGoing = attending.has(item.id);
+    const isLocked = item.visibility_rule && item.visibility_rule !== 'open' && !item.venue_name && !isGoing;
 
     return (
       <TouchableOpacity
@@ -93,6 +94,12 @@ export default function EventsScreen() {
         <Card noPadding minHeight={120}>
           <BannerImage style={s.banner}>
             <Ionicons name="sparkles" size={20} color={colors.primaryLight} />
+            {isLocked && (
+              <View style={s.lockedBadge}>
+                <Ionicons name="lock-closed" size={12} color="rgba(255,255,255,0.4)" />
+                <Text style={s.lockedBadgeText}>Join to see</Text>
+              </View>
+            )}
           </BannerImage>
           <View style={s.cardBody}>
             <View style={s.dateBox}>
@@ -197,7 +204,9 @@ export default function EventsScreen() {
 const s = StyleSheet.create({
   emptyWrap: { flex: 1, paddingVertical: 80 },
   cardTouchable: { flex: 1, minWidth: 0 },
-  banner: { height: 50, alignItems: 'center', justifyContent: 'center' },
+  banner: { height: 50, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  lockedBadge: { position: 'absolute', top: 6, right: 8, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  lockedBadgeText: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '600' },
   cardBody: { flexDirection: 'row', alignItems: 'center', padding: 14 },
   dateBox: { width: 42, alignItems: 'center', marginRight: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 8, paddingVertical: 6 },
   dateDay: { color: colors.primaryLight, fontSize: 20, fontWeight: '800', lineHeight: 22 },

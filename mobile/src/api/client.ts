@@ -131,6 +131,10 @@ export const discoverApi = {
     if (primaryIntent) url += `&primaryIntent=${encodeURIComponent(primaryIntent)}`;
     return api<{ data: any[]; count: number; discoveryCap?: number }>(url);
   },
+  crossingPaths: (minCount?: number) => {
+    const url = minCount != null ? `/v1/discover/crossing-paths?minCount=${minCount}` : '/v1/discover/crossing-paths';
+    return api<{ data: Array<{ venueId: string; otherUserId: string; count: number; venueName: string | null }> }>(url);
+  },
   updateLocation: (lat: number, lng: number, isPrecise?: boolean) =>
     api('/v1/discover/location', { method: 'POST', body: JSON.stringify({ lat, lng, isPrecise }) }),
 };
@@ -207,6 +211,11 @@ export const safetyApi = {
     api('/v1/safety/checkin', { method: 'POST', body: JSON.stringify({ type, lat, lng }) }),
   panic: (lat?: number, lng?: number) =>
     api('/v1/safety/panic', { method: 'POST', body: JSON.stringify({ lat, lng }) }),
+  venueDistress: (venueId: string) =>
+    api<{ data: { recorded: boolean; staffNotified: number } }>('/v1/safety/venue-distress', {
+      method: 'POST',
+      body: JSON.stringify({ venueId }),
+    }),
 };
 
 export const complianceApi = {

@@ -18,6 +18,7 @@ interface Conversation {
   unread_count?: number;
   participantNames?: string[];
   lastMessageSnippet?: string | null;
+  consentState?: { requiresMutualConsent: boolean; grantedByMe: boolean; grantedCount: number };
 }
 
 function timeAgo(d: string | null | undefined): string {
@@ -95,6 +96,11 @@ export default function MessagesScreen() {
                 <Text style={styles.preview} numberOfLines={1}>
                   {preview}
                 </Text>
+                {item.consentState && (
+                  <Text style={styles.consentHint} numberOfLines={1}>
+                    {item.consentState.grantedByMe ? '✓ You consented' : item.consentState.requiresMutualConsent ? 'Consent pending' : '—'} · Revoke anytime
+                  </Text>
+                )}
               </View>
               {unread > 0 && (
                 <View style={styles.badge}><Text style={styles.badgeText}>{unread > 99 ? '99+' : unread}</Text></View>
@@ -126,6 +132,7 @@ const styles = StyleSheet.create({
   name: { color: colors.text, fontSize: fontSize.md, fontWeight: '600' },
   time: { color: colors.textMuted, fontSize: fontSize.xs },
   preview: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: 2 },
+  consentHint: { color: colors.textMuted, fontSize: 10, marginTop: 2, opacity: 0.8 },
   badge: { backgroundColor: colors.primary, borderRadius: borderRadius.full, minWidth: 22, height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, marginLeft: spacing.sm },
   badgeText: { color: '#fff', fontSize: fontSize.xxs, fontWeight: '800' },
   sep: { height: 0.5, backgroundColor: colors.border, marginLeft: 82 },

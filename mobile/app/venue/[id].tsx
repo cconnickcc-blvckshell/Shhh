@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, useWindowDimensions, Share, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { api, venuesApi } from '../../src/api/client';
+import { api, venuesApi, safetyApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 
 export default function VenueDetailScreen() {
@@ -57,7 +57,15 @@ export default function VenueDetailScreen() {
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
         <View style={s.heroBottom}>
-          <Text style={s.venueName}>{venue.name}</Text>
+          <View style={s.titleRow}>
+            <Text style={s.venueName}>{venue.name}</Text>
+            {venue.verifiedSafe && (
+              <View style={s.verifiedBadge}>
+                <Ionicons name="shield-checkmark" size={14} color="#34D399" />
+                <Text style={s.verifiedBadgeText}>Verified safe</Text>
+              </View>
+            )}
+          </View>
           {venue.tagline && <Text style={s.tagline}>{venue.tagline}</Text>}
           <View style={s.metaRow}>
             {venue.price_range && <Text style={s.metaPill}>{venue.price_range}</Text>}
@@ -73,6 +81,25 @@ export default function VenueDetailScreen() {
           <TouchableOpacity style={s.actionBtn} onPress={() => api(`/v1/venues/${id}/checkin`, { method: 'POST' })}>
             <Ionicons name="location" size={18} color={colors.primaryLight} />
             <Text style={s.actionText}>Check In</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.actionBtn, s.distressBtn]}
+            onPress={async () => {
+              if (!id) return;
+              try {
+                await safetyApi.venueDistress(id);
+                const { Alert } = await import('react-native');
+                Alert.alert('Sent', 'Venue security has been notified.');
+              } catch (e: any) {
+                const { Alert } = await import('react-native');
+                Alert.alert('', e?.message || 'You must be checked in to signal distress.');
+              }
+            }}
+            accessibilityLabel="Signal distress to venue security"
+            accessibilityRole="button"
+          >
+            <Ionicons name="warning" size={18} color="#EF4444" />
+            <Text style={[s.actionText, { color: '#EF4444' }]}>Distress</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.actionBtn} onPress={handleShare}>
             <Ionicons name="share-outline" size={18} color={colors.primaryLight} />
@@ -211,7 +238,11 @@ const s = StyleSheet.create({
   heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
   backBtn: { position: 'absolute', top: 50, left: 16, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   heroBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, backgroundColor: 'rgba(0,0,0,0.6)' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   venueName: { color: '#fff', fontSize: 24, fontWeight: '800' },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(52,211,153,0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  verifiedBadgeText: { color: '#34D399', fontSize: 11, fontWeight: '700' },
+  distressBtn: { borderColor: 'rgba(239,68,68,0.3)', backgroundColor: 'rgba(239,68,68,0.08)' },
   tagline: { color: 'rgba(255,255,255,0.6)', fontSize: 14, marginTop: 2 },
   metaRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
   metaPill: { backgroundColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, fontSize: 12, fontWeight: '600' },

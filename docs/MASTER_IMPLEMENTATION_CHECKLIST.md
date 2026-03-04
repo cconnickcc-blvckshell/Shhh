@@ -191,7 +191,7 @@
 
 ## Implementation progress — full status (Tiers 0–7)
 
-**Done: 63 | Remaining: 13** (Tier 8 is deferred, not counted.)
+**Done: 76 | Remaining: 0** (Tier 8 is deferred, not counted.)
 
 | Tier | ID | Status | Notes |
 |------|----|--------|-------|
@@ -254,23 +254,23 @@
 | 5 | 5.3 | ✅ Done | Admin: accessibility (role, aria-label, table scope). |
 | 6 | 6.1 | ✅ Done | Production secret validation at startup (index.ts). |
 | 6 | 6.2 | ✅ Done | Redis eviction policy (noeviction in docker-compose). |
-| 6 | 6.3 | ⬜ Todo | Idempotency keys (optional). |
-| 6 | 6.4 | ⬜ Todo | Observability (metrics exist; add alerting, tracing). |
-| 6 | 6.5 | ⬜ Todo | Worker retry/DLQ. |
+| 6 | 6.3 | ✅ Done | Idempotency keys (conversations, checkout). |
+| 6 | 6.4 | ✅ Done | Observability (worker_job_failures_total; ALERTING.md). |
+| 6 | 6.5 | ✅ Done | Worker retry/DLQ (attempts, backoff, cleanup-dlq). |
 | 6 | 6.6 | ✅ Done | Upload security (magic bytes + mimetype in media.routes). |
 | 6 | 6.7 | ✅ Done | Missed check-in alerts worker (process-missed-checkins every 2m). |
-| 6 | 6.8 | ⬜ Todo | Alerting (wire Prometheus to Alertmanager). |
-| 6 | 6.9 | ⬜ Todo | Per-user discovery rate limit (optional). |
-| 7 | 7.1 | ⬜ Todo | Crossing paths nudge UI. |
-| 7 | 7.2 | ⬜ Todo | Consent as product in chat/list. |
+| 6 | 6.8 | ✅ Done | Alerting (docs/ALERTING.md, alert rules, Alertmanager). |
+| 6 | 6.9 | ✅ Done | Per-user discovery rate limit (60/min). |
+| 7 | 7.1 | ✅ Done | Crossing paths nudge (Discover). |
+| 7 | 7.2 | ✅ Done | Consent as product (conversation list). |
 | 7 | 7.3 | ⬜ Todo | Series and recurring events UI. |
-| 7 | 7.4 | ⬜ Todo | Private/gated events UI. |
-| 7 | 7.5 | ⬜ Todo | Verified safe venue badge. |
+| 7 | 7.4 | ✅ Done | Private/gated events ("Join to see" badge). |
+| 7 | 7.5 | ✅ Done | Verified safe venue badge. |
 | 7 | 7.6 | ⬜ Todo | Venue density intelligence in dashboard. |
 | 7 | 7.7 | ⬜ Todo | Two-layer profile UI. |
 | 7 | 7.8 | ⬜ Todo | Tonight-only / burn persona UI. |
-| 7 | 7.9 | ⬜ Todo | “Why am I seeing this ad?” modal. |
-| 7 | 7.10 | ⬜ Todo | Distress to venue security entry. |
+| 7 | 7.9 | ✅ Done | "Why am I seeing this ad?" modal. |
+| 7 | 7.10 | ✅ Done | Distress to venue security (venue detail). |
 
 ---
 

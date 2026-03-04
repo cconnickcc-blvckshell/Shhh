@@ -953,6 +953,8 @@ Deletion, retention, anonymization, and TTL behavior across stores:
 | **push tokens** | Postgres | Until unregister; deletion should revoke. |
 | **OTP codes** | Redis | 5 min TTL. |
 | **Redis eviction** | noeviction | Do not evict auth/OTP keys; returns error when full. See docker-compose. |
+| **Idempotency** | Redis | Idempotency-Key on POST conversations, checkout; 24h TTL. |
+| **Discovery rate limit** | Redis | Per-user 60/min (DISCOVERY_RATE_LIMIT_PER_MIN). |
 | **user PII** | Postgres | Deletion worker anonymizes (phone_hash, profile); sets `deleted_at`. |
 
 **Gap:** MongoDB messages for deleted users are not purged. Deletion worker only handles Postgres.

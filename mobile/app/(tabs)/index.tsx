@@ -194,6 +194,7 @@ export default function DiscoverScreen() {
   const [atDiscoveryCap, setAtDiscoveryCap] = useState(false);
   const [discoverAd, setDiscoverAd] = useState<any>(null);
   const [nearbyStories, setNearbyStories] = useState<any[]>([]);
+  const [crossingPaths, setCrossingPaths] = useState<Array<{ venueId: string; otherUserId: string; count: number; venueName: string | null }>>([]);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -209,6 +210,7 @@ export default function DiscoverScreen() {
       if (res.count >= cap) setAtDiscoveryCap(true);
       adsApi.getFeed(lat, lng).then((r) => setDiscoverAd(r.data)).catch(() => setDiscoverAd(null));
       storiesApi.nearby(lat, lng, radiusKm).then((r) => setNearbyStories(r.data || [])).catch(() => setNearbyStories([]));
+      discoverApi.crossingPaths(2).then((r) => setCrossingPaths(r.data || [])).catch(() => setCrossingPaths([]));
     } catch (err: any) {
       setLoadError(mapApiError(err));
       setUsers([]);
@@ -227,7 +229,7 @@ export default function DiscoverScreen() {
   useEffect(() => {
     if (discoverAd?.id) adsApi.recordImpression(discoverAd.id, 'discover_feed').catch(() => {});
   }, [discoverAd?.id]);
-  const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); adsApi.getFeed(lat, lng).then((r) => setDiscoverAd(r.data)).catch(() => {}); storiesApi.nearby(lat, lng, radiusKm).then((r) => setNearbyStories(r.data || [])).catch(() => {}); setRefreshing(false); };
+  const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); adsApi.getFeed(lat, lng).then((r) => setDiscoverAd(r.data)).catch(() => {}); storiesApi.nearby(lat, lng, radiusKm).then((r) => setNearbyStories(r.data || [])).catch(() => {}); discoverApi.crossingPaths(2).then((r) => setCrossingPaths(r.data || [])).catch(() => {}); setRefreshing(false); };
 
   const sortedUsers = useMemo(() => {
     if (sortMode === 'active') {
@@ -358,6 +360,26 @@ export default function DiscoverScreen() {
           />
         </View>
       )}
+      {crossingPaths.length > 0 && (
+        <View style={s.crossingPathsWrap}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.crossingPathsScroll}>
+            {crossingPaths.slice(0, 5).map((cp) => (
+              <TouchableOpacity
+                key={`${cp.otherUserId}-${cp.venueId}`}
+                style={s.crossingPathCard}
+                onPress={() => router.push(`/user/${cp.otherUserId}`)}
+                accessibilityLabel={`You've both been at ${cp.venueName || 'a venue'}. Say hi to this person.`}
+                accessibilityRole="button"
+              >
+                <Ionicons name="location" size={14} color={colors.primaryLight} />
+                <Text style={s.crossingPathText} numberOfLines={2}>
+                  You've both been at {cp.venueName || 'a venue'} — say hi?
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
       {atDiscoveryCap && users.length > 0 && (
         <View style={s.capBanner}>
           <Ionicons name="information-circle" size={18} color={colors.host} />
@@ -448,4 +470,8 @@ const s = StyleSheet.create({
   storyAddCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, borderColor: colors.primaryLight, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
   storyAddLabel: { color: colors.primaryLight, fontSize: 10, fontWeight: '600', marginTop: 2 },
   storyCircle: { width: 60, height: 60, borderRadius: 30, overflow: 'hidden', borderWidth: 2, borderColor: colors.primaryLight },
+  crossingPathsWrap: { paddingVertical: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  crossingPathsScroll: { paddingHorizontal: spacing.md, gap: 10, flexDirection: 'row', alignItems: 'center' },
+  crossingPathCard: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: 'rgba(147,51,234,0.12)', borderWidth: 1, borderColor: 'rgba(147,51,234,0.25)', maxWidth: 220 },
+  crossingPathText: { color: colors.text, fontSize: fontSize.sm, flex: 1 },
 });

@@ -18,6 +18,13 @@ const httpRequestDuration = new Histogram({
   registers: [register],
 });
 
+export const workerJobFailuresTotal = new Counter({
+  name: 'worker_job_failures_total',
+  help: 'Total worker job failures (after all retries)',
+  labelNames: ['job'],
+  registers: [register],
+});
+
 function normalizeRoute(path: string): string {
   const match = path.match(/^\/v1\/([^/]+)/);
   return match ? `/v1/${match[1]}` : path || '/';

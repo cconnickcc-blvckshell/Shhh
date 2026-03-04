@@ -240,8 +240,10 @@ export class VenueDashboardService {
       query(`SELECT id, name, is_active FROM venue_chat_rooms WHERE venue_id = $1 AND is_active = true`, [venueId]),
     ]);
 
+    const v = venue.rows[0] || {};
     return {
-      ...venue.rows[0],
+      ...v,
+      verifiedSafe: v.verified_safe_at != null,
       reviews,
       specials,
       realtime: stats,

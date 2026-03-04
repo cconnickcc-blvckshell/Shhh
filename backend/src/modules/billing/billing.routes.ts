@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { SubscriptionService } from './subscription.service';
 import { validate } from '../../middleware/validation';
 import { authenticate } from '../../middleware/auth';
+import { idempotencyMiddleware } from '../../middleware/idempotency';
 
 const router = Router();
 const svc = new SubscriptionService();
@@ -21,7 +22,7 @@ router.get('/subscription', authenticate, async (req: Request, res: Response, ne
   } catch (err) { next(err); }
 });
 
-router.post('/checkout', authenticate, validate(z.object({
+router.post('/checkout', authenticate, idempotencyMiddleware('checkout'), validate(z.object({
   tier: z.enum(['discreet', 'phantom', 'elite']),
 })), async (req: Request, res: Response, next: NextFunction) => {
   try {

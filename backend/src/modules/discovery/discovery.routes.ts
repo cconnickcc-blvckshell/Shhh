@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { DiscoveryController } from './discovery.controller';
 import { validate } from '../../middleware/validation';
 import { authenticate } from '../../middleware/auth';
+import { discoveryRateLimit } from '../../middleware/discoveryRateLimit';
 
 const router = Router();
 const controller = new DiscoveryController();
@@ -29,7 +30,7 @@ const updateLocationSchema = z.object({
 });
 
 router.get('/crossing-paths', authenticate, controller.getCrossingPaths);
-router.get('/', authenticate, validate(discoverQuerySchema, 'query'), controller.discover);
+router.get('/', authenticate, discoveryRateLimit, validate(discoverQuerySchema, 'query'), controller.discover);
 router.post('/location', authenticate, validate(updateLocationSchema), controller.updateLocation);
 
 export default router;

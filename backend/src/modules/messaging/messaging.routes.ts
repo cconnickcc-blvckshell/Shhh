@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { MessagingController } from './messaging.controller';
 import { validate } from '../../middleware/validation';
 import { authenticate, requireTier } from '../../middleware/auth';
+import { idempotencyMiddleware } from '../../middleware/idempotency';
 
 const router = Router();
 const controller = new MessagingController();
@@ -27,7 +28,7 @@ const retentionSchema = z.object({
 });
 
 router.get('/', authenticate, requireTier(0), controller.getConversations);
-router.post('/', authenticate, requireTier(1), validate(createConversationSchema), controller.createConversation);
+router.post('/', authenticate, requireTier(1), idempotencyMiddleware('conversations'), validate(createConversationSchema), controller.createConversation);
 router.put('/:id/retention', authenticate, validate(retentionSchema), controller.setRetention);
 router.get('/:id/messages', authenticate, controller.getMessages);
 router.post('/:id/messages', authenticate, validate(sendMessageSchema), controller.sendMessage);
