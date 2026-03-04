@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { useState, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
@@ -18,14 +18,134 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 const SNAP_CLIENT_ID = process.env.EXPO_PUBLIC_SNAP_CLIENT_ID;
 
+function VerifyCodeInline({ phone, devCode, onBack }: { phone: string; devCode: string | null; onBack: () => void }) {
+  const [digits, setDigits] = useState<string[]>(() => {
+    const code = devCode?.replace(/\D/g, '').slice(0, 6);
+    if (code?.length === 6) return code.split('');
+    return Array(6).fill('');
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { verifyAndLogin } = useAuthStore();
+  const inputRefs = useRef<(TextInput | null)[]>([]);
+
+  const handleDigit = (index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1);
+    const next = [...digits];
+    next[index] = value;
+    setDigits(next);
+    setError('');
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
+    if (next.every(d => d) && next.join('').length === 6) submitCode(next.join(''));
+  };
+
+  const handleBackspace = (index: number) => {
+    if (!digits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+      const next = [...digits];
+      next[index - 1] = '';
+      setDigits(next);
+    }
+  };
+
+  const submitCode = async (code: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      await verifyAndLogin(phone, code);
+    } catch (err: any) {
+      setError(err.message || 'Invalid code');
+      setDigits(Array(6).fill(''));
+      inputRefs.current[0]?.focus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthScreenBackground>
+      <View style={styles.container}>
+        <View style={styles.glow} />
+        <View style={styles.content}>
+          <TouchableOpacity style={styles.backBtn} onPress={onBack}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.logoWrap}>
+            <View style={styles.iconFrame}>
+              <AppIconImage size={72} />
+            </View>
+            <Text style={styles.logo}>Shhh</Text>
+            <Text style={styles.tagline}>YOUR SECRET IS SAFE</Text>
+          </View>
+          <View style={styles.form}>
+            <Text style={styles.label}>VERIFICATION CODE</Text>
+            <Text style={{ color: colors.textMuted, fontSize: fontSize.sm, marginBottom: spacing.md }}>
+              {'Enter the 6-digit code sent to '}
+              <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>{phone}</Text>
+            </Text>
+            {devCode ? (
+              <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fontSize.xs, marginBottom: spacing.md }}>
+                {'Dev code: '}{devCode}
+              </Text>
+            ) : null}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: spacing.lg }}>
+              {digits.map((d, i) => (
+                <TextInput
+                  key={i}
+                  ref={r => { inputRefs.current[i] = r; }}
+                  style={{
+                    width: 48, height: 56, borderRadius: borderRadius.md,
+                    backgroundColor: colors.surface, borderWidth: 1.5,
+                    borderColor: d ? colors.primaryLight : colors.border,
+                    color: colors.text, fontSize: fontSize.xl, fontWeight: '800',
+                    textAlign: 'center',
+                  }}
+                  value={d}
+                  onChangeText={v => handleDigit(i, v)}
+                  onKeyPress={({ nativeEvent }) => { if (nativeEvent.key === 'Backspace') handleBackspace(i); }}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  selectTextOnFocus
+                />
+              ))}
+            </View>
+            {error ? (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle" size={14} color={colors.danger} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+            <TouchableOpacity
+              style={[styles.button, digits.join('').length !== 6 && styles.buttonDisabled]}
+              onPress={() => submitCode(digits.join(''))}
+              disabled={loading || digits.join('').length !== 6}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.buttonText}>Verify</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </AuthScreenBackground>
+  );
+}
+
 export default function LoginScreen() {
   useScreenView('login');
   const [phone, setPhone] = useState('');
-  const [showLoginForm, setShowLoginForm] = useState(Platform.OS !== 'web');
+  const [showLoginForm, setShowLoginForm] = useState(() => {
+    if (Platform.OS !== 'web') return true;
+    try { return sessionStorage.getItem('shhh_entered') === '1'; } catch { return false; }
+  });
   const [authStep, setAuthStep] = useState<'choose' | 'phone'>('choose');
   const { sendOTP, login, oauthGoogle, oauthSnap, isLoading, error, clearError } = useAuthStore();
   const { signInWithApple } = useOAuth();
   const canSubmit = phone.length >= 10;
+  const [otpSent, setOtpSent] = useState(false);
+  const [devCodeState, setDevCodeState] = useState<string | null>(null);
 
   const [googleRequest, , googlePrompt] = useIdTokenAuthRequest(
     GOOGLE_CLIENT_ID
@@ -48,7 +168,10 @@ export default function LoginScreen() {
   );
 
   if (Platform.OS === 'web' && !showLoginForm) {
-    return <WebEntryShell onEnter={() => setShowLoginForm(true)} />;
+    return <WebEntryShell onEnter={() => {
+      try { sessionStorage.setItem('shhh_entered', '1'); } catch {}
+      setShowLoginForm(true);
+    }} />;
   }
 
   const handleAuthSelect = async (method: AuthMethod) => {
@@ -96,15 +219,21 @@ export default function LoginScreen() {
     } catch {
       try {
         const result = await sendOTP(phone);
-        if (result.devCode) {
-          router.replace({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login', devCode: result.devCode } });
-          setTimeout(() => Alert.alert('Dev Mode', `Your OTP code is: ${result.devCode}\n\nEnter it below to continue.`, [{ text: 'OK' }]), 300);
-        } else {
-          router.replace({ pathname: '/(auth)/verify-code', params: { phone, mode: 'login' } });
-        }
+        if (result.devCode) setDevCodeState(result.devCode);
+        setOtpSent(true);
       } catch {}
     }
   };
+
+  if (otpSent) {
+    return (
+      <VerifyCodeInline
+        phone={phone}
+        devCode={devCodeState}
+        onBack={() => { setOtpSent(false); setDevCodeState(null); }}
+      />
+    );
+  }
 
   if (authStep === 'choose') {
     return (

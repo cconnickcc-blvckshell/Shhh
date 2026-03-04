@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { authApi, usersApi, setAuthToken, api } from '../api/client';
+import { authApi, usersApi, setAuthToken, setRefreshToken, clearTokens, api } from '../api/client';
 import { router } from 'expo-router';
 
 interface AuthState {
@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   clearError: () => set({ error: null }),
 
   clearSession: () => {
-    setAuthToken('');
+    clearTokens();
     clearSavedToken();
     set({ userId: null, token: null, refreshToken: null, profile: null, isAuthenticated: false });
     router.replace('/(auth)');
@@ -54,6 +54,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setTokens: (token, refreshToken, userId) => {
     setAuthToken(token);
+    if (refreshToken) setRefreshToken(refreshToken);
     set({ token, refreshToken, userId, isAuthenticated: true, error: null });
   },
 
@@ -173,7 +174,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try { await authApi.logout(); } catch {}
-    setAuthToken('');
+    clearTokens();
     clearSavedToken();
     set({ userId: null, token: null, refreshToken: null, profile: null, isAuthenticated: false });
     router.replace('/(auth)');

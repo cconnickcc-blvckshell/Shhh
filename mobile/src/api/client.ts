@@ -8,6 +8,9 @@ export const API_BASE = envApiUrl
     : 'http://10.0.2.2:3000';
 
 let authToken = '';
+let refreshTokenValue = '';
+let isRefreshing = false;
+let refreshQueue: Array<{ resolve: (token: string) => void; reject: (err: Error) => void }> = [];
 
 export type UnauthorizedHandler = () => void;
 let onUnauthorized: UnauthorizedHandler | null = null;
@@ -26,6 +29,62 @@ export function getAuthToken(): string {
     try { authToken = (typeof window !== 'undefined' ? window.localStorage?.getItem('shhh_token') : null) || ''; } catch {}
   }
   return authToken;
+}
+
+export function setRefreshToken(token: string) {
+  refreshTokenValue = token;
+  try { if (typeof window !== 'undefined') window.localStorage?.setItem('shhh_refresh_token', token); } catch {}
+}
+
+export function getRefreshToken(): string {
+  if (!refreshTokenValue) {
+    try { refreshTokenValue = (typeof window !== 'undefined' ? window.localStorage?.getItem('shhh_refresh_token') : null) || ''; } catch {}
+  }
+  return refreshTokenValue;
+}
+
+export function clearTokens() {
+  authToken = '';
+  refreshTokenValue = '';
+  try {
+    if (typeof window !== 'undefined') {
+      window.localStorage?.removeItem('shhh_token');
+      window.localStorage?.removeItem('shhh_refresh_token');
+    }
+  } catch {}
+}
+
+async function refreshAccessToken(): Promise<string> {
+  const rt = getRefreshToken();
+  if (!rt) throw new Error('No refresh token');
+
+  if (isRefreshing) {
+    return new Promise((resolve, reject) => { refreshQueue.push({ resolve, reject }); });
+  }
+
+  isRefreshing = true;
+  try {
+    const res = await fetch(`${API_BASE}/v1/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: rt }),
+    });
+    if (!res.ok) throw new Error('Refresh failed');
+    const body = await res.json();
+    const newAccess = body.data?.accessToken || body.accessToken;
+    const newRefresh = body.data?.refreshToken || body.refreshToken;
+    if (!newAccess) throw new Error('No access token in refresh response');
+    setAuthToken(newAccess);
+    if (newRefresh) setRefreshToken(newRefresh);
+    refreshQueue.forEach(q => q.resolve(newAccess));
+    return newAccess;
+  } catch (err) {
+    refreshQueue.forEach(q => q.reject(err as Error));
+    throw err;
+  } finally {
+    isRefreshing = false;
+    refreshQueue = [];
+  }
 }
 
 export function getMediaUrl(storagePath: string): string {
@@ -56,18 +115,30 @@ export interface ApiError extends Error {
   tierOptions?: string[];
 }
 
-export async function api<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+export async function api<T = any>(path: string, options: RequestInit = {}, _skipRefresh = false): Promise<T> {
+  const token = getAuthToken();
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
   });
 
+  if (res.status === 401 && !_skipRefresh && !path.startsWith('/v1/auth/') && getRefreshToken()) {
+    try {
+      await refreshAccessToken();
+      return api<T>(path, options, true);
+    } catch {
+      if (onUnauthorized) onUnauthorized();
+      const body = await res.json().catch(() => ({ error: { message: res.statusText } }));
+      throw new Error(body.error?.message || 'Session expired');
+    }
+  }
+
   if (!res.ok) {
-    if (res.status === 401 && onUnauthorized) {
+    if (res.status === 401 && onUnauthorized && !path.startsWith('/v1/auth/')) {
       onUnauthorized();
     }
     const body = await res.json().catch(() => ({ error: { message: res.statusText } }));
