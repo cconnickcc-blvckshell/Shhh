@@ -82,7 +82,7 @@ export class MessagingService {
       if (ids) for (const id of ids) otherUserIds.add(id);
     }
 
-    let displayNames: Record<string, string> = {};
+    const displayNames: Record<string, string> = {};
     if (otherUserIds.size > 0) {
       const namesResult = await query(
         `SELECT user_id, display_name FROM user_profiles WHERE user_id = ANY($1)`,
@@ -93,7 +93,7 @@ export class MessagingService {
       }
     }
 
-    let lastMessages: Record<string, { content: string; contentType: string }> = {};
+    const lastMessages: Record<string, { content: string; contentType: string }> = {};
     if (convIds.length > 0) {
       const agg = await Message.aggregate([
         { $match: { conversationId: { $in: convIds } } },

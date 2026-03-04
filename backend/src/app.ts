@@ -132,6 +132,7 @@ export function createApp() {
 
   // Test-only routes (TEST_MODE or NODE_ENV=test)
   if (process.env.TEST_MODE === 'true' || config.nodeEnv === 'test') {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires -- conditional load to avoid test routes in prod
     const testRoutes = require('./modules/test/test.routes').default;
     app.use('/v1/test', testRoutes);
   }
@@ -140,6 +141,7 @@ export function createApp() {
   app.use('/v1/admin', adminRoutes);
 
   // Extended Admin API
+  // eslint-disable-next-line @typescript-eslint/no-var-requires -- conditional load for admin-extended
   const adminExtendedRoutes = require('./modules/admin/admin-extended.routes').default;
   app.use('/v1/admin', adminExtendedRoutes);
 

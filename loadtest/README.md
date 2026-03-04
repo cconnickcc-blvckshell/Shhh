@@ -40,8 +40,8 @@ loadtest/
 │   ├── scenarios/     # auth, discovery, chat, venue, ads, safety, compliance
 │   ├── suites/        # smoke_100, baseline_1000, stress_10000, soak_4h, chaos
 │   └── reports/       # Generated artifacts (gitignored)
-├── smoke.js           # Legacy (5 VUs)
-└── stress.js          # Legacy (ramp 500)
+├── smoke.js           # DEPRECATED — register storm invalid (OTP required). Use k6/suites/smoke_100.js with seeded tokens.
+└── stress.js          # DEPRECATED — same. Use baseline_1000.js or stress_10000.js.
 ```
 
 ## Environment
