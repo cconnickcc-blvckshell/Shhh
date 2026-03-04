@@ -111,9 +111,9 @@ function extractTaggedCounts(metrics, metricPrefix) {
     else if (typeof vals === 'number') count = vals;
     else if (vals && typeof vals === 'object' && !Array.isArray(vals)) count = vals.count || vals.rate || 0;
     if (count <= 0) continue;
-    const epMatch = tagPart.match(/endpoint[=:]([^,}]+)/);
-    const statusMatch = tagPart.match(/status[=:]([^,}]+)/);
-    const classMatch = tagPart.match(/error_class[=:]([^,}]+)/);
+    const epMatch = tagPart.match(/endpoint\s*[=:]\s*["']?([^"',}\s]+)/);
+    const statusMatch = tagPart.match(/status\s*[=:]\s*["']?([^"',}\s]+)/);
+    const classMatch = tagPart.match(/error_class\s*[=:]\s*["']?([^"',}\s]+)/);
     const ep = epMatch ? epMatch[1] : 'unknown';
     const tag2 = statusMatch ? statusMatch[1] : (classMatch ? classMatch[1] : '?');
     const k = ep + '|' + tag2;
@@ -146,7 +146,7 @@ export function handleSummary(data) {
       lines.push('  ' + ep + ': ' + parts.join(', '));
     }
   } else {
-    const sampleKeys = Object.keys(metrics || {}).filter(function (k) { return k.indexOf('http_status') !== -1; }).slice(0, 5);
+    const sampleKeys = Object.keys(metrics || {}).filter(function (k) { return k.indexOf('http_status') !== -1 || k.indexOf('error_class') !== -1; }).slice(0, 15);
     lines.push('  (no tagged submetrics; sample keys: ' + (sampleKeys.length ? sampleKeys.join(', ') : 'none') + ')');
   }
 
@@ -225,6 +225,18 @@ export function handleSummary(data) {
   }
 
   lines.push('');
+
+  if (Object.keys(statusCounts).length === 0) {
+    const allKeys = Object.keys(metrics || {}).filter(function (k) { return k.indexOf('http_status') >= 0 || k.indexOf('error_class') >= 0; });
+    lines.push('');
+    lines.push('=== DEBUG: metric keys (for histogram parsing) ===');
+    lines.push(allKeys.length ? allKeys.join('\n') : 'none');
+  }
+
+  lines.push('');
+  lines.push('=== CREATE FAILURE NOTE ===');
+  lines.push('If create_conversation shows 0% pass, check logs above for [FAIL SAMPLE] create_conversation lines.');
+  lines.push('Those show status + body. Example: status=403 -> auth/tier; 422 -> validation; 409 -> conflict.');
 
   const summary = textSummary(data, { indent: ' ', enableColors: true });
   return {

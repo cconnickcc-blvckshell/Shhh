@@ -7,7 +7,8 @@ import { Counter } from 'k6/metrics';
 const statusCounter = new Counter('http_status_by_endpoint');
 const errorClassCounter = new Counter('error_class_by_endpoint');
 
-const SAMPLE_LOG_MAX = 5;
+const SAMPLE_LOG_MAX_PER_VU = 1;
+const SAMPLE_LOG_VUS = 10;
 const sampleLogCount = {};
 
 /**
@@ -31,28 +32,46 @@ function truncate(str, len) {
 }
 
 /**
- * Record a response for status histogram and error classification.
- * From VU 1, logs first 5 failures per endpoint+status (status + body snippet).
- * Call after each HTTP request in scenarios.
+ * Central fail-sample: log first N failures per endpoint from VUs 1–10.
+ * Call from every scenario that makes HTTP requests.
  *
- * @param {string} endpoint - Endpoint name (e.g. 'discover', 'create_conversation', 'checkout')
- * @param {object} res - k6 HTTP response { status, body }
+ * @param {string} endpoint - e.g. 'create_conversation', 'discover'
+ * @param {object} res - k6 response { status, body, headers }
+ * @param {object} meta - optional { idempotencyKey, requestId }
  */
-export function recordResponse(endpoint, res) {
+export function failSample(endpoint, res, meta) {
+  const status = res && res.status ? res.status : 0;
+  const errClass = classifyStatus(status);
+  if (errClass === 'ok') return;
+
+  if (__VU >= 1 && __VU <= SAMPLE_LOG_VUS) {
+    const key = endpoint + ':' + status + ':vu' + __VU;
+    const n = (sampleLogCount[key] || 0) + 1;
+    sampleLogCount[key] = n;
+    if (n <= SAMPLE_LOG_MAX_PER_VU) {
+      const body = res && res.body ? truncate(res.body, 500) : '';
+      const reqId = (res && res.headers && res.headers['X-Request-Id']) || (meta && meta.requestId) || '';
+      const idem = (meta && meta.idempotencyKey) || '';
+      console.warn('[FAIL SAMPLE] ' + endpoint + ' status=' + status + ' (' + errClass + ') vu=' + __VU + ' idemKey=' + idem + ' x-request-id=' + reqId + ' body=' + body);
+    }
+  }
+}
+
+/**
+ * Record a response for status histogram and error classification.
+ * Calls failSample for non-2xx. Use recordResponse for all endpoints.
+ *
+ * @param {string} endpoint - Endpoint name
+ * @param {object} res - k6 HTTP response { status, body }
+ * @param {object} meta - optional { idempotencyKey } for create calls
+ */
+export function recordResponse(endpoint, res, meta) {
   const status = res && res.status ? res.status : 0;
   const errClass = classifyStatus(status);
 
   statusCounter.add(1, { endpoint, status: String(status) });
   if (errClass !== 'ok') {
     errorClassCounter.add(1, { endpoint, error_class: errClass });
-    if (__VU === 1) {
-      const key = endpoint + ':' + status;
-      const n = (sampleLogCount[key] || 0) + 1;
-      sampleLogCount[key] = n;
-      if (n <= SAMPLE_LOG_MAX) {
-        const body = res && res.body ? truncate(res.body, 120) : '';
-        console.warn('[FAIL SAMPLE] ' + endpoint + ' status=' + status + ' (' + errClass + ') body=' + body);
-      }
-    }
+    failSample(endpoint, res, meta);
   }
 }

@@ -36,7 +36,11 @@ The smoke suite records status codes per endpoint and error class. At end of run
 
 Error classes: `auth_denied` (401/403), `conflict` (409), `validation` (400/422), `rate_limited` (429), `tier_gate_or_partial` (203), `server_error` (5xx).
 
-Use this to diagnose "53% errors" — e.g. "34% were 429 from discovery because we reused too few tokens."
+Use this to diagnose failures — e.g. "34% were 429 from discovery" or "create 0% pass".
+
+**Live samples:** VUs 1–10 each log their first failure per endpoint as `[FAIL SAMPLE] endpoint status=X (class) vu=N idemKey=... body=...`. Guarantees create failures are captured (10 VUs × 1 sample).
+
+**CREATE FAILURE NOTE:** If create_conversation shows 0% pass, the summary directs you to `[FAIL SAMPLE] create_conversation` lines for status + body.
 
 Discover check accepts 200, 203, or 204 (tier-gated/partial/empty).
 
