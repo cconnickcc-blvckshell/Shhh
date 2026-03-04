@@ -12,14 +12,20 @@ Production-grade load testing harness. See `loadtest/README.md` for usage.
 | Soak | soak_4h | 500 | — | — | On-demand |
 | Chaos | chaos_redis_restart | 500 spike | — | — | Manual |
 
-## Backend Test Hooks
+## Backend Test Hooks (Test Harness API)
 
-When `TEST_MODE=true` or `NODE_ENV=test`:
+When `TEST_MODE=true` or `NODE_ENV=test`. **Never registered in production.**
 
-- **POST /v1/test/seed** — Creates N users with deterministic phones, locations, **verification_tier=1** (for conversation create), and returns `{ data: { users: [{ userId, accessToken, refreshToken, phone }] } }`. Max 5000 per request.
-- **Checkout stub** — When Stripe is not configured, `POST /v1/billing/checkout` returns a fake URL (200) instead of 503.
-- **Discovery rate limit** — Raised to 500/min per user (configurable via `DISCOVERY_RATE_LIMIT_PER_MIN`).
-- **CI env** — `loadtest-smoke` job sets `DISCOVERY_RATE_LIMIT_PER_MIN=500`.
+| Endpoint | Purpose |
+|----------|---------|
+| **GET /v1/test/health** | Confirm test mode enabled; returns `{ testMode, version, nodeEnv }` |
+| **POST /v1/test/reset** | Clear Redis keys (discovery_rate, discover cache, ad_cooldown) for deterministic baseline |
+| **POST /v1/test/seed** | Create N users with deterministic phones, locations, **verification_tier=1**; returns `{ data: { users: [{ userId, accessToken, refreshToken, phone }] } }`. Max 5000 per request. |
+| **POST /v1/test/token** | Mint JWT for a seeded user by `userId` (no OTP). Use when tokens expire mid-run. |
+
+**k6 flow:** `checkTestHealth()` → `resetTestState()` → `seedUsers()` — never registers during load.
+
+**Other:** Checkout stub (returns fake URL when Stripe not configured); discovery rate limit 500/min in test mode.
 
 ## Response Classification & Status Histograms
 
@@ -32,7 +38,7 @@ Error classes: `auth_denied` (401/403), `conflict` (409), `validation` (400/422)
 
 Use this to diagnose "53% errors" — e.g. "34% were 429 from discovery because we reused too few tokens."
 
-Discover check accepts 200 or 203 (tier-gated/partial responses).
+Discover check accepts 200, 203, or 204 (tier-gated/partial/empty).
 
 ## Metrics (Prometheus)
 
@@ -52,6 +58,15 @@ For 10k–100k VUs, run distributed k6:
 3. **Grafana Cloud k6** — Use Grafana's hosted load testing
 
 Store results in S3; optionally push to Prometheus remote write. Use GitHub OIDC for credentials.
+
+## Pipeline Order
+
+1. **Smoke (100 VUs)** must achieve &lt;1% error before scaling
+2. **Load (100–500)** — check p95/p99 and error rate
+3. **Stress (1k+)** — find breakpoints
+4. **Soak (hours)** — detect leaks
+
+100k concurrent requires distributed k6 (Grafana Cloud, Kubernetes), not GitHub Actions.
 
 ## Graceful Degradation
 

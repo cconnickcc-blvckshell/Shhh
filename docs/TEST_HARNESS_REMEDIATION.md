@@ -62,5 +62,11 @@ The seed endpoint (`POST /v1/test/seed`) is only registered when `TEST_MODE=true
 - **Fix:** `loadtest/k6/lib/classifier.js` records status per endpoint; `handleSummary` prints STATUS HISTOGRAMS and ERROR CLASS BY ENDPOINT
 - **Reason:** Turn "53% errors" into actionable diagnostics (e.g. "34% were 429 from discover")
 
-### Discover check accepts 200 and 203
-- **Fix:** `discovery_nearby.js` check updated to accept 200 or 203 (tier-gated/partial)
+### Discover check accepts 200, 203, 204
+- **Fix:** `discovery_nearby.js` check updated to accept 200, 203, or 204 (tier-gated/partial/empty)
+
+### Test Harness API (deterministic load test contract)
+- **GET /v1/test/health** — Confirm test mode enabled
+- **POST /v1/test/reset** — Clear Redis cache/rate-limit keys before seed
+- **POST /v1/test/token** — Mint JWT for seeded user (no OTP)
+- **k6:** `checkTestHealth()` → `resetTestState()` → `seedUsers()` — never registers during load

@@ -1,11 +1,47 @@
 /**
  * Auth helpers for k6: seed-based tokens or OTP flow (dev/test).
+ * Never registers during load — uses pre-seeded accounts only.
  */
 import http from 'k6/http';
 import { BASE_URL } from './config.js';
 
 /**
+ * Verify test mode is enabled. Call before seed.
+ */
+export function checkTestHealth() {
+  const res = http.get(`${BASE_URL}/v1/test/health`);
+  return res.status === 200 && res.json('testMode') === true;
+}
+
+/**
+ * Clear Redis rate-limit and cache keys before seed. Ensures deterministic baseline.
+ */
+export function resetTestState() {
+  const res = http.post(
+    `${BASE_URL}/v1/test/reset`,
+    JSON.stringify({}),
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+  return res.status === 200;
+}
+
+/**
+ * Mint fresh JWT for a seeded user (no OTP). Use when tokens expire mid-run.
+ */
+export function mintToken(userId) {
+  const res = http.post(
+    `${BASE_URL}/v1/test/token`,
+    JSON.stringify({ userId }),
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+  if (res.status !== 200) return null;
+  const data = res.json('data') || res.json();
+  return data && data.accessToken ? data : null;
+}
+
+/**
  * Fetch tokens from seed endpoint (TEST_MODE). Creates N users deterministically.
+ * Call resetTestState() first for deterministic runs.
  * @param {number} count - Number of users to seed
  * @param {number} lat - Center lat for user geos
  * @param {number} lng - Center lng for user geos

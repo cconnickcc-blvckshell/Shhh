@@ -97,18 +97,22 @@ export function runMix(data) {
 
 /**
  * Extract tagged metric counts. Handles k6 metric formats: {endpoint=X,status=Y} or nested.
+ * Supports multiple key formats to avoid "unknown" in output.
  */
-function extractTaggedCounts(metric) {
+function extractTaggedCounts(metric, isErrorClass) {
   const byKey = {};
   if (!metric || !metric.values) return byKey;
   for (const [key, val] of Object.entries(metric.values)) {
     const count = typeof val === 'object' && val !== null && 'count' in val ? val.count : (typeof val === 'number' ? val : 0);
     if (count <= 0) continue;
-    const epMatch = key.match(/endpoint=([^,}]+)/);
-    const statusMatch = key.match(/status=([^,}]+)/);
-    const classMatch = key.match(/error_class=([^,}]+)/);
-    const ep = epMatch ? epMatch[1] : 'unknown';
-    const tag2 = statusMatch ? statusMatch[1] : (classMatch ? classMatch[1] : '?');
+    const epMatch = key.match(/endpoint["']?\s*[:=]\s*["']?([^"',}\s]+)/) || key.match(/endpoint=([^,}]+)/);
+    const statusMatch = key.match(/status["']?\s*[:=]\s*["']?([^"',}\s]+)/) || key.match(/status=([^,}]+)/);
+    const classMatch = key.match(/error_class["']?\s*[:=]\s*["']?([^"',}\s]+)/) || key.match(/error_class=([^,}]+)/);
+    let ep = epMatch ? epMatch[1].trim() : null;
+    let tag2 = statusMatch ? statusMatch[1].trim() : (classMatch ? classMatch[1].trim() : null);
+    if (!ep && key.indexOf('{') === -1) ep = key;
+    if (!ep) ep = 'unknown';
+    if (!tag2) tag2 = '?';
     const k = ep + '|' + tag2;
     byKey[k] = (byKey[k] || 0) + count;
   }
@@ -125,7 +129,7 @@ export function handleSummary(data) {
 
   const metrics = data.metrics || {};
   const statusMetric = metrics['http_status_by_endpoint'];
-  const statusCounts = extractTaggedCounts(statusMetric);
+  const statusCounts = extractTaggedCounts(statusMetric, false);
 
   if (Object.keys(statusCounts).length > 0) {
     const byEndpoint = {};
@@ -147,7 +151,7 @@ export function handleSummary(data) {
   lines.push('=== ERROR CLASS BY ENDPOINT (non-2xx) ===');
 
   const errorMetric = metrics['error_class_by_endpoint'];
-  const errorCounts = extractTaggedCounts(errorMetric);
+  const errorCounts = extractTaggedCounts(errorMetric, true);
 
   if (Object.keys(errorCounts).length > 0) {
     const byEndpoint = {};

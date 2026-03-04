@@ -76,9 +76,16 @@ loadtest/
 - 3% Compliance
 - 2% Subscription
 
-## Backend Requirements
+## Backend Requirements (Test Harness API)
 
-- `POST /v1/test/seed` — creates N users when `TEST_MODE=true`
+When `TEST_MODE=true`:
+
+- `GET /v1/test/health` — confirm test mode
+- `POST /v1/test/reset` — clear Redis cache/rate-limit keys
+- `POST /v1/test/seed` — create N users (tier 1, locations)
+- `POST /v1/test/token` — mint JWT for userId (no OTP)
+
+k6 calls reset → seed before load; never registers during load.
 - Prometheus metrics: `http_requests_total`, `http_request_duration_seconds`, `ws_connections_current`, `worker_queue_depth`, `dlq_depth`, `worker_job_failures_total`
 
 ## CI / Nightly

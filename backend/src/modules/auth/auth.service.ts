@@ -140,6 +140,18 @@ export class AuthService {
     );
   }
 
+  /** Test-only: mint JWT for a user by ID without OTP. Used by load test harness. */
+  async mintTokenForTest(userId: string) {
+    const result = await query(
+      'SELECT verification_tier FROM users WHERE id = $1 AND is_active = true AND deleted_at IS NULL',
+      [userId]
+    );
+    if (result.rows.length === 0) {
+      throw Object.assign(new Error('User not found'), { statusCode: 404 });
+    }
+    return this.generateTokens(userId, result.rows[0].verification_tier);
+  }
+
   private async generateTokens(userId: string, tier: number) {
     const payload: AuthPayload = { userId, tier };
 

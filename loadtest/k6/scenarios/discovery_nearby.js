@@ -18,7 +18,7 @@ export function discoveryNearby(token) {
 
   const res = getDiscover(token, lat, lng, 50);
   recordResponse('discover', res);
-  const ok = check(res, { 'discover 200/203': (r) => r.status === 200 || r.status === 203 });
+  const ok = check(res, { 'discover 200/203/204': (r) => r.status === 200 || r.status === 203 || r.status === 204 });
   errorRate.add(!ok);
   discoverDuration.add(res.timings.duration);
   return ok;
