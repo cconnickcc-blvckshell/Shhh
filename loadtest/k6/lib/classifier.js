@@ -8,6 +8,7 @@ const statusCounter = new Counter('http_status_by_endpoint');
 const errorClassCounter = new Counter('error_class_by_endpoint');
 
 const SAMPLE_LOG_MAX = 5;
+const SAMPLE_LOG_MAX_CREATE = 10;
 const sampleLogCount = {};
 
 /**
@@ -49,8 +50,9 @@ export function recordResponse(endpoint, res) {
       const key = endpoint + ':' + status;
       const n = (sampleLogCount[key] || 0) + 1;
       sampleLogCount[key] = n;
-      if (n <= SAMPLE_LOG_MAX) {
-        const body = res && res.body ? truncate(res.body, 120) : '';
+      const maxLog = endpoint === 'create_conversation' ? SAMPLE_LOG_MAX_CREATE : SAMPLE_LOG_MAX;
+      if (n <= maxLog) {
+        const body = res && res.body ? truncate(res.body, 200) : '';
         console.warn('[FAIL SAMPLE] ' + endpoint + ' status=' + status + ' (' + errClass + ') body=' + body);
       }
     }
