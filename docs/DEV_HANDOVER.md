@@ -2222,7 +2222,7 @@ Located in `terraform/`. Provisions:
 
 ### 16.3 CI/CD Pipeline (GitHub Actions)
 
-`.github/workflows/ci.yml` defines 4 jobs:
+`.github/workflows/ci.yml` defines 5 jobs:
 
 | Job | Depends on | Steps |
 |-----|-----------|-------|
@@ -2230,8 +2230,9 @@ Located in `terraform/`. Provisions:
 | `backend-test` | lint-typecheck | Start PG/Redis/Mongo services → `npm ci` → `npm run migrate` → `npm test` |
 | `backend-build` | lint-typecheck | `npm ci` → `tsc` |
 | `admin-dashboard` | — | `npm ci` → `tsc --noEmit` → `vite build` |
+| `loadtest-smoke` | backend-test | Start backend with TEST_MODE → k6 smoke_100 (100 VUs, 3 min) → upload reports |
 
-Triggered on push/PR to `main`. Uses Node 22.
+Triggered on push/PR to `main`. Uses Node 22. `.github/workflows/nightly-load.yml` runs baseline (1000 VUs) on schedule.
 
 ### 16.4 EAS Build Configuration (iOS/Android)
 
@@ -2253,11 +2254,11 @@ eas build --platform android
 
 ### 16.5 Load Testing (k6)
 
-No k6 scripts exist yet. The performance targets (100k concurrent, <200ms p95) imply they will be needed. Key scenarios to test:
-- Discovery query under load (PostGIS)
-- WebSocket connection scaling
-- Auth endpoint rate limiting
-- Message throughput
+See `loadtest/README.md` and `docs/LOADTEST.md`. Tiers: smoke (100 VUs, CI), baseline (1000, nightly), stress (10k), soak (4h), chaos.
+
+- **Seed:** `POST /v1/test/seed` creates users with tier 1 when `TEST_MODE=true`
+- **Response classification:** Status histograms and error class per endpoint at end of run
+- **Scenarios:** Discovery, presence, chat (REST + WS), events, ads, safety, compliance, subscription
 
 ---
 

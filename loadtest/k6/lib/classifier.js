@@ -1,0 +1,39 @@
+/**
+ * Response classification for k6 load tests.
+ * Records status codes per endpoint and error class for end-of-run diagnostics.
+ */
+import { Counter } from 'k6/metrics';
+
+const statusCounter = new Counter('http_status_by_endpoint');
+const errorClassCounter = new Counter('error_class_by_endpoint');
+
+/**
+ * Classify HTTP status into error class for diagnostics.
+ */
+export function classifyStatus(status) {
+  if (status >= 200 && status < 300) return 'ok';
+  if (status === 401 || status === 403) return 'auth_denied';
+  if (status === 409) return 'conflict';
+  if (status === 422 || status === 400) return 'validation';
+  if (status === 429) return 'rate_limited';
+  if (status === 203) return 'tier_gate_or_partial';
+  if (status >= 500) return 'server_error';
+  return 'other';
+}
+
+/**
+ * Record a response for status histogram and error classification.
+ * Call after each HTTP request in scenarios.
+ *
+ * @param {string} endpoint - Endpoint name (e.g. 'discover', 'create_conversation', 'checkout')
+ * @param {object} res - k6 HTTP response { status, body }
+ */
+export function recordResponse(endpoint, res) {
+  const status = res && res.status ? res.status : 0;
+  const errClass = classifyStatus(status);
+
+  statusCounter.add(1, { endpoint, status: String(status) });
+  if (errClass !== 'ok') {
+    errorClassCounter.add(1, { endpoint, error_class: errClass });
+  }
+}

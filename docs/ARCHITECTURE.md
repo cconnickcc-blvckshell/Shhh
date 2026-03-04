@@ -52,7 +52,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 /workspace/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                    # GitHub Actions CI (main)
+│       ├── ci.yml                    # GitHub Actions CI (lint, test, build, loadtest-smoke)
+│       └── nightly-load.yml          # Scheduled baseline load test
 ├── admin-dashboard/                  # React + Vite admin SPA (port 5173)
 │   ├── src/
 │   │   ├── api/
@@ -305,9 +306,13 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   ├── tsconfig.json
 │   └── jest.config.ts
 ├── loadtest/                         # k6 load tests (smoke, baseline, stress, soak, chaos)
-│   ├── k6/                           # Scenarios, suites, lib; reports/ (gitignored)
-│   ├── smoke.js                      # Legacy
-│   └── stress.js                     # Legacy
+│   ├── k6/
+│   │   ├── lib/                      # config, api, auth, metrics, thresholds, mix, classifier
+│   │   ├── scenarios/                # discovery, chat, venue, ads, safety, compliance, subscription
+│   │   ├── suites/                   # smoke_100, baseline_1000, stress_10000, soak_4h, chaos
+│   │   └── reports/                  # smoke-report.json, smoke-summary.txt (gitignored)
+│   ├── smoke.js                      # DEPRECATED
+│   └── stress.js                     # DEPRECATED
 ├── docker-compose.yml                # PostgreSQL+PostGIS, Redis, MongoDB
 ├── .env.example                      # Environment template
 ├── AGENTS.md                         # Cloud agent instructions

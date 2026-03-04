@@ -7,9 +7,11 @@ import { BASE_URL } from '../lib/config.js';
 import { authHeaders } from '../lib/auth.js';
 import { getConversations, postMessage } from '../lib/api.js';
 import { errorRate, chatSendDuration } from '../lib/metrics.js';
+import { recordResponse } from '../lib/classifier.js';
 
 export function chatSendRest(token, targetUserId) {
   const listRes = getConversations(token);
+  recordResponse('conversations', listRes);
   if (!check(listRes, { 'conversations 200': (r) => r.status === 200 })) {
     errorRate.add(1);
     return;
@@ -29,6 +31,7 @@ export function chatSendRest(token, targetUserId) {
       JSON.stringify({ participantIds: [targetUserId] }),
       { headers: authHeaders(token), tags: { name: 'create_conversation' } }
     );
+    recordResponse('create_conversation', createRes);
     if (check(createRes, { 'create 201': (r) => r.status === 201 })) {
       conversationId = createRes.json('data.id') || createRes.json('data.conversationId');
     }
@@ -40,6 +43,7 @@ export function chatSendRest(token, targetUserId) {
   }
 
   const msgRes = postMessage(token, conversationId, `Load test msg ${Date.now()}`);
+  recordResponse('post_message', msgRes);
   const ok = check(msgRes, { 'message 201': (r) => r.status === 201 });
   errorRate.add(!ok);
   chatSendDuration.add(msgRes.timings.duration);

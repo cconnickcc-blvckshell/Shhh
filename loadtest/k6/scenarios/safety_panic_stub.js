@@ -4,9 +4,11 @@
 import { postScreenshot } from '../lib/api.js';
 import { check } from 'k6';
 import { errorRate } from '../lib/metrics.js';
+import { recordResponse } from '../lib/classifier.js';
 
 export function safetyScreenshot(token) {
   const res = postScreenshot(token);
+  recordResponse('screenshot', res);
   const ok = check(res, { 'screenshot 200/201/204': (r) => r.status >= 200 && r.status < 300 });
   errorRate.add(!ok);
 }

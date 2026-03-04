@@ -31,12 +31,23 @@ npm run loadtest:smoke
 | Soak | soak_4h | 500 | 4h | Memory/leak |
 | Chaos | chaos_redis_restart | 500 spike | ~2 min | Graceful degradation |
 
+## Response Classification & Status Histograms
+
+The smoke suite records status codes per endpoint and error class. At the end of each run, `handleSummary` prints:
+
+- **STATUS HISTOGRAMS BY ENDPOINT** — e.g. `discover: 200:203, 429:4389`
+- **ERROR CLASS BY ENDPOINT (non-2xx)** — e.g. `discover: rate_limited:4389`, `create_conversation: auth_denied:1085`
+
+Error classes: `auth_denied` (401/403), `conflict` (409), `validation` (400/422), `rate_limited` (429), `tier_gate_or_partial` (203), `server_error` (5xx).
+
+Use this to diagnose "53% errors" — e.g. "34% were 429 from discovery because we reused too few tokens."
+
 ## Structure
 
 ```
 loadtest/
 ├── k6/
-│   ├── lib/           # config, api, auth, metrics, thresholds, mix
+│   ├── lib/           # config, api, auth, metrics, thresholds, mix, classifier
 │   ├── scenarios/     # auth, discovery, chat, venue, ads, safety, compliance
 │   ├── suites/        # smoke_100, baseline_1000, stress_10000, soak_4h, chaos
 │   └── reports/       # Generated artifacts (gitignored)

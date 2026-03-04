@@ -2,6 +2,7 @@
  * Tier A: PR gate. 100 VUs, 2–5 min. Catches regressions.
  */
 import { sleep } from 'k6';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js';
 import { loadSeeds } from '../lib/seeds.js';
 import { getMix, selectScenario } from '../lib/mix.js';
 import { getThresholds } from '../lib/thresholds.js';
@@ -14,6 +15,7 @@ import { safetyScreenshot } from '../scenarios/safety_panic_stub.js';
 import { complianceExport } from '../scenarios/compliance_delete_export.js';
 import { subscriptionCheckoutStub } from '../scenarios/subscription_checkout_stub.js';
 import { postPresenceState } from '../lib/api.js';
+import { recordResponse } from '../lib/classifier.js';
 
 export const options = {
   scenarios: {
@@ -58,9 +60,11 @@ export function runMix(data) {
     case 'discovery':
       discoveryNearby(token);
       break;
-    case 'presence':
-      postPresenceState(token, ['browsing', 'open_to_chat', 'nearby'][Math.floor(Math.random() * 3)]);
+    case 'presence': {
+      const presRes = postPresenceState(token, ['browsing', 'open_to_chat', 'nearby'][Math.floor(Math.random() * 3)]);
+      recordResponse('presence', presRes);
       break;
+    }
     case 'chat':
       if (__ITER % 3 === 0) {
         chatWsConnect(token);
@@ -89,4 +93,83 @@ export function runMix(data) {
       discoveryNearby(token);
   }
   sleep(0.5 + Math.random());
+}
+
+/**
+ * Extract tagged metric counts. Handles k6 metric formats: {endpoint=X,status=Y} or nested.
+ */
+function extractTaggedCounts(metric) {
+  const byKey = {};
+  if (!metric || !metric.values) return byKey;
+  for (const [key, val] of Object.entries(metric.values)) {
+    const count = typeof val === 'object' && val !== null && 'count' in val ? val.count : (typeof val === 'number' ? val : 0);
+    if (count <= 0) continue;
+    const epMatch = key.match(/endpoint=([^,}]+)/);
+    const statusMatch = key.match(/status=([^,}]+)/);
+    const classMatch = key.match(/error_class=([^,}]+)/);
+    const ep = epMatch ? epMatch[1] : 'unknown';
+    const tag2 = statusMatch ? statusMatch[1] : (classMatch ? classMatch[1] : '?');
+    const k = ep + '|' + tag2;
+    byKey[k] = (byKey[k] || 0) + count;
+  }
+  return byKey;
+}
+
+/**
+ * Print status histograms per endpoint and error class summary.
+ */
+export function handleSummary(data) {
+  const lines = [];
+  lines.push('');
+  lines.push('=== STATUS HISTOGRAMS BY ENDPOINT ===');
+
+  const metrics = data.metrics || {};
+  const statusMetric = metrics['http_status_by_endpoint'];
+  const statusCounts = extractTaggedCounts(statusMetric);
+
+  if (Object.keys(statusCounts).length > 0) {
+    const byEndpoint = {};
+    for (const [k, count] of Object.entries(statusCounts)) {
+      const [ep, status] = k.split('|');
+      if (!byEndpoint[ep]) byEndpoint[ep] = {};
+      byEndpoint[ep][status] = (byEndpoint[ep][status] || 0) + count;
+    }
+    for (const [ep, statuses] of Object.entries(byEndpoint)) {
+      const sorted = Object.entries(statuses).sort(function (a, b) { return b[1] - a[1]; });
+      const parts = sorted.map(function (s) { return s[0] + ':' + s[1]; });
+      lines.push('  ' + ep + ': ' + parts.join(', '));
+    }
+  } else {
+    lines.push('  (no status data)');
+  }
+
+  lines.push('');
+  lines.push('=== ERROR CLASS BY ENDPOINT (non-2xx) ===');
+
+  const errorMetric = metrics['error_class_by_endpoint'];
+  const errorCounts = extractTaggedCounts(errorMetric);
+
+  if (Object.keys(errorCounts).length > 0) {
+    const byEndpoint = {};
+    for (const [k, count] of Object.entries(errorCounts)) {
+      const [ep, errClass] = k.split('|');
+      if (!byEndpoint[ep]) byEndpoint[ep] = {};
+      byEndpoint[ep][errClass] = (byEndpoint[ep][errClass] || 0) + count;
+    }
+    for (const [ep, classes] of Object.entries(byEndpoint)) {
+      const sorted = Object.entries(classes).sort(function (a, b) { return b[1] - a[1]; });
+      const parts = sorted.map(function (c) { return c[0] + ':' + c[1]; });
+      lines.push('  ' + ep + ': ' + parts.join(', '));
+    }
+  } else {
+    lines.push('  (no error class data)');
+  }
+
+  lines.push('');
+
+  const summary = textSummary(data, { indent: ' ', enableColors: true });
+  return {
+    stdout: summary + lines.join('\n'),
+    'loadtest/reports/smoke-summary.txt': lines.join('\n'),
+  };
 }

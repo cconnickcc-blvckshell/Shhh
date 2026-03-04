@@ -54,6 +54,15 @@ export async function seed(req: Request, res: Response, next: NextFunction): Pro
         userId = result.userId;
       }
 
+      // Load tests need tier 1 to create conversations; re-login to get tokens with tier
+      await query('UPDATE users SET verification_tier = 1 WHERE id = $1', [userId]);
+      const reLogin = await authService.loginWithPhone(phone);
+      const lastUser = users[users.length - 1];
+      if (lastUser) {
+        lastUser.accessToken = reLogin.accessToken;
+        lastUser.refreshToken = reLogin.refreshToken;
+      }
+
       const jitterLat = lat + (Math.random() - 0.5) * 0.02;
       const jitterLng = lng + (Math.random() - 0.5) * 0.02;
       await query(

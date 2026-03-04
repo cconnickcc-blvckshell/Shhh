@@ -43,3 +43,24 @@ npm run loadtest:smoke
 ```
 
 The seed endpoint (`POST /v1/test/seed`) is only registered when `TEST_MODE=true` or `NODE_ENV=test`.
+
+## Smoke Test Semantic Fixes (March 2026)
+
+### Seed users with tier 1
+- **Fix:** `seed.controller.ts` updates `verification_tier=1` after create/login and re-logs in to get tokens with tier
+- **Reason:** POST `/v1/conversations` requires tier 1; seed users were tier 0 → 403
+
+### Checkout stub in test mode
+- **Fix:** `subscription.service.ts` returns fake checkout URL when Stripe not configured and `TEST_MODE=true` or `NODE_ENV=test`
+- **Reason:** CI has no Stripe secrets; checkout was 503
+
+### Discovery rate limit in test mode
+- **Fix:** `discoveryRateLimit.ts` uses 500/min when `TEST_MODE` or `NODE_ENV=test`; CI sets `DISCOVERY_RATE_LIMIT_PER_MIN=500`
+- **Reason:** 60/min per user was hit under 100 VUs with 40% discovery mix
+
+### Response classification & status histograms
+- **Fix:** `loadtest/k6/lib/classifier.js` records status per endpoint; `handleSummary` prints STATUS HISTOGRAMS and ERROR CLASS BY ENDPOINT
+- **Reason:** Turn "53% errors" into actionable diagnostics (e.g. "34% were 429 from discover")
+
+### Discover check accepts 200 and 203
+- **Fix:** `discovery_nearby.js` check updated to accept 200 or 203 (tier-gated/partial)

@@ -5,7 +5,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { getRedis } from '../config/redis';
 
-const LIMIT = parseInt(process.env.DISCOVERY_RATE_LIMIT_PER_MIN || '60', 10);
+const LIMIT = parseInt(
+  process.env.DISCOVERY_RATE_LIMIT_PER_MIN ||
+    (process.env.TEST_MODE === 'true' || process.env.NODE_ENV === 'test' ? '500' : '60'),
+  10
+);
 const WINDOW_SEC = 60;
 const PREFIX = 'discovery_rate:';
 

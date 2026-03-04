@@ -64,43 +64,48 @@ Runs Jest with `--forceExit --detectOpenHandles`. Tests use `NODE_ENV=test` and 
 `.github/workflows/ci.yml`:
 
 - **Services:** Postgres (PostGIS), Redis, MongoDB
-- **Env:** `DATABASE_URL`, `REDIS_URL`, `MONGODB_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `NODE_ENV=test`
-- **Steps:** `npm ci` → `npm run migrate` → `npm test`
+- **Env:** `DATABASE_URL`, `REDIS_URL`, `MONGODB_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `NODE_ENV=test`, `TEST_MODE=true`
+- **Jobs:** backend-lint-typecheck, backend-test, backend-build, admin-dashboard, loadtest-smoke
+- **loadtest-smoke:** Backend with TEST_MODE → k6 smoke_100 (100 VUs, 3 min) → upload reports
 
 ---
 
 ## 4. Load Tests (k6)
 
+See `loadtest/README.md` and `docs/LOADTEST.md`.
+
 ### Prerequisites
 
 - [k6](https://k6.io/docs/get-started/installation/) installed
+- Backend running with `TEST_MODE=true` (or `NODE_ENV=test`)
 
-### Smoke (5 VUs, 30s)
+### Smoke (100 VUs, ~3 min)
 
 ```bash
-cd loadtest
-k6 run smoke.js
+# From repo root
+npm run loadtest:smoke
 ```
 
-Or from root: `k6 run loadtest/smoke.js`
+Or: `k6 run loadtest/k6/suites/smoke_100.js`
 
-### Stress (ramp to 500 VUs)
+### Baseline / Stress
 
 ```bash
-cd loadtest
-k6 run stress.js
+npm run loadtest:baseline   # 1000 VUs
+npm run loadtest:stress     # 10k VUs
 ```
 
 ### Against Production
 
 ```bash
-cd loadtest
-k6 run -e API_URL=https://api.shhh.app smoke.js
+k6 run -e API_URL=https://api.shhh.app -e LOAD_TIER=smoke loadtest/k6/suites/smoke_100.js
 ```
 
-### Thresholds
+Note: Production must have seed disabled. Use pre-generated `SEED_FILE` or OTP flow.
 
-Smoke typically uses p95 < 500ms, error rate < 5%. Adjust in script if needed.
+### Response Classification
+
+At end of run, status histograms and error class per endpoint are printed. Use to diagnose failures (e.g. 429 rate_limited, 403 auth_denied).
 
 ---
 
