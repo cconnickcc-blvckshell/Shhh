@@ -41,15 +41,23 @@ const styles = StyleSheet.create({
   row: {
     flex: 1,
     flexDirection: 'row',
-  },
+    height: '100%',
+  } as any,
   sidebarSlot: {
     width: layout.sidebarWidth,
-  },
+    minHeight: '100vh',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    zIndex: 10,
+  } as any,
   contentWrap: {
     flex: 1,
     alignItems: 'center',
     minWidth: 0,
     minHeight: 0,
+    marginLeft: layout.sidebarWidth,
     ...(Platform.OS === 'web' && { overflow: 'hidden' as const }),
   },
   contentWrapFull: {

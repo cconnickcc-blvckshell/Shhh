@@ -11,13 +11,13 @@ import { WebSidebar } from '../../src/components/WebSidebar';
 import { pathnameToTab, TAB_TO_ROUTE, type DesktopTabId } from '../../src/lib/tabRoutes';
 
 const TAB_OPTIONS = {
-  // Scene containers must fully cover the viewport so inactive tabs are not visible.
-  sceneStyle: { backgroundColor: 'transparent', flex: 1 },
-  contentStyle: { backgroundColor: 'transparent' },
-  headerStyle: { backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0, borderBottomWidth: 0.5, borderBottomColor: 'rgba(147,51,234,0.15)' },
+  sceneStyle: { backgroundColor: colors.background, flex: 1 },
+  contentStyle: { backgroundColor: colors.background },
+  headerStyle: { backgroundColor: colors.surface, elevation: 0, shadowOpacity: 0, borderBottomWidth: 0.5, borderBottomColor: 'rgba(147,51,234,0.15)' },
   headerTitleStyle: { color: colors.text, fontWeight: '700' as const, fontSize: fontSize.lg },
+  headerShown: false,
   tabBarStyle: {
-    backgroundColor: 'transparent',
+    backgroundColor: colors.surface,
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(147,51,234,0.2)',
     height: 64,

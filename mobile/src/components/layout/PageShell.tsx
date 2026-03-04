@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-import { layout, spacing } from '../../constants/theme';
+import { layout, spacing, colors } from '../../constants/theme';
 
 /**
  * Page-level wrapper: centers content, enforces max width, vertical padding.
@@ -20,5 +20,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.md,
     minHeight: 0,
+    backgroundColor: colors.background,
   },
 });

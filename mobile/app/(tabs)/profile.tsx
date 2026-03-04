@@ -47,6 +47,7 @@ const mStyles = StyleSheet.create({
 export default function ProfileScreen() {
   useScreenView('profile');
   const { profile, logout, loadProfile, isAuthenticated } = useAuthStore();
+  const location = useLocation();
   useEffect(() => {
     if (isAuthenticated && !profile) loadProfile();
   }, [isAuthenticated, profile, loadProfile]);
@@ -58,8 +59,6 @@ export default function ProfileScreen() {
       </PageShell>
     );
   }
-
-  const location = useLocation();
   const handlePanic = () => Alert.alert('Emergency Alert', 'Record a panic alert with your location? Your emergency contacts will be notified when possible.', [
     { text: 'Cancel', style: 'cancel' },
     {

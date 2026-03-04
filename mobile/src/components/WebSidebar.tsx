@@ -75,12 +75,13 @@ function SidebarItem({
 const styles = StyleSheet.create({
   sidebar: {
     width: layout.sidebarWidth,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    height: '100%',
+    backgroundColor: 'rgba(8,5,14,0.95)',
     borderRightWidth: 1,
     borderRightColor: colors.border,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.sm,
-  },
+  } as any,
   brandWrap: { paddingHorizontal: spacing.sm, marginBottom: spacing.md },
   item: {
     flexDirection: 'row',
