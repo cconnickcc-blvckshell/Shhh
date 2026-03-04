@@ -7,7 +7,7 @@ let pool: Pool | null = null;
 export function getPool(): Pool {
   if (!pool) {
     const ssl = process.env.DATABASE_SSL === 'true'
-      ? { rejectUnauthorized: true }
+      ? { rejectUnauthorized: false }
       : undefined;
     pool = new Pool({
       connectionString: config.database.url,

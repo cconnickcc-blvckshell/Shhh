@@ -11,7 +11,7 @@ function getMigrationPool(): Pool {
   return new Pool({
     connectionString: url,
     max: 1,
-    ...(needsSsl && { ssl: { rejectUnauthorized: true } }),
+    ...(needsSsl && { ssl: { rejectUnauthorized: false } }),
   });
 }
 
