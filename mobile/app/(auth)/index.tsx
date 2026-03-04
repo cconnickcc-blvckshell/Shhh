@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useIdTokenAuthRequest } from 'expo-auth-session/providers/google';
 import * as AuthSession from 'expo-auth-session';
 import { useAuthStore } from '../../src/stores/auth';
+import { api, authApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 import { AuthScreenBackground, AppIconImage } from '../../src/components/Backgrounds';
 import { WebEntryShell } from '../../src/components/WebEntryShell';
@@ -26,7 +27,7 @@ function VerifyCodeInline({ phone, devCode, onBack }: { phone: string; devCode: 
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { verifyAndLogin } = useAuthStore();
+  const { setTokens, loadProfile } = useAuthStore();
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const handleDigit = (index: number, value: string) => {
@@ -52,9 +53,21 @@ function VerifyCodeInline({ phone, devCode, onBack }: { phone: string; devCode: 
     setLoading(true);
     setError('');
     try {
-      await verifyAndLogin(phone, code);
+      const verifyRes = await api<{ data: { verified: boolean; sessionToken?: string } }>('/v1/auth/phone/verify', {
+        method: 'POST', body: JSON.stringify({ phone, code }),
+      });
+      const sessionToken = verifyRes.data?.sessionToken;
+      let res;
+      try {
+        res = await authApi.register(phone, 'New User', sessionToken);
+      } catch {
+        res = await authApi.login(phone, sessionToken);
+      }
+      setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
+      await loadProfile();
+      router.replace('/(tabs)');
     } catch (err: any) {
-      setError(err.message || 'Invalid code');
+      setError(err.message || 'Verification failed');
       setDigits(Array(6).fill(''));
       inputRefs.current[0]?.focus();
     } finally {
@@ -215,14 +228,10 @@ export default function LoginScreen() {
     if (!canSubmit) return;
     clearError();
     try {
-      await login(phone);
-    } catch {
-      try {
-        const result = await sendOTP(phone);
-        if (result.devCode) setDevCodeState(result.devCode);
-        setOtpSent(true);
-      } catch {}
-    }
+      const result = await sendOTP(phone);
+      if (result.devCode) setDevCodeState(result.devCode);
+      setOtpSent(true);
+    } catch {}
   };
 
   if (otpSent) {
