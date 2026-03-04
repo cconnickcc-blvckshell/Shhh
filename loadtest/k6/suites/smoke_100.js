@@ -172,6 +172,59 @@ export function handleSummary(data) {
   }
 
   lines.push('');
+  lines.push('=== PER-ENDPOINT SUMMARY (pass rate, top status codes) ===');
+
+  if (Object.keys(statusCounts).length > 0) {
+    const byEndpoint = {};
+    for (const [k, count] of Object.entries(statusCounts)) {
+      const [ep, status] = k.split('|');
+      if (!byEndpoint[ep]) byEndpoint[ep] = {};
+      byEndpoint[ep][status] = (byEndpoint[ep][status] || 0) + count;
+    }
+    const hints = { 401: 'auth missing', 403: 'auth denied/tier', 404: 'not found', 409: 'conflict', 422: 'validation', 429: 'rate limit', 500: 'server error' };
+    for (const [ep, statuses] of Object.entries(byEndpoint)) {
+      const total = Object.values(statuses).reduce(function (a, b) { return a + b; }, 0);
+      const success = Object.entries(statuses).filter(function (s) { const c = parseInt(s[0], 10); return c >= 200 && c < 300; }).reduce(function (a, s) { return a + s[1]; }, 0);
+      const pct = total > 0 ? (100 * success / total).toFixed(1) : '0';
+      const top3 = Object.entries(statuses).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 3);
+      const topStr = top3.map(function (s) { const h = hints[s[0]] ? ' (' + hints[s[0]] + ')' : ''; return s[0] + ':' + s[1] + h; }).join(', ');
+      const flag = parseFloat(pct) < 80 ? ' <<<' : '';
+      lines.push('  ' + ep + ': ' + success + '/' + total + ' (' + pct + '% pass) | top: ' + topStr + flag);
+    }
+  }
+
+  lines.push('');
+  lines.push('=== FAILURE PATTERN (endpoints by fail rate, likely cause) ===');
+
+  if (Object.keys(statusCounts).length > 0) {
+    const byEndpoint = {};
+    for (const [k, count] of Object.entries(statusCounts)) {
+      const [ep, status] = k.split('|');
+      if (!byEndpoint[ep]) byEndpoint[ep] = { total: 0, success: 0, topStatus: {} };
+      byEndpoint[ep].total += count;
+      if (parseInt(status, 10) >= 200 && parseInt(status, 10) < 300) byEndpoint[ep].success += count;
+      byEndpoint[ep].topStatus[status] = (byEndpoint[ep].topStatus[status] || 0) + count;
+    }
+    const sorted = Object.entries(byEndpoint)
+      .map(function (e) { return { ep: e[0], failRate: 1 - e[1].success / Math.max(1, e[1].total), total: e[1].total, top: e[1].topStatus }; })
+      .filter(function (x) { return x.failRate > 0; })
+      .sort(function (a, b) { return b.failRate - a.failRate; });
+    for (let i = 0; i < sorted.length; i++) {
+      const x = sorted[i];
+      const topCode = Object.entries(x.top).sort(function (a, b) { return b[1] - a[1]; })[0];
+      const code = topCode ? topCode[0] : '?';
+      let cause = 'unknown';
+      if (code === '401' || code === '403') cause = 'auth/tier gate';
+      else if (code === '429') cause = 'rate limit';
+      else if (code === '422' || code === '400') cause = 'validation/schema';
+      else if (code === '409') cause = 'conflict/duplicate';
+      else if (code === '500') cause = 'server error';
+      lines.push('  ' + (i + 1) + '. ' + x.ep + ': ' + (100 * x.failRate).toFixed(0) + '% fail (n=' + x.total + '), top ' + code + ' -> ' + cause);
+    }
+    if (sorted.length === 0) lines.push('  (all endpoints passing)');
+  }
+
+  lines.push('');
 
   const summary = textSummary(data, { indent: ' ', enableColors: true });
   return {

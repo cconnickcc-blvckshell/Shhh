@@ -7,6 +7,9 @@ import { Counter } from 'k6/metrics';
 const statusCounter = new Counter('http_status_by_endpoint');
 const errorClassCounter = new Counter('error_class_by_endpoint');
 
+const SAMPLE_LOG_MAX = 5;
+const sampleLogCount = {};
+
 /**
  * Classify HTTP status into error class for diagnostics.
  */
@@ -21,8 +24,15 @@ export function classifyStatus(status) {
   return 'other';
 }
 
+function truncate(str, len) {
+  if (!str || typeof str !== 'string') return '';
+  str = str.replace(/\s+/g, ' ').trim();
+  return str.length <= len ? str : str.substring(0, len) + '...';
+}
+
 /**
  * Record a response for status histogram and error classification.
+ * From VU 1, logs first 5 failures per endpoint+status (status + body snippet).
  * Call after each HTTP request in scenarios.
  *
  * @param {string} endpoint - Endpoint name (e.g. 'discover', 'create_conversation', 'checkout')
@@ -35,5 +45,14 @@ export function recordResponse(endpoint, res) {
   statusCounter.add(1, { endpoint, status: String(status) });
   if (errClass !== 'ok') {
     errorClassCounter.add(1, { endpoint, error_class: errClass });
+    if (__VU === 1) {
+      const key = endpoint + ':' + status;
+      const n = (sampleLogCount[key] || 0) + 1;
+      sampleLogCount[key] = n;
+      if (n <= SAMPLE_LOG_MAX) {
+        const body = res && res.body ? truncate(res.body, 120) : '';
+        console.warn('[FAIL SAMPLE] ' + endpoint + ' status=' + status + ' (' + errClass + ') body=' + body);
+      }
+    }
   }
 }

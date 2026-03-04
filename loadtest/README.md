@@ -31,16 +31,18 @@ npm run loadtest:smoke
 | Soak | soak_4h | 500 | 4h | Memory/leak |
 | Chaos | chaos_redis_restart | 500 spike | ~2 min | Graceful degradation |
 
-## Response Classification & Status Histograms
+## Response Classification & Detailed Reporting
 
 The smoke suite records status codes per endpoint and error class. At the end of each run, `handleSummary` prints:
 
-- **STATUS HISTOGRAMS BY ENDPOINT** — e.g. `discover: 200:203, 429:4389`
-- **ERROR CLASS BY ENDPOINT (non-2xx)** — e.g. `discover: rate_limited:4389`, `create_conversation: auth_denied:1085`
+- **STATUS HISTOGRAMS BY ENDPOINT** — e.g. `discover: 200:1522, 429:2000, 403:1170`
+- **ERROR CLASS BY ENDPOINT (non-2xx)** — e.g. `discover: rate_limited:2000`, `create_conversation: auth_denied:1164`
+- **PER-ENDPOINT SUMMARY** — pass rate, total, top 3 status codes with hints (auth missing, rate limit, validation, etc.)
+- **FAILURE PATTERN** — endpoints sorted by fail rate with likely cause (auth/tier gate, rate limit, validation, etc.)
+
+During the run, VU 1 logs the first 5 failure samples per endpoint+status: `[FAIL SAMPLE] discover status=429 (rate_limited) body=...`
 
 Error classes: `auth_denied` (401/403), `conflict` (409), `validation` (400/422), `rate_limited` (429), `tier_gate_or_partial` (203), `server_error` (5xx).
-
-Use this to diagnose "53% errors" — e.g. "34% were 429 from discovery because we reused too few tokens."
 
 ## Structure
 
