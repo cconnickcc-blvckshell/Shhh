@@ -92,15 +92,22 @@ export class OTPService {
     return sessionToken;
   }
 
-  /** Consume OTP session; returns phone if valid. Throws if invalid/expired. */
-  async consumeOTPSession(sessionToken: string): Promise<string> {
+  /** Validate OTP session without consuming it; returns phone if valid. */
+  async validateOTPSession(sessionToken: string): Promise<string> {
     const redis = getRedis();
     const key = `otp_session:${sessionToken}`;
     const phone = await redis.get(key);
     if (!phone) {
       throw Object.assign(new Error('Session expired or invalid. Please verify your phone again.'), { statusCode: 401 });
     }
-    await redis.del(key);
+    return phone;
+  }
+
+  /** Consume OTP session (delete from Redis); returns phone if valid. Throws if invalid/expired. */
+  async consumeOTPSession(sessionToken: string): Promise<string> {
+    const phone = await this.validateOTPSession(sessionToken);
+    const redis = getRedis();
+    await redis.del(`otp_session:${sessionToken}`);
     return phone;
   }
 }

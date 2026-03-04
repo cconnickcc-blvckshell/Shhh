@@ -16,7 +16,7 @@ export class AuthController {
       if (config.nodeEnv === 'test' && !sessionToken) {
         // Test bypass for backward compat with existing tests
       } else if (sessionToken) {
-        verifiedPhone = await otpService.consumeOTPSession(sessionToken);
+        verifiedPhone = await otpService.validateOTPSession(sessionToken);
         if (phone && phone !== verifiedPhone) {
           throw Object.assign(new Error('Phone does not match verification session'), { statusCode: 400 });
         }
@@ -25,6 +25,7 @@ export class AuthController {
       }
 
       const result = await authService.registerWithPhone(verifiedPhone, displayName);
+      if (sessionToken) await otpService.consumeOTPSession(sessionToken);
       res.status(201).json({ data: result });
     } catch (err) {
       next(err);
@@ -39,7 +40,7 @@ export class AuthController {
       if (config.nodeEnv === 'test' && !sessionToken) {
         // Test bypass for backward compat with existing tests
       } else if (sessionToken) {
-        verifiedPhone = await otpService.consumeOTPSession(sessionToken);
+        verifiedPhone = await otpService.validateOTPSession(sessionToken);
         if (phone && phone !== verifiedPhone) {
           throw Object.assign(new Error('Phone does not match verification session'), { statusCode: 400 });
         }
@@ -48,6 +49,7 @@ export class AuthController {
       }
 
       const result = await authService.loginWithPhone(verifiedPhone);
+      if (sessionToken) await otpService.consumeOTPSession(sessionToken);
       res.json({ data: result });
     } catch (err) {
       next(err);
