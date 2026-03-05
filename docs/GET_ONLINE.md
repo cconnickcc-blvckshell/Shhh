@@ -194,3 +194,21 @@ docker run -p 3000:3000 --env-file .env shhh-backend
 | Backend exits on startup | Check Postgres/Redis/Mongo connect. In prod, all four secrets required. |
 | CORS errors from frontend | Add frontend URL to `CORS_ORIGINS` (comma-separated, no trailing slash). |
 | 401 on API calls | JWT/auth flow; ensure `EXPO_PUBLIC_API_URL` has no trailing slash. |
+| **ECONNREFUSED 127.0.0.1:6379** (Redis) | Render has no local Redis. Add `REDIS_URL` in Render Dashboard → Environment. Use [Upstash](https://upstash.com) (free tier) or Redis Cloud. |
+| **ECONNREFUSED / timeout** (PostgreSQL) | Add `DATABASE_URL` in Render. Use Render PostgreSQL add-on or [Supabase](https://supabase.com). |
+| **ECONNREFUSED** (MongoDB) | Add `MONGODB_URL` in Render. Use [MongoDB Atlas](https://mongodb.com/cloud/atlas) (free tier). |
+| **ENOENT / address: "%20--tls%20-u%20redis://..."** (Redis) | You pasted the redis-cli command. Use only the URL. For Upstash use `rediss://default:PASSWORD@host:6379` (double s = TLS). |
+| **self-signed certificate in certificate chain** (PostgreSQL) | Add `DATABASE_SSL_REJECT_UNAUTHORIZED=false` in Render Environment. Some cloud Postgres use internal CAs. |
+
+### Render: Required Environment Variables
+
+Render containers have **no local databases**. You must set these in **Dashboard → Your Web Service → Environment**:
+
+| Variable | Where to get it |
+|----------|-----------------|
+| `DATABASE_URL` | Render PostgreSQL add-on, or Supabase pooler URL |
+| `REDIS_URL` | [Upstash](https://console.upstash.com/) → Create Database → copy URL |
+| `MONGODB_URL` | [MongoDB Atlas](https://cloud.mongodb.com/) → Connect → Drivers → copy URI (add `authSource=admin`) |
+| `JWT_SECRET`, `JWT_REFRESH_SECRET`, `PHONE_HASH_PEPPER` | `openssl rand -hex 32` (three different values) |
+| `CORS_ORIGINS` | Your frontend URL(s), comma-separated, no trailing slash |
+| `NODE_ENV` | `production` |

@@ -34,8 +34,34 @@ function validateProductionSecrets() {
   }
 }
 
+/** Fail fast in production if DB/Redis URLs point to localhost (Render, Railway, etc. have no local services). */
+function validateProductionDataServices() {
+  if (config.nodeEnv !== 'production') return;
+
+  const dbUrl = process.env.DATABASE_URL || '';
+  const redisUrl = process.env.REDIS_URL || '';
+  const mongoUrl = process.env.MONGODB_URL || '';
+  const localhostPattern = /localhost|127\.0\.0\.1|::1/;
+
+  const missing: string[] = [];
+  if (!dbUrl || localhostPattern.test(dbUrl)) missing.push('DATABASE_URL (use Supabase pooler or Render PostgreSQL)');
+  if (!redisUrl || localhostPattern.test(redisUrl)) missing.push('REDIS_URL (use Upstash or Redis Cloud)');
+  if (!mongoUrl || localhostPattern.test(mongoUrl)) missing.push('MONGODB_URL (use MongoDB Atlas)');
+
+  if (missing.length > 0) {
+    logger.error(
+      { missing },
+      'Production requires cloud data services. In Render Dashboard → Environment, set: ' +
+        missing.join('; ') +
+        '. See docs/GET_ONLINE.md'
+    );
+    process.exit(1);
+  }
+}
+
 async function main() {
   validateProductionSecrets();
+  validateProductionDataServices();
   logger.info({ env: config.nodeEnv }, 'Starting Shhh API server...');
 
   try {
