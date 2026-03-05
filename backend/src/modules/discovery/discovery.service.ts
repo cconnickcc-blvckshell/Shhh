@@ -104,7 +104,7 @@ export class DiscoveryService {
         CASE WHEN l.is_precise_mode THEN
           ST_Distance(l.geom_point::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
         ELSE
-          ST_Distance(l.geom_point::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) + (random() * $5 - $5/2)
+          GREATEST(0, ST_Distance(l.geom_point::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography) + (random() * $5 - $5/2))
         END as distance,
         l.updated_at as last_active,
         pr.state as presence_state,

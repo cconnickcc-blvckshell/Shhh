@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '../../src/stores/auth';
 
 const ONBOARDING_DONE_KEY = 'shhh_onboarding_done';
+
+async function getOnboardingDone(): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    try { return localStorage.getItem(ONBOARDING_DONE_KEY) === '1'; } catch { return false; }
+  }
+  try { return (await SecureStore.getItemAsync(ONBOARDING_DONE_KEY)) === '1'; } catch { return false; }
+}
 
 export default function AuthLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -16,16 +24,12 @@ export default function AuthLayout() {
     }
     let cancelled = false;
     (async () => {
-      try {
-        const done = await SecureStore.getItemAsync(ONBOARDING_DONE_KEY);
-        if (cancelled) return;
-        if (done === '1') {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/(auth)/onboarding');
-        }
-      } catch {
-        if (!cancelled) router.replace('/(auth)/onboarding');
+      const done = await getOnboardingDone();
+      if (cancelled) return;
+      if (done) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)/onboarding');
       }
       setAuthRedirectDone(true);
     })();

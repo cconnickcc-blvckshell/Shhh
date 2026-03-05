@@ -9,3 +9,4 @@ backend/uploads/
 .idea/
 loadtest/reports/
 loadtest/k6/seeds/
+admin-dashboard/.vite/

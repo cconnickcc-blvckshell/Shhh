@@ -71,7 +71,11 @@ async function seed() {
       await query(`INSERT INTO user_profiles (user_id, display_name) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [uid, u.name]);
     }
 
-    await query(`UPDATE users SET verification_tier = $1${u.role ? ', role = \'' + u.role + '\'' : ''} WHERE id = $2`, [u.tier, uid]);
+    if (u.role) {
+      await query(`UPDATE users SET verification_tier = $1, role = $3 WHERE id = $2`, [u.tier, uid, u.role]);
+    } else {
+      await query(`UPDATE users SET verification_tier = $1 WHERE id = $2`, [u.tier, uid]);
+    }
     const uExt = u as typeof u & { primaryIntent?: string; discoveryVisibleTo?: string };
     await query(
       `UPDATE user_profiles SET display_name=$1, bio=$2, gender=$3, sexuality=$4, experience_level=$5, is_host=$6, kinks=$7, photos_json=$8, verification_status=$9 WHERE user_id=$10`,

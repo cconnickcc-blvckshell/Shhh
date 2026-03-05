@@ -48,28 +48,40 @@ export class SafetyService {
   }
 
   async checkIn(userId: string, type: 'arrived' | 'periodic' | 'departed', eventId?: string, lat?: number, lng?: number, nextCheckInMinutes?: number) {
-    const location = lat && lng ? `ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)` : 'NULL';
+    const hasLocation = lat != null && lng != null;
     const expectedNext = nextCheckInMinutes
       ? new Date(Date.now() + nextCheckInMinutes * 60 * 1000)
       : null;
 
-    const result = await query(
-      `INSERT INTO safety_checkins (user_id, event_id, type, location, expected_next_at, responded_at)
-       VALUES ($1, $2, $3, ${location}, $4, NOW()) RETURNING id, created_at`,
-      [userId, eventId || null, type, expectedNext]
-    );
+    const result = hasLocation
+      ? await query(
+          `INSERT INTO safety_checkins (user_id, event_id, type, location, expected_next_at, responded_at)
+           VALUES ($1, $2, $3, ST_SetSRID(ST_MakePoint($5, $6), 4326), $4, NOW()) RETURNING id, created_at`,
+          [userId, eventId || null, type, expectedNext, lng, lat]
+        )
+      : await query(
+          `INSERT INTO safety_checkins (user_id, event_id, type, location, expected_next_at, responded_at)
+           VALUES ($1, $2, $3, NULL, $4, NOW()) RETURNING id, created_at`,
+          [userId, eventId || null, type, expectedNext]
+        );
 
     return result.rows[0];
   }
 
   async panic(userId: string, lat?: number, lng?: number) {
-    const location = lat && lng ? `ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)` : 'NULL';
+    const hasLocation = lat != null && lng != null;
 
-    const checkin = await query(
-      `INSERT INTO safety_checkins (user_id, type, location, responded_at, alert_sent)
-       VALUES ($1, 'panic', ${location}, NOW(), true) RETURNING id`,
-      [userId]
-    );
+    const checkin = hasLocation
+      ? await query(
+          `INSERT INTO safety_checkins (user_id, type, location, responded_at, alert_sent)
+           VALUES ($1, 'panic', ST_SetSRID(ST_MakePoint($2, $3), 4326), NOW(), true) RETURNING id`,
+          [userId, lng, lat]
+        )
+      : await query(
+          `INSERT INTO safety_checkins (user_id, type, location, responded_at, alert_sent)
+           VALUES ($1, 'panic', NULL, NOW(), true) RETURNING id`,
+          [userId]
+        );
 
     const contacts = await this.getEmergencyContacts(userId);
     const contactsForNotify = await this.getEmergencyContactsForPanic(userId);

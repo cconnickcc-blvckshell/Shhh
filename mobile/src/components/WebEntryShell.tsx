@@ -42,7 +42,7 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
           style={s.heroBgImage}
           resizeMode="cover"
         />
-        <View style={s.heroOverlay} />
+        <View style={s.heroOverlay} pointerEvents="none" />
 
         {/* Nav bar */}
         <View style={[s.nav, isDesktop && s.navDesktop]}>

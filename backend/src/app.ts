@@ -53,6 +53,13 @@ export function createApp() {
     credentials: true,
   }));
   app.use(compression());
+
+  // Stripe webhook MUST receive raw body before JSON parsing
+  app.post('/v1/billing/webhook', express.raw({ type: 'application/json' }), (req, _res, next) => {
+    (req as any)._stripeRawBody = true;
+    next();
+  });
+
   app.use(express.json({ limit: '10mb' }));
   app.use(metricsMiddleware);
   app.use(globalRateLimiter);
@@ -130,8 +137,8 @@ export function createApp() {
   // Billing
   app.use('/v1/billing', billingRoutes);
 
-  // Test-only routes (TEST_MODE or NODE_ENV=test)
-  if (process.env.TEST_MODE === 'true' || config.nodeEnv === 'test') {
+  // Test-only routes (NODE_ENV=test only — never in production)
+  if (config.nodeEnv === 'test') {
     // eslint-disable-next-line @typescript-eslint/no-var-requires -- conditional load to avoid test routes in prod
     const testRoutes = require('./modules/test/test.routes').default;
     app.use('/v1/test', testRoutes);
