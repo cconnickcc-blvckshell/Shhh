@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, Image, ScrollView,
   Platform, useWindowDimensions,
 } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 // Use public folder assets so hero/logo display on Vercel (expo export copies public/ to dist/)
@@ -51,6 +52,9 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
             resizeMode="contain"
           />
           <View style={s.navRight}>
+            <Pressable onPress={() => router.push('/(auth)/register')} style={s.navSignUpBtn}>
+              <Text style={s.navSignUpText}>Sign Up</Text>
+            </Pressable>
             <Pressable onPress={onEnter} style={s.navLoginBtn}>
               <Text style={s.navLoginText}>Log In</Text>
             </Pressable>
@@ -184,6 +188,8 @@ const s = StyleSheet.create({
   navDesktop: { paddingHorizontal: 60, paddingTop: 30 },
   navLogo: { width: 100, height: 40 },
   navRight: { flexDirection: 'row', gap: 12 },
+  navSignUpBtn: { backgroundColor: '#9333EA', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 24 },
+  navSignUpText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   navLoginBtn: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 24 },
   navLoginText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   heroContent: { padding: 24, paddingBottom: 60, zIndex: 5 },

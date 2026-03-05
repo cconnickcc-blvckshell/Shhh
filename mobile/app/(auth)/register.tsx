@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useIdTokenAuthRequest } from 'expo-auth-session/providers/google';
@@ -107,9 +107,9 @@ export default function RegisterScreen() {
             </View>
             <AuthOptions onSelect={handleAuthSelect} isLoading={isLoading} />
             {error && <View style={styles.errorBox}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
-            <Link href="/(auth)" asChild>
-              <TouchableOpacity style={styles.linkWrap}><Text style={styles.linkText}>Already a member? </Text><Text style={styles.linkBold}>Log in</Text></TouchableOpacity>
-            </Link>
+            <TouchableOpacity style={styles.linkWrap} onPress={() => router.push('/(auth)')}>
+              <Text style={styles.linkText}>Already a member? </Text><Text style={styles.linkBold}>Log in</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </AuthScreenBackground>
@@ -150,9 +150,9 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           </View>
 
-          <Link href="/(auth)" asChild>
-            <TouchableOpacity style={styles.linkWrap}><Text style={styles.linkText}>Already a member? </Text><Text style={styles.linkBold}>Log in</Text></TouchableOpacity>
-          </Link>
+          <TouchableOpacity style={styles.linkWrap} onPress={() => router.push('/(auth)')}>
+            <Text style={styles.linkText}>Already a member? </Text><Text style={styles.linkBold}>Log in</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </AuthScreenBackground>

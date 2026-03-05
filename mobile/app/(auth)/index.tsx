@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useIdTokenAuthRequest } from 'expo-auth-session/providers/google';
@@ -259,9 +259,9 @@ export default function LoginScreen() {
             </View>
             <AuthOptions onSelect={handleAuthSelect} isLoading={isLoading} />
             {error && <View style={styles.errorBox} accessibilityLiveRegion="polite" accessibilityLabel={`Error: ${error}`}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
-            <Link href="/(auth)/register" asChild>
-              <TouchableOpacity style={styles.linkWrap} accessibilityLabel="Sign up" accessibilityRole="link"><Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text></TouchableOpacity>
-            </Link>
+            <TouchableOpacity style={styles.linkWrap} onPress={() => router.push('/(auth)/register')} accessibilityLabel="Sign up" accessibilityRole="link">
+              <Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </AuthScreenBackground>
@@ -298,9 +298,9 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          <Link href="/(auth)/register" asChild>
-            <TouchableOpacity style={styles.linkWrap} accessibilityLabel="Sign up" accessibilityRole="link"><Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text></TouchableOpacity>
-          </Link>
+          <TouchableOpacity style={styles.linkWrap} onPress={() => router.push('/(auth)/register')} accessibilityLabel="Sign up" accessibilityRole="link">
+            <Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </AuthScreenBackground>
