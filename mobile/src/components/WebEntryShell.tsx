@@ -52,7 +52,7 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
             resizeMode="contain"
           />
           <View style={s.navRight}>
-            <Pressable onPress={() => router.push('/(auth)/register')} style={s.navSignUpBtn}>
+            <Pressable onPress={onEnter} style={s.navSignUpBtn}>
               <Text style={s.navSignUpText}>Sign Up</Text>
             </Pressable>
             <Pressable onPress={onEnter} style={s.navLoginBtn}>
