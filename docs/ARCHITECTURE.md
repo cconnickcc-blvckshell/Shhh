@@ -59,22 +59,35 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   ├── api/
 │   │   │   └── client.ts             # API client with JWT
 │   │   ├── components/
-│   │   │   └── Layout.tsx            # App shell with nav
+│   │   │   ├── Layout.tsx            # App shell with nav
+│   │   │   ├── StatusBar.tsx         # Top bar: live KPIs, refresh, shortcuts
+│   │   │   ├── GlassCard.tsx         # Glassmorphism card
+│   │   │   ├── GlassButton.tsx       # Primary/secondary/ghost buttons
+│   │   │   ├── GlassInput.tsx        # Styled input
+│   │   │   ├── Badge.tsx             # Status badges
+│   │   │   ├── Sparkline.tsx        # Mini trend chart
+│   │   │   ├── AdminSkeleton.tsx    # SkeletonCards, SkeletonTable
+│   │   │   └── AdminPageState.tsx   # Loading, error states
+│   │   ├── context/
+│   │   │   └── CommandCenterContext.tsx  # Status data, refresh, keyboard shortcuts
 │   │   ├── pages/
 │   │   │   ├── Login.tsx             # Admin login (phone + OTP)
-│   │   │   ├── Dashboard.tsx         # Stats overview
-│   │   │   ├── Users.tsx             # User management
-│   │   │   ├── Revenue.tsx           # Revenue / subscriptions
-│   │   │   ├── Venues.tsx            # Venue list
-│   │   │   ├── Ads.tsx               # Ad placements
-│   │   │   ├── Events.tsx            # Events
-│   │   │   ├── Reports.tsx           # Report management
-│   │   │   ├── Safety.tsx            # Safety / panic
-│   │   │   ├── AuditLog.tsx          # Audit trail
-│   │   │   └── Settings.tsx          # Settings
-│   │   ├── App.tsx                   # Router setup
-│   │   ├── main.tsx                  # Entry point
-│   │   └── index.css                 # Global styles
+│   │   │   ├── Dashboard.tsx         # Stats overview + sparklines
+│   │   │   ├── Users.tsx            # User management
+│   │   │   ├── Revenue.tsx          # Revenue + sparkline + 30d bar chart
+│   │   │   ├── Venues.tsx           # Venue list
+│   │   │   ├── Ads.tsx              # Ad placements
+│   │   │   ├── Events.tsx           # Events
+│   │   │   ├── Reports.tsx          # Report management
+│   │   │   ├── Moderation.tsx       # Kanban: reports + mod queue
+│   │   │   ├── Safety.tsx           # Safety / panic
+│   │   │   ├── AuditLog.tsx         # Audit trail
+│   │   │   ├── Settings.tsx         # Settings
+│   │   │   └── Map.tsx              # Command map (Leaflet + heatmap)
+│   │   ├── theme.ts                 # Design system (colors, glass, typography)
+│   │   ├── App.tsx                  # Router setup
+│   │   ├── main.tsx                 # Entry point
+│   │   └── index.css                # Global styles
 │   ├── package.json
 │   └── tsconfig.json
 ├── mobile/                           # React Native + Expo 55
@@ -683,6 +696,9 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | GET | `/v1/admin/safety/alerts` | Yes | moderator | Safety/panic alerts |
 | GET | `/v1/admin/settings/ads` | Yes | moderator | Ad controls |
 | PUT | `/v1/admin/settings/ads/:id` | Yes | admin | Update ad control |
+| GET | `/v1/admin/presence/geo` | Yes | moderator | User locations for map |
+| GET | `/v1/admin/stats/cities` | Yes | moderator | City aggregates (hot/dead) |
+| POST | `/v1/admin/moderation/:id/resolve` | Yes | moderator | Approve/reject mod queue item |
 
 ### Documentation
 | Method | Path | Description |

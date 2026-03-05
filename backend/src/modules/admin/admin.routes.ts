@@ -22,6 +22,12 @@ router.use(requireRole('moderator'));
 
 router.get('/stats', ctrl.getDashboardStats);
 router.get('/moderation', ctrl.getModerationQueue);
+router.post('/moderation/:id/resolve', validate(z.object({ status: z.enum(['approved', 'rejected']) })), async (req, res, next) => {
+  try {
+    await logAdminAction(req.user!.userId, 'resolve_moderation', 'moderation', req.params.id as string);
+    await ctrl.resolveModeration(req, res, next);
+  } catch (err) { next(err); }
+});
 router.get('/reports', ctrl.getReports);
 router.post('/reports/:id/resolve', validate(resolveReportSchema), async (req, res, next) => {
   try {

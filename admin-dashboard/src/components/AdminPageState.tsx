@@ -2,6 +2,9 @@
  * Shared loading and error states for admin pages.
  * Ensures no silent failures per MASTER_IMPLEMENTATION_CHECKLIST Tier 5.2.
  */
+import { theme } from '../theme';
+import { GlassButton } from './GlassButton';
+
 interface LoadingProps {
   message?: string;
 }
@@ -12,8 +15,23 @@ export function AdminLoading({ message = 'Loading...' }: LoadingProps) {
       role="status"
       aria-live="polite"
       aria-label={message}
-      style={{ color: '#888', padding: 24, textAlign: 'center' }}
+      style={{
+        color: theme.colors.textMuted,
+        padding: theme.space[8],
+        textAlign: 'center',
+        fontFamily: theme.font.body,
+        fontSize: theme.fontSize.base,
+      }}
     >
+      <div style={{
+        width: 32,
+        height: 32,
+        margin: '0 auto 16px',
+        border: `2px solid ${theme.colors.primaryMuted}`,
+        borderTopColor: theme.colors.primary,
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite',
+      }} />
       {message}
     </div>
   );
@@ -30,32 +48,32 @@ export function AdminError({ message, onRetry }: ErrorProps) {
       role="alert"
       aria-live="assertive"
       style={{
-        background: 'rgba(239,68,68,0.1)',
-        border: '1px solid #EF4444',
-        borderRadius: 12,
-        padding: 20,
-        color: '#EF4444',
-        marginBottom: 16,
+        background: theme.colors.dangerMuted,
+        border: `1px solid ${theme.colors.danger}`,
+        borderRadius: theme.radius.lg,
+        padding: theme.space[5],
+        marginBottom: theme.space[4],
       }}
     >
-      <div style={{ fontWeight: 600, marginBottom: 8 }}>Error</div>
-      <div style={{ color: '#aaa', fontSize: 14, marginBottom: onRetry ? 12 : 0 }}>{message}</div>
+      <div style={{
+        fontFamily: theme.font.display,
+        fontWeight: theme.fontWeight.semibold,
+        color: theme.colors.danger,
+        marginBottom: theme.space[2],
+      }}>
+        Error
+      </div>
+      <div style={{
+        color: theme.colors.textSecondary,
+        fontSize: theme.fontSize.sm,
+        marginBottom: onRetry ? theme.space[3] : 0,
+      }}>
+        {message}
+      </div>
       {onRetry && (
-        <button
-          onClick={onRetry}
-          style={{
-            padding: '8px 16px',
-            borderRadius: 8,
-            border: 'none',
-            background: '#EF4444',
-            color: '#fff',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
-          aria-label="Retry"
-        >
+        <GlassButton variant="danger" onClick={onRetry} style={{ marginTop: theme.space[2] }}>
           Retry
-        </button>
+        </GlassButton>
       )}
     </div>
   );

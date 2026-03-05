@@ -36,7 +36,7 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 | **ENHANCEMENT_ROADMAP.md** | Enhancement work (branch `shh-enhancement-trial`): phases, doc sync checklist. | Optional: when following that branch. |
 | **FRONTEND_GAP_LIST.md** | Frontend gap list (mobile) by feature. | Sync with E2E audit and checklist. |
 | **FEATURE_ADDITIONS_CRITIQUE.md** | Feature grades vs current system; game-changer ideas; discovery cap. | Optional: mark implemented items. |
-| **ADMIN_DASHBOARD_FUTURE_PLAN.md** | Future admin dashboard ideas: 3D globe, marble drop, live activity feed, phasing. | When planning admin dashboard enhancements. |
+| **ADMIN_DASHBOARD_FUTURE_PLAN.md** | Future admin dashboard ideas: 3D globe, marble drop, live activity feed, Admin Control (feature flags, content, rate limits, etc.), phasing. Implementation status for map, Kanban, sparkline. | When planning admin dashboard enhancements. |
 
 ## Operations & Technical
 

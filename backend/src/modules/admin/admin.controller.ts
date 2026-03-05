@@ -34,6 +34,17 @@ export class AdminController {
     } catch (err) { next(err); }
   }
 
+  async resolveModeration(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await modSvc.resolveModerationItem(
+        req.params.id as string,
+        req.body.status,
+        (req as any).user?.userId
+      );
+      res.json({ data: result });
+    } catch (err) { next(err); }
+  }
+
   async banUser(req: Request, res: Response, next: NextFunction) {
     try {
       await modSvc.banUser(req.params.userId as string, req.body.reason);

@@ -31,13 +31,14 @@ export class AdminExtendedService {
 
   async getRevenueHistory(days: number = 30) {
     const result = await query(`
-      SELECT date_trunc('day', created_at) as date,
-        COUNT(*) FILTER (WHERE tier != 'free') as new_subs,
-        COUNT(*) FILTER (WHERE status = 'cancelled') as cancellations
+      SELECT date_trunc('day', created_at)::date as date,
+        COUNT(*) FILTER (WHERE tier != 'free' AND status = 'active') as new_subs,
+        COUNT(*) FILTER (WHERE status = 'cancelled') as cancellations,
+        COALESCE(SUM(CASE WHEN tier = 'discreet' THEN 999 WHEN tier = 'phantom' THEN 1999 WHEN tier = 'elite' THEN 3999 ELSE 0 END) FILTER (WHERE status = 'active'), 0)::int as revenue_cents
       FROM subscriptions
       WHERE created_at > NOW() - $1 * INTERVAL '1 day'
       GROUP BY date_trunc('day', created_at)
-      ORDER BY date DESC
+      ORDER BY date ASC
     `, [days]);
     return result.rows;
   }
@@ -205,6 +206,62 @@ export class AdminExtendedService {
 
   async updateAdControl(id: string, value: Record<string, unknown>) {
     await query(`UPDATE ad_controls SET value = $1, updated_at = NOW() WHERE id = $2`, [JSON.stringify(value), id]);
+  }
+
+  // ==================== MAP / GEO ====================
+  /** Live user locations for command center map. Returns lat, lng, userId, lastSeen. */
+  async getPresenceGeo() {
+    const result = await query(`
+      SELECT
+        l.user_id as "userId",
+        ST_Y(l.geom_point::geometry)::double precision as lat,
+        ST_X(l.geom_point::geometry)::double precision as lng,
+        l.updated_at as "lastSeen",
+        p.state as "presenceState"
+      FROM locations l
+      LEFT JOIN presence p ON l.user_id = p.user_id AND p.expires_at > NOW()
+      WHERE (l.expires_at IS NULL OR l.expires_at > NOW())
+      ORDER BY l.updated_at DESC
+      LIMIT 5000
+    `);
+    return result.rows.map((r: Record<string, unknown>) => ({
+      userId: r.userId,
+      lat: Number(r.lat),
+      lng: Number(r.lng),
+      lastSeen: r.lastSeen,
+      presenceState: r.presenceState || 'unknown',
+    }));
+  }
+
+  /** City-like aggregates for hot/dead and expansion. Uses ~11km grid cells. */
+  async getStatsCities() {
+    const result = await query(`
+      WITH grid AS (
+        SELECT
+          ROUND(ST_Y(l.geom_point::geometry)::numeric, 1) as lat,
+          ROUND(ST_X(l.geom_point::geometry)::numeric, 1) as lng,
+          l.user_id
+        FROM locations l
+        JOIN users u ON l.user_id = u.id AND u.deleted_at IS NULL
+        WHERE (l.expires_at IS NULL OR l.expires_at > NOW())
+      )
+      SELECT
+        lat::double precision as lat,
+        lng::double precision as lng,
+        COUNT(*)::int as "activeCount",
+        COUNT(*) FILTER (WHERE u.created_at > NOW() - INTERVAL '7 days')::int as "newThisWeek"
+      FROM grid g
+      JOIN users u ON g.user_id = u.id
+      GROUP BY g.lat, g.lng
+      ORDER BY "activeCount" DESC
+      LIMIT 500
+    `);
+    return result.rows.map((r: Record<string, unknown>) => ({
+      lat: Number(r.lat),
+      lng: Number(r.lng),
+      activeCount: Number(r.activeCount),
+      newThisWeek: Number(r.newThisWeek),
+    }));
   }
 
   // ==================== ENHANCED DASHBOARD ====================

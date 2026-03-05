@@ -59,7 +59,7 @@ Shhh is a **privacy-native, proximity-driven social platform for adults**. It co
 | Surface | Technology | Purpose |
 |---------|-----------|---------|
 | Mobile app | React Native + Expo 55 | Primary user-facing client |
-| Admin dashboard | React + Vite SPA | Moderation, reports, audit logs |
+| Admin dashboard | React + Vite SPA | Moderation, reports, audit logs, Map, Kanban, Revenue sparkline, status bar, keyboard shortcuts |
 | Backend API | Express + TypeScript | REST API + WebSocket server |
 
 ---

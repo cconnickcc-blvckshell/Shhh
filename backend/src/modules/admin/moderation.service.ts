@@ -93,6 +93,14 @@ export class ModerationService {
     return { reportId, status };
   }
 
+  async resolveModerationItem(id: string, status: 'approved' | 'rejected', adminId?: string) {
+    await query(
+      `UPDATE moderation_queue SET status = $1, resolved_at = NOW(), assigned_to = $2 WHERE id = $3`,
+      [status, adminId || null, id]
+    );
+    return { id, status };
+  }
+
   async banUser(userId: string, reason: string) {
     await query('UPDATE users SET is_active = false WHERE id = $1', [userId]);
     await query(

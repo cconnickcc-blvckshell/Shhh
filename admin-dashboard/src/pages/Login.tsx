@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminApi, setToken, clearToken } from '../api/client';
+import { GlassInput } from '../components/GlassInput';
+import { GlassButton } from '../components/GlassButton';
+import { theme } from '../theme';
 
 export default function Login() {
   const [phone, setPhone] = useState('');
@@ -54,45 +57,120 @@ export default function Login() {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#050508' }}>
-      <form onSubmit={step === 'phone' ? handleSendCode : handleVerifyAndLogin} style={{ background: '#0E0B16', padding: '3rem', borderRadius: '16px', width: '400px', border: '1px solid rgba(147,51,234,0.15)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#A855F7', letterSpacing: '-1px' }}>Shhh</div>
-          <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '4px' }}>Command Center</div>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      padding: theme.space[6],
+    }}>
+      <form
+        onSubmit={step === 'phone' ? handleSendCode : handleVerifyAndLogin}
+        style={{
+          width: '100%',
+          maxWidth: 420,
+          background: theme.glass.bg,
+          backdropFilter: theme.glass.blur,
+          WebkitBackdropFilter: theme.glass.blur,
+          border: theme.glass.border,
+          borderRadius: theme.radius.xl,
+          padding: theme.space[8],
+          boxShadow: theme.glass.shadow,
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: theme.space[8] }}>
+          <div style={{
+            fontFamily: theme.font.display,
+            fontSize: theme.fontSize['3xl'],
+            fontWeight: theme.fontWeight.bold,
+            color: theme.colors.primary,
+            letterSpacing: '-1px',
+          }}>
+            Shhh
+          </div>
+          <div style={{
+            color: theme.colors.textDim,
+            fontSize: theme.fontSize.xs,
+            textTransform: 'uppercase',
+            letterSpacing: '2.5px',
+            marginTop: theme.space[2],
+          }}>
+            Command Center
+          </div>
         </div>
 
         {step === 'phone' ? (
-          <>
-            <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '1.5px', marginBottom: '0.5rem', textTransform: 'uppercase' }}>ADMIN PHONE</div>
-            <input
-              type="text" value={phone} onChange={e => setPhone(e.target.value)}
-              placeholder="+15550000001"
-              style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '1rem', marginBottom: '1rem', boxSizing: 'border-box', outline: 'none' }}
-            />
-          </>
+          <GlassInput
+            label="Admin phone"
+            value={phone}
+            onChange={setPhone}
+            placeholder="+15550000001"
+          />
         ) : (
           <>
-            <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '1.5px', marginBottom: '0.5rem', textTransform: 'uppercase' }}>VERIFICATION CODE</div>
-            <input
-              type="text" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            <GlassInput
+              label="Verification code"
+              value={code}
+              onChange={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000"
               maxLength={6}
-              style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: '#fff', fontSize: '1rem', marginBottom: '1rem', boxSizing: 'border-box', outline: 'none' }}
             />
-            {devCode && <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', marginBottom: '0.75rem' }}>Dev code: {devCode}</p>}
-            <button type="button" onClick={() => { setStep('phone'); setCode(''); setError(''); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', cursor: 'pointer', marginBottom: '0.5rem' }}>← Change phone</button>
+            {devCode && (
+              <p style={{
+                color: theme.colors.textMuted,
+                fontSize: theme.fontSize.sm,
+                marginBottom: theme.space[3],
+              }}>
+                Dev code: {devCode}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => { setStep('phone'); setCode(''); setError(''); }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: theme.colors.textMuted,
+                fontSize: theme.fontSize.sm,
+                cursor: 'pointer',
+                marginBottom: theme.space[3],
+              }}
+            >
+              ← Change phone
+            </button>
           </>
         )}
 
-        {error && <p style={{ color: '#EF4444', fontSize: '0.875rem', marginBottom: '0.75rem', background: 'rgba(239,68,68,0.08)', padding: '8px 12px', borderRadius: '8px' }}>{error}</p>}
-        <button
-          type="submit" disabled={loading || (step === 'phone' ? !phone : code.length !== 6)}
-          style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: '#9333EA', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '1rem' }}
+        {error && (
+          <div style={{
+            background: theme.colors.dangerMuted,
+            border: `1px solid ${theme.colors.danger}`,
+            borderRadius: theme.radius.md,
+            padding: theme.space[3],
+            color: theme.colors.danger,
+            fontSize: theme.fontSize.sm,
+            marginBottom: theme.space[4],
+          }}>
+            {error}
+          </div>
+        )}
+
+        <GlassButton
+          type="submit"
+          variant="primary"
+          style={{ width: '100%', padding: `${theme.space[3]} ${theme.space[4]}` }}
+          disabled={loading || (step === 'phone' ? !phone : code.length !== 6)}
         >
           {loading ? 'Verifying...' : step === 'phone' ? 'Send code' : 'Verify & Login'}
-        </button>
-        <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.7rem', textAlign: 'center', marginTop: '1rem' }}>
-          Only users with admin or moderator roles can access this dashboard.
+        </GlassButton>
+
+        <p style={{
+          color: theme.colors.textDim,
+          fontSize: theme.fontSize.xs,
+          textAlign: 'center',
+          marginTop: theme.space[5],
+        }}>
+          Admin or moderator role required.
         </p>
       </form>
     </div>

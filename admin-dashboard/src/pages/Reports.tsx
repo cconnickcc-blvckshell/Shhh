@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
-import { AdminLoading, AdminError } from '../components/AdminPageState';
+import { AdminError } from '../components/AdminPageState';
+import { SkeletonCards } from '../components/AdminSkeleton';
+import { GlassCard } from '../components/GlassCard';
+import { GlassButton } from '../components/GlassButton';
+import { theme } from '../theme';
 
 interface Report {
   id: string;
@@ -29,44 +33,63 @@ export default function Reports() {
 
   useEffect(load, [filter]);
 
-  if (error) return <AdminError message={error} onRetry={load} />;
-  if (loading && reports.length === 0) return <AdminLoading />;
-
   const resolve = async (id: string, status: string) => {
     await adminApi.resolveReport(id, status);
     load();
   };
 
+  if (error) return <AdminError message={error} onRetry={load} />;
+  if (loading && reports.length === 0) return <SkeletonCards count={4} />;
+
+  const filters = ['pending', 'reviewing', 'resolved', 'dismissed'];
+
   return (
     <div role="main" aria-label="Content reports">
-      <h2 style={{ color: '#fff', marginBottom: '1rem' }} id="reports-title">Reports</h2>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        {['pending', 'reviewing', 'resolved', 'dismissed'].map(s => (
-          <button key={s} onClick={() => setFilter(s)}
-            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: filter === s ? '#e94560' : '#1a1a2e', color: '#fff', cursor: 'pointer' }}>
+      <h2 style={{
+        fontFamily: theme.font.display,
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        marginBottom: theme.space[5],
+      }} id="reports-title">
+        Reports
+      </h2>
+      <div style={{ display: 'flex', gap: theme.space[2], marginBottom: theme.space[4] }}>
+        {filters.map(s => (
+          <GlassButton
+            key={s}
+            variant={filter === s ? 'primary' : 'secondary'}
+            onClick={() => setFilter(s)}
+          >
             {s}
-          </button>
+          </GlassButton>
         ))}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        {reports.length === 0 && <div style={{ color: '#666' }}>No reports found.</div>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: theme.space[3] }}>
+        {reports.length === 0 && (
+          <GlassCard>
+            <div style={{ color: theme.colors.textMuted, textAlign: 'center' }}>No reports found.</div>
+          </GlassCard>
+        )}
         {reports.map(r => (
-          <div key={r.id} style={{ background: '#1a1a2e', padding: '1rem', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-              <span style={{ color: '#e94560', fontWeight: 'bold' }}>{r.reason}</span>
-              <span style={{ color: '#666', fontSize: '0.75rem' }}>{new Date(r.created_at).toLocaleString()}</span>
+          <GlassCard key={r.id}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: theme.space[2] }}>
+              <span style={{ color: theme.colors.danger, fontWeight: theme.fontWeight.semibold }}>{r.reason}</span>
+              <span style={{ color: theme.colors.textDim, fontSize: theme.fontSize.xs }}>{new Date(r.created_at).toLocaleString()}</span>
             </div>
-            <div style={{ color: '#aaa', fontSize: '0.875rem' }}>
+            <div style={{ color: theme.colors.textSecondary, fontSize: theme.fontSize.sm }}>
               <strong>{r.reporter_name}</strong> reported <strong>{r.reported_name}</strong>
             </div>
-            {r.description && <div style={{ color: '#888', fontSize: '0.875rem', marginTop: '0.25rem' }}>{r.description}</div>}
+            {r.description && (
+              <div style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.sm, marginTop: theme.space[2] }}>{r.description}</div>
+            )}
             {r.status === 'pending' && (
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                <button onClick={() => resolve(r.id, 'resolved')} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: '#d63031', color: '#fff', cursor: 'pointer' }}>Resolve</button>
-                <button onClick={() => resolve(r.id, 'dismissed')} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: '#636e72', color: '#fff', cursor: 'pointer' }}>Dismiss</button>
+              <div style={{ display: 'flex', gap: theme.space[2], marginTop: theme.space[3] }}>
+                <GlassButton variant="danger" onClick={() => resolve(r.id, 'resolved')}>Resolve</GlassButton>
+                <GlassButton variant="secondary" onClick={() => resolve(r.id, 'dismissed')}>Dismiss</GlassButton>
               </div>
             )}
-          </div>
+          </GlassCard>
         ))}
       </div>
     </div>

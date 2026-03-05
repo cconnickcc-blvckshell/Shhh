@@ -84,10 +84,21 @@ export const adminApi = {
   // Reports & Moderation
   getReports: (status = 'pending') => api<{ data: any[]; count: number }>(`/v1/admin/reports?status=${status}`),
   resolveReport: (id: string, status: string, notes?: string) => api(`/v1/admin/reports/${id}/resolve`, { method: 'POST', body: JSON.stringify({ status, notes }) }),
-  getQueue: (type?: string) => api<{ data: any[] }>(`/v1/admin/moderation${type ? `?type=${type}` : ''}`),
+  getQueue: (type?: string, status?: string) => {
+    const params = new URLSearchParams();
+    if (type) params.set('type', type);
+    if (status) params.set('status', status);
+    const q = params.toString();
+    return api<{ data: any[] }>(`/v1/admin/moderation${q ? `?${q}` : ''}`);
+  },
+  resolveModeration: (id: string, status: 'approved' | 'rejected') => api(`/v1/admin/moderation/${id}/resolve`, { method: 'POST', body: JSON.stringify({ status }) }),
 
   // Safety
   getSafetyAlerts: () => api<{ data: any }>('/v1/admin/safety/alerts'),
+
+  // Map / Geo
+  getPresenceGeo: () => api<{ data: Array<{ userId: string; lat: number; lng: number; lastSeen: string; presenceState?: string }> }>('/v1/admin/presence/geo'),
+  getStatsCities: () => api<{ data: Array<{ lat: number; lng: number; activeCount: number; newThisWeek: number }> }>('/v1/admin/stats/cities'),
 
   // Audit
   getAuditLogs: (limit = 100) => api<{ data: any[] }>(`/v1/admin/audit-logs?limit=${limit}`),

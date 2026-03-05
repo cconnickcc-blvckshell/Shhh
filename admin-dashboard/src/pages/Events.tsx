@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
-import { AdminLoading, AdminError } from '../components/AdminPageState';
+import { AdminError } from '../components/AdminPageState';
+import { SkeletonCards } from '../components/AdminSkeleton';
+import { GlassCard } from '../components/GlassCard';
+import { Badge } from '../components/Badge';
+import { theme } from '../theme';
+
+const phaseColors: Record<string, string> = {
+  discovery: theme.colors.info,
+  upcoming: theme.colors.accent,
+  live: theme.colors.success,
+  winding_down: theme.colors.warning,
+  post: theme.colors.textMuted,
+  archived: theme.colors.textDim,
+};
 
 export default function Events() {
   const [events, setEvents] = useState<any[]>([]);
@@ -19,35 +32,49 @@ export default function Events() {
   useEffect(load, []);
 
   if (error) return <AdminError message={error} onRetry={load} />;
-  if (loading && events.length === 0) return <AdminLoading />;
-
-  const phaseColors: Record<string, string> = { discovery: '#60A5FA', upcoming: '#818CF8', live: '#34D399', winding_down: '#FBBF24', post: '#888', archived: '#555' };
+  if (loading && events.length === 0) return <SkeletonCards count={5} />;
 
   return (
     <div role="main" aria-label="Events management">
-      <h2 style={{ color: '#fff', marginBottom: 20 }} id="events-title">Events ({events.length})</h2>
-      <div style={{ display: 'grid', gap: 10 }}>
-        {events.map(e => (
-          <div key={e.id} style={{ background: '#1a1a2e', borderRadius: 12, padding: 16, borderLeft: `3px solid ${phaseColors[e.phase || e.status] || '#555'}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ color: '#fff', fontSize: 15, fontWeight: 700 }}>{e.title}</div>
-                <div style={{ color: '#888', fontSize: 12, marginTop: 2 }}>{e.venue_name || 'No venue'} · Hosted by {e.host_name}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ padding: '3px 10px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: `${phaseColors[e.phase || e.status] || '#555'}20`, color: phaseColors[e.phase || e.status] || '#555' }}>
+      <h2 style={{
+        fontFamily: theme.font.display,
+        fontSize: theme.fontSize.xl,
+        fontWeight: theme.fontWeight.bold,
+        color: theme.colors.text,
+        marginBottom: theme.space[6],
+      }} id="events-title">
+        Events ({events.length})
+      </h2>
+      <div style={{ display: 'grid', gap: theme.space[3] }}>
+        {events.map(e => {
+          const phaseColor = phaseColors[e.phase || e.status] || theme.colors.textDim;
+          return (
+            <GlassCard key={e.id} accent={phaseColor} hover>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: theme.space[2] }}>
+                <div>
+                  <div style={{
+                    fontFamily: theme.font.display,
+                    fontSize: theme.fontSize.base,
+                    fontWeight: theme.fontWeight.semibold,
+                    color: theme.colors.text,
+                  }}>{e.title}</div>
+                  <div style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.sm, marginTop: theme.space[1] }}>
+                    {e.venue_name || 'No venue'} · Hosted by {e.host_name}
+                  </div>
+                </div>
+                <Badge variant="primary" style={{ background: `${phaseColor}20`, color: phaseColor }}>
                   {e.phase || e.status}
-                </span>
+                </Badge>
               </div>
-            </div>
-            <div style={{ display: 'flex', gap: 20, marginTop: 10, color: '#888', fontSize: 12 }}>
-              <span>📅 {new Date(e.starts_at).toLocaleDateString()}</span>
-              <span>👥 {e.going_count || 0} going</span>
-              <span>✅ {e.checked_in_count || 0} checked in</span>
-              <span>🏠 Capacity: {e.capacity || '∞'}</span>
-            </div>
-          </div>
-        ))}
+              <div style={{ display: 'flex', gap: theme.space[5], color: theme.colors.textMuted, fontSize: theme.fontSize.sm }}>
+                <span>📅 {new Date(e.starts_at).toLocaleDateString()}</span>
+                <span>👥 {e.going_count || 0} going</span>
+                <span>✅ {e.checked_in_count || 0} checked in</span>
+                <span>🏠 Capacity: {e.capacity || '∞'}</span>
+              </div>
+            </GlassCard>
+          );
+        })}
       </div>
     </div>
   );

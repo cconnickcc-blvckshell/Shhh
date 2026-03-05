@@ -97,6 +97,15 @@ router.get('/safety/alerts', async (_req: Request, res: Response, next: NextFunc
   try { res.json({ data: await svc.getSafetyAlerts() }); } catch (err) { next(err); }
 });
 
+// Map / Geo (command center)
+router.get('/presence/geo', async (_req: Request, res: Response, next: NextFunction) => {
+  try { res.json({ data: await svc.getPresenceGeo() }); } catch (err) { next(err); }
+});
+
+router.get('/stats/cities', async (_req: Request, res: Response, next: NextFunction) => {
+  try { res.json({ data: await svc.getStatsCities() }); } catch (err) { next(err); }
+});
+
 // Settings
 router.get('/settings/ads', async (_req: Request, res: Response, next: NextFunction) => {
   try { res.json({ data: await svc.getAdControls() }); } catch (err) { next(err); }
