@@ -16,6 +16,8 @@ interface AuthState {
   verifyAndRegister: (phone: string, code: string, displayName: string) => Promise<void>;
   login: (phone: string) => Promise<void>;
   register: (phone: string, displayName: string) => Promise<void>;
+  registerEmail: (email: string, password: string, displayName: string) => Promise<void>;
+  loginEmail: (email: string, password: string) => Promise<void>;
   oauthApple: (idToken: string, displayName?: string) => Promise<void>;
   oauthGoogle: (idToken: string, displayName?: string) => Promise<void>;
   oauthSnap: (authCode: string, displayName?: string) => Promise<void>;
@@ -124,6 +126,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await authApi.register(phone, displayName);
+      get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
+      await get().loadProfile();
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+      throw err;
+    }
+  },
+
+  registerEmail: async (email, password, displayName) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await authApi.registerEmail(email, password, displayName);
+      get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
+      await get().loadProfile();
+      router.replace('/(auth)/onboarding');
+    } catch (err: any) {
+      set({ error: err.message, isLoading: false });
+      throw err;
+    }
+  },
+
+  loginEmail: async (email, password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await authApi.loginEmail(email, password);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(tabs)');

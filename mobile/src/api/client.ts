@@ -156,6 +156,16 @@ export async function api<T = any>(path: string, options: RequestInit = {}, _ski
 }
 
 export const authApi = {
+  registerEmail: (email: string, password: string, displayName: string) =>
+    api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/email/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, displayName }),
+    }),
+  loginEmail: (email: string, password: string) =>
+    api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/email/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
   register: (phone: string, displayName: string, sessionToken?: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/register', {
       method: 'POST', body: JSON.stringify({ phone, displayName, ...(sessionToken && { sessionToken }) }),

@@ -62,6 +62,63 @@ export class AuthService {
     return { userId: user.id, ...tokens };
   }
 
+  async registerWithEmail(email: string, password: string, displayName: string) {
+    const emailHash = hashEmail(email);
+    const existing = await query('SELECT id FROM users WHERE email_hash = $1', [emailHash]);
+    if (existing.rows.length > 0) {
+      throw Object.assign(new Error('Email already registered'), { statusCode: 409 });
+    }
+
+    const passwordHash = await this.hashPassword(password);
+    const result = await query(
+      `INSERT INTO users (phone_hash, email_hash, password_hash, verification_tier) VALUES (NULL, $1, $2, 0) RETURNING id`,
+      [emailHash, passwordHash]
+    );
+    const userId = result.rows[0].id;
+
+    await query(
+      `INSERT INTO user_profiles (user_id, display_name) VALUES ($1, $2)`,
+      [userId, displayName]
+    );
+
+    await query(
+      `INSERT INTO audit_logs (user_id, action, gdpr_category) VALUES ($1, 'user.registered', 'account')`,
+      [userId]
+    );
+
+    const tokens = await this.generateTokens(userId, 0);
+    return { userId, ...tokens };
+  }
+
+  async loginWithEmail(email: string, password: string) {
+    const emailHash = hashEmail(email);
+    const result = await query(
+      'SELECT id, verification_tier, password_hash FROM users WHERE email_hash = $1 AND is_active = true AND deleted_at IS NULL',
+      [emailHash]
+    );
+    if (result.rows.length === 0) {
+      throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
+    }
+
+    const user = result.rows[0];
+    if (!user.password_hash) {
+      throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
+    }
+    const valid = await this.verifyPassword(user.password_hash, password);
+    if (!valid) {
+      throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
+    }
+
+    const tokens = await this.generateTokens(user.id, user.verification_tier);
+
+    await query(
+      `INSERT INTO audit_logs (user_id, action, gdpr_category) VALUES ($1, 'user.login', 'account')`,
+      [user.id]
+    );
+
+    return { userId: user.id, ...tokens };
+  }
+
   async refreshToken(refreshTokenStr: string) {
     const tokenHash = hashValue(refreshTokenStr);
 

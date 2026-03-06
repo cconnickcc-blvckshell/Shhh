@@ -116,4 +116,24 @@ export class AuthController {
       next(err);
     }
   }
+
+  async registerEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, password, displayName } = req.body;
+      const result = await authService.registerWithEmail(email, password, displayName);
+      res.status(201).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async loginEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, password } = req.body;
+      const result = await authService.loginWithEmail(email, password);
+      res.json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

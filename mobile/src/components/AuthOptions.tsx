@@ -3,9 +3,16 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, borderRadius } from '../constants/theme';
 
-export type AuthMethod = 'phone' | 'apple' | 'google' | 'snap';
+export type AuthMethod = 'email' | 'phone' | 'apple' | 'google' | 'snap';
 
 const OPTIONS: { id: AuthMethod; label: string; icon: string; pros: string; cons: string }[] = [
+  {
+    id: 'email',
+    label: 'Email & password',
+    icon: 'mail',
+    pros: 'Simple. No phone, no OAuth. Just email and a password.',
+    cons: 'You manage your own credentials.',
+  },
   {
     id: 'phone',
     label: 'Phone number',

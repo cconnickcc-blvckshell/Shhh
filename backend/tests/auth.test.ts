@@ -103,4 +103,41 @@ describe('Auth API', () => {
       .send({ phone: '123', displayName: 'Test' });
     expect(res.status).toBe(400);
   });
+
+  describe('Email/password auth', () => {
+    const testEmail = `test-${Date.now()}@example.com`;
+    const testPassword = 'password123';
+    const testName = 'EmailUser';
+
+    it('POST /v1/auth/email/register creates user with email', async () => {
+      const res = await request
+        .post('/v1/auth/email/register')
+        .send({ email: testEmail, password: testPassword, displayName: testName });
+      expect(res.status).toBe(201);
+      expect(res.body.data).toHaveProperty('userId');
+      expect(res.body.data).toHaveProperty('accessToken');
+    });
+
+    it('POST /v1/auth/email/register rejects duplicate email', async () => {
+      const res = await request
+        .post('/v1/auth/email/register')
+        .send({ email: testEmail, password: 'otherpass123', displayName: 'Other' });
+      expect(res.status).toBe(409);
+    });
+
+    it('POST /v1/auth/email/login authenticates with email', async () => {
+      const res = await request
+        .post('/v1/auth/email/login')
+        .send({ email: testEmail, password: testPassword });
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveProperty('accessToken');
+    });
+
+    it('POST /v1/auth/email/login rejects wrong password', async () => {
+      const res = await request
+        .post('/v1/auth/email/login')
+        .send({ email: testEmail, password: 'wrongpassword' });
+      expect(res.status).toBe(401);
+    });
+  });
 });

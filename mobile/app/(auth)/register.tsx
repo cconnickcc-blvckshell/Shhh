@@ -19,8 +19,10 @@ const SNAP_CLIENT_ID = process.env.EXPO_PUBLIC_SNAP_CLIENT_ID;
 export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [authStep, setAuthStep] = useState<'choose' | 'phone'>('choose');
-  const { sendOTP, register: registerDirect, oauthGoogle, oauthSnap, isLoading, error, clearError } = useAuthStore();
+  const [authStep, setAuthStep] = useState<'choose' | 'phone' | 'email'>('choose');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { sendOTP, register: registerDirect, registerEmail, oauthGoogle, oauthSnap, isLoading, error, clearError } = useAuthStore();
   const { signInWithApple } = useOAuth();
   const canSubmit = phone.length >= 10 && displayName.length >= 2;
 
@@ -44,6 +46,10 @@ export default function RegisterScreen() {
   const handleAuthSelect = async (method: AuthMethod) => {
     if (method === 'phone') {
       setAuthStep('phone');
+      return;
+    }
+    if (method === 'email') {
+      setAuthStep('email');
       return;
     }
     clearError();
@@ -93,6 +99,54 @@ export default function RegisterScreen() {
       try { await registerDirect(phone, displayName); } catch {}
     }
   };
+
+  const handleEmailSignUp = async () => {
+    if (!email.trim() || password.length < 8) return;
+    clearError();
+    try {
+      const displayName = (email.split('@')[0] || 'User').slice(0, 50);
+      await registerEmail(email.trim().toLowerCase(), password, displayName.length >= 2 ? displayName : 'User');
+    } catch {}
+  };
+
+  if (authStep === 'email') {
+    return (
+      <AuthScreenBackground>
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.glow} />
+          <View style={styles.content}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => { setAuthStep('choose'); setEmail(''); setPassword(''); clearError(); }}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <View style={styles.logoWrap}>
+              <View style={styles.iconFrame}><AppIconImage size={56} /></View>
+              <Text style={styles.title}>Join Shhh</Text>
+              <Text style={styles.subtitle}>Create your secret identity</Text>
+            </View>
+            <View style={styles.formCard}>
+              <Text style={styles.label}>EMAIL</Text>
+              <View style={[styles.inputWrap, email.length > 0 && styles.inputFocused]}>
+                <Ionicons name="mail-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
+                <TextInput style={styles.input} placeholder="you@example.com" placeholderTextColor={colors.textMuted} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+              </View>
+              <Text style={styles.label}>PASSWORD (min 8 characters)</Text>
+              <View style={[styles.inputWrap, password.length > 0 && styles.inputFocused]}>
+                <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
+                <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={colors.textMuted} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" />
+              </View>
+              {error && <View style={styles.errorBox}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
+              <TouchableOpacity style={[styles.button, (!email.trim() || password.length < 8) && styles.buttonDisabled]} onPress={handleEmailSignUp} disabled={isLoading || !email.trim() || password.length < 8} activeOpacity={0.8}>
+                {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <><Text style={styles.buttonText}>Create account</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></>}
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.linkWrap} onPress={() => router.push('/(auth)')}>
+              <Text style={styles.linkText}>Already a member? </Text><Text style={styles.linkBold}>Log in</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </AuthScreenBackground>
+    );
+  }
 
   if (authStep === 'choose') {
     return (

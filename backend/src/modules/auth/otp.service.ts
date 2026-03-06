@@ -8,6 +8,14 @@ const OTP_TTL = 300;
 const OTP_SESSION_TTL = 300; // 5 min to complete register/login after verify
 const MAX_ATTEMPTS = 5;
 
+/** Normalize to E.164 for Twilio (+countrycode). */
+function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  return phone.startsWith('+') ? phone : `+${phone.replace(/\D/g, '')}`;
+}
+
 function generateOTP(): string {
   return crypto.randomInt(100000, 999999).toString();
 }
@@ -46,16 +54,26 @@ export class OTPService {
     const twilio = this.getTwilioClient();
     if (twilio) {
       try {
+        const toE164 = normalizePhone(phone);
         await twilio.client.messages.create({
           body: `Your Shhh verification code is: ${code}. It expires in 5 minutes.`,
           from: twilio.from,
-          to: phone,
+          to: toE164,
         });
         logger.info({ phone: phone.slice(-4) }, 'OTP sent via Twilio');
         return { sent: true };
-      } catch (err) {
-        logger.error({ err }, 'Failed to send OTP via Twilio');
-        throw Object.assign(new Error('Failed to send verification code'), { statusCode: 500 });
+      } catch (err: unknown) {
+        const twilioCode = (err as { code?: number })?.code;
+        const twilioMsg = (err as { message?: string })?.message;
+        logger.error({ err, twilioCode, twilioMsg }, 'Failed to send OTP via Twilio');
+        // 21608 = recipient not verified (Twilio trial); 21607 = wrong from number
+        if (twilioCode === 21608) {
+          throw Object.assign(new Error('This phone number must be verified in Twilio Console (trial accounts). Or upgrade Twilio to a paid account.'), { statusCode: 400 });
+        }
+        if (twilioCode === 21607) {
+          throw Object.assign(new Error('Twilio trial: use your trial/sandbox number as TWILIO_PHONE_NUMBER.'), { statusCode: 500 });
+        }
+        throw Object.assign(new Error(twilioMsg || 'Failed to send verification code'), { statusCode: 500 });
       }
     }
 

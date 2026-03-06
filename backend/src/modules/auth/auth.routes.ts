@@ -51,6 +51,17 @@ const verifyCodeSchema = z.object({
   code: z.string().length(6),
 });
 
+const emailRegisterSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(128),
+  displayName: z.string().min(2).max(50),
+});
+
+const emailLoginSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(1),
+});
+
 router.post('/phone/send-code', authRateLimiter, validate(sendCodeSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await otpService.sendOTP(req.body.phone);
@@ -95,6 +106,8 @@ router.get('/admin-bypass-status', (_req, res) => {
   });
 });
 router.post('/admin-bypass', authRateLimiter, controller.adminBypass);
+router.post('/email/register', authRateLimiter, validate(emailRegisterSchema), controller.registerEmail);
+router.post('/email/login', authRateLimiter, validate(emailLoginSchema), controller.loginEmail);
 router.post('/register', authRateLimiter, validate(registerSchema), controller.register);
 router.post('/login', authRateLimiter, validate(loginSchema), controller.login);
 router.post('/oauth/apple', authRateLimiter, validate(oauthAppleSchema), controller.oauthApple);

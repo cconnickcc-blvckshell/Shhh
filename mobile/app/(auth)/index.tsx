@@ -153,8 +153,10 @@ export default function LoginScreen() {
     if (Platform.OS !== 'web') return true;
     try { return sessionStorage.getItem('shhh_entered') === '1'; } catch { return false; }
   });
-  const [authStep, setAuthStep] = useState<'choose' | 'phone'>('choose');
-  const { sendOTP, login, oauthGoogle, oauthSnap, isLoading, error, clearError } = useAuthStore();
+  const [authStep, setAuthStep] = useState<'choose' | 'phone' | 'email'>('choose');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { sendOTP, login, loginEmail, registerEmail, oauthGoogle, oauthSnap, isLoading, error, clearError } = useAuthStore();
   const { signInWithApple } = useOAuth();
   const canSubmit = phone.length >= 10;
   const [otpSent, setOtpSent] = useState(false);
@@ -199,6 +201,10 @@ export default function LoginScreen() {
   const handleAuthSelect = async (method: AuthMethod) => {
     if (method === 'phone') {
       setAuthStep('phone');
+      return;
+    }
+    if (method === 'email') {
+      setAuthStep('email');
       return;
     }
     clearError();
@@ -250,6 +256,65 @@ export default function LoginScreen() {
         devCode={devCodeState}
         onBack={() => { setOtpSent(false); setDevCodeState(null); }}
       />
+    );
+  }
+
+  const handleEmailSubmit = async (isRegister: boolean) => {
+    if (!email.trim() || !password) return;
+    clearError();
+    try {
+      if (isRegister) {
+        const displayName = (email.split('@')[0] || 'User').slice(0, 50);
+        await registerEmail(email.trim().toLowerCase(), password, displayName.length >= 2 ? displayName : 'User');
+      } else {
+        await loginEmail(email.trim().toLowerCase(), password);
+      }
+    } catch {}
+  };
+
+  if (authStep === 'email') {
+    return (
+      <AuthScreenBackground>
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.glow} />
+          <View style={styles.content}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => { setAuthStep('choose'); setEmail(''); setPassword(''); clearError(); }}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <View style={styles.logoWrap}>
+              <View style={styles.iconFrame}>
+                <AppIconImage size={72} />
+              </View>
+              <Text style={styles.logo}>Shhh</Text>
+              <Text style={styles.tagline}>YOUR SECRET IS SAFE</Text>
+            </View>
+            <View style={styles.form}>
+              <Text style={styles.label}>EMAIL</Text>
+              <View style={[styles.inputWrap, email.length > 0 && styles.inputFocused]}>
+                <Ionicons name="mail-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
+                <TextInput style={styles.input} placeholder="you@example.com" placeholderTextColor={colors.textMuted} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+              </View>
+              <Text style={styles.label}>PASSWORD</Text>
+              <View style={[styles.inputWrap, password.length > 0 && styles.inputFocused]}>
+                <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
+                <TextInput style={styles.input} placeholder="Min 8 characters" placeholderTextColor={colors.textMuted} value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
+              </View>
+              {error && <View style={styles.errorBox}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
+              <TouchableOpacity style={[styles.button, (!email.trim() || !password) && styles.buttonDisabled]} onPress={() => handleEmailSubmit(false)} disabled={isLoading || !email.trim() || !password} activeOpacity={0.8}>
+                {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <><Text style={styles.buttonText}>Log in</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></>}
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.buttonSecondary, (!email.trim() || password.length < 8) && styles.buttonDisabled]} onPress={() => handleEmailSubmit(true)} disabled={isLoading || !email.trim() || password.length < 8} activeOpacity={0.8}>
+                <Text style={styles.buttonTextSecondary}>Sign up with email</Text>
+              </TouchableOpacity>
+            </View>
+            <Link href="/(auth)/register" asChild>
+              <TouchableOpacity style={styles.linkWrap}>
+                <Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
+        </KeyboardAvoidingView>
+      </AuthScreenBackground>
     );
   }
 
@@ -337,8 +402,10 @@ const styles = StyleSheet.create({
   errorBox: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(239,68,68,0.08)', padding: spacing.sm, borderRadius: borderRadius.sm, marginBottom: spacing.md },
   errorText: { color: colors.danger, fontSize: fontSize.sm },
   button: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.primary, paddingVertical: 18, borderRadius: borderRadius.lg, ...shadows.glow },
+  buttonSecondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border, marginTop: spacing.sm },
   buttonDisabled: { backgroundColor: colors.surfaceLight, shadowOpacity: 0 },
   buttonText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '700' },
+  buttonTextSecondary: { color: colors.textSecondary, fontSize: fontSize.lg, fontWeight: '600' },
   linkWrap: { flexDirection: 'row', justifyContent: 'center', paddingVertical: spacing.md },
   linkText: { color: colors.textMuted, fontSize: fontSize.sm },
   linkBold: { color: colors.primaryLight, fontSize: fontSize.sm, fontWeight: '700' },
