@@ -41,15 +41,27 @@ const createAlbumSchema = z.object({
   isPrivate: z.boolean().optional(),
 });
 
-const shareAlbumSchema = z.object({
-  userId: z.string().uuid().optional(),
-  targetPersonaId: z.string().uuid().optional(),
-  targetCoupleId: z.string().uuid().optional(),
-  canDownload: z.boolean().optional(),
-  expiresInHours: z.number().positive().optional(),
-  watermarkMode: z.enum(['off', 'subtle', 'invisible']).optional(),
-  notifyOnView: z.boolean().optional(),
-}).refine(d => !!(d.userId ?? d.targetPersonaId ?? d.targetCoupleId), { message: 'One of userId, targetPersonaId, targetCoupleId required' });
+const shareAlbumSchema = z
+  .object({
+    userId: z.string().uuid().optional(),
+    targetPersonaId: z.string().uuid().optional(),
+    targetCoupleId: z.string().uuid().optional(),
+    canDownload: z.boolean().optional(),
+    expiresInHours: z.number().positive().optional(),
+    watermarkMode: z.enum(['off', 'subtle', 'invisible']).optional(),
+    notifyOnView: z.boolean().optional(),
+  })
+  .refine((d) => !!(d.userId ?? d.targetPersonaId ?? d.targetCoupleId), {
+    message: 'One of userId, targetPersonaId, targetCoupleId required',
+  })
+  .refine(
+    (d) => {
+      // When sharing with couple (no userId, no targetPersonaId), targetCoupleId must be present
+      if (d.userId || d.targetPersonaId) return true;
+      return !!d.targetCoupleId;
+    },
+    { message: 'targetCoupleId required when sharing with couple', path: ['targetCoupleId'] }
+  );
 
 // Media endpoints
 router.post('/upload', authenticate, upload.single('file'), validateFileMagic, ctrl.upload);

@@ -62,7 +62,11 @@ export const adminApi = {
   getStats: () => api<{ data: any }>('/v1/admin/stats'),
 
   // Users
-  listUsers: (page = 1, filter?: string) => api<{ data: any }>(`/v1/admin/users/list?page=${page}${filter ? `&filter=${filter}` : ''}`),
+  listUsers: (page = 1, filter?: string) => {
+    const params = new URLSearchParams({ page: String(page) });
+    if (filter) params.set('filter', filter);
+    return api<{ data: any }>(`/v1/admin/users/list?${params.toString()}`);
+  },
   searchUsers: (q: string, page = 1) => api<{ data: any }>(`/v1/admin/users/search?q=${encodeURIComponent(q)}&page=${page}`),
   getUserDetail: (id: string) => api<{ data: any }>(`/v1/admin/users/${id}`),
   setUserRole: (id: string, role: string) => api(`/v1/admin/users/${id}/role`, { method: 'POST', body: JSON.stringify({ role }) }),

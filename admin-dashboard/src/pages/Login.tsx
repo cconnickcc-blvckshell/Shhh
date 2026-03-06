@@ -120,29 +120,33 @@ export default function Login() {
           </div>
         </div>
 
-        <GlassButton
-          type="button"
-          variant="secondary"
-          onClick={handleBypass}
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: `${theme.space[3]} ${theme.space[4]}`,
-            marginBottom: theme.space[6],
-            borderStyle: 'dashed',
-          }}
-        >
-          {loading ? '...' : 'Skip login (dev bypass)'}
-        </GlassButton>
+        {import.meta.env.VITE_ALLOW_BYPASS === 'true' && (
+          <GlassButton
+            type="button"
+            variant="secondary"
+            onClick={handleBypass}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: `${theme.space[3]} ${theme.space[4]}`,
+              marginBottom: theme.space[6],
+              borderStyle: 'dashed',
+            }}
+          >
+            {loading ? '...' : 'Skip login (dev bypass)'}
+          </GlassButton>
+        )}
 
-        <div style={{
-          color: theme.colors.textDim,
-          fontSize: theme.fontSize.xs,
-          textAlign: 'center',
-          marginBottom: theme.space[4],
-        }}>
-          — or sign in with phone —
-        </div>
+        {import.meta.env.VITE_ALLOW_BYPASS === 'true' && (
+          <div style={{
+            color: theme.colors.textDim,
+            fontSize: theme.fontSize.xs,
+            textAlign: 'center',
+            marginBottom: theme.space[4],
+          }}>
+            — or sign in with phone —
+          </div>
+        )}
 
         {step === 'phone' ? (
           <GlassInput

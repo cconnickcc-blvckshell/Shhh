@@ -140,13 +140,12 @@ export class AuthService {
     );
   }
 
-  /** Dev bypass: when OTP_DEV_BYPASS=true or NODE_ENV=development, return tokens for first admin user. No OTP required. */
+  /** Test-only bypass: NODE_ENV=test only. Never enabled in development or production. */
   async adminBypassLogin() {
-    const bypassAllowed =
-      process.env.OTP_DEV_BYPASS === 'true' || process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    const bypassAllowed = config.nodeEnv === 'test';
     if (!bypassAllowed) {
       throw Object.assign(
-        new Error('Admin bypass not enabled. Set OTP_DEV_BYPASS=true in Render environment variables.'),
+        new Error('Admin bypass not enabled.'),
         { statusCode: 403 }
       );
     }

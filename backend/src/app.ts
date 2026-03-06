@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config';
-import { metricsMiddleware, metricsHandler } from './middleware/metrics';
+import { metricsMiddleware, metricsHandler, metricsAuth } from './middleware/metrics';
 import compression from 'compression';
 import { globalRateLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
@@ -28,6 +28,7 @@ import intentRoutes from './modules/users/intent.routes';
 import preferencesRoutes from './modules/users/preferences.routes';
 import e2eeRoutes from './modules/messaging/e2ee.routes';
 import billingRoutes from './modules/billing/billing.routes';
+import { handleStripeWebhook } from './modules/billing/webhook.handler';
 import whisperRoutes from './modules/discovery/whisper.routes';
 import adRoutes from './modules/ads/ad.routes';
 import venueDashboardRoutes from './modules/venues/venue-dashboard.routes';
@@ -54,11 +55,8 @@ export function createApp() {
   }));
   app.use(compression());
 
-  // Stripe webhook MUST receive raw body before JSON parsing
-  app.post('/v1/billing/webhook', express.raw({ type: 'application/json' }), (req, _res, next) => {
-    (req as any)._stripeRawBody = true;
-    next();
-  });
+  // Stripe webhook: single raw-body handler (must be before express.json)
+  app.post('/v1/billing/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
 
   app.use(express.json({ limit: '10mb' }));
   app.use(metricsMiddleware);
@@ -74,7 +72,7 @@ export function createApp() {
   }));
   app.get('/docs.json', (_req, res) => res.json(swaggerSpec));
 
-  app.get('/metrics', metricsHandler);
+  app.get('/metrics', metricsAuth, metricsHandler);
   app.get('/health', (_req, res) => {
     res.json({
       status: 'ok',

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
+import { query } from '../config/database';
 import createError from 'http-errors';
 
 export interface AuthPayload {
@@ -51,17 +52,20 @@ export function requireVenueAccess(req: Request, _res: Response, next: NextFunct
   const venueId = req.params.id as string;
   const userId = req.user?.userId;
   if (!userId) return next(createError(401, 'Authentication required'));
-  import('../config/database').then(({ query }) =>
-    query(
-      `SELECT 1 FROM venues WHERE id = $1 AND verified_owner_id = $2
-       UNION ALL
-       SELECT 1 FROM venue_staff WHERE venue_id = $1 AND user_id = $2 AND is_active = true`,
-      [venueId, userId]
-    )
-  ).then((result: { rows: unknown[] }) => {
-    if (!result.rows.length) return next(createError(403, 'Venue access required (owner or staff)'));
-    next();
-  }).catch(next);
+  void (async () => {
+    try {
+      const result = await query(
+        `SELECT 1 FROM venues WHERE id = $1 AND verified_owner_id = $2
+         UNION ALL
+         SELECT 1 FROM venue_staff WHERE venue_id = $1 AND user_id = $2 AND is_active = true`,
+        [venueId, userId]
+      );
+      if (!result.rows.length) return next(createError(403, 'Venue access required (owner or staff)'));
+      next();
+    } catch (err) {
+      next(err);
+    }
+  })();
 }
 
 /** Feature names from subscription tiers (e.g. expandedRadius, vault, reveal_l3). */

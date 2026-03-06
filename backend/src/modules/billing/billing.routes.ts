@@ -1,4 +1,4 @@
-import express, { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { SubscriptionService } from './subscription.service';
 import { validate } from '../../middleware/validation';
@@ -31,29 +31,6 @@ router.post('/checkout', authenticate, idempotencyMiddleware('checkout'), valida
   } catch (err) { next(err); }
 });
 
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const sig = req.headers['stripe-signature'] as string;
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-    if (!endpointSecret) {
-      res.status(503).json({ error: { message: 'Webhook secret not configured' } });
-      return;
-    }
-
-    const Stripe = await import('stripe');
-    const stripe = new Stripe.default(process.env.STRIPE_SECRET_KEY || '');
-    const event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-
-    await svc.handleWebhook(event as any);
-    res.json({ received: true });
-  } catch (err: any) {
-    if (err.type === 'StripeSignatureVerificationError') {
-      res.status(400).json({ error: { message: 'Invalid webhook signature' } });
-      return;
-    }
-    next(err);
-  }
-});
+// Webhook is handled in app.ts with single raw-body middleware (see webhook.handler.ts)
 
 export default router;
