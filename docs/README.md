@@ -43,6 +43,7 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 | **FRONTEND_GAP_LIST.md** | Frontend gap list (mobile) by feature. | Sync with E2E audit and checklist. |
 | **FEATURE_ADDITIONS_CRITIQUE.md** | Feature grades vs current system; game-changer ideas; discovery cap. | Optional: mark implemented items. |
 | **ADMIN_DASHBOARD_FUTURE_PLAN.md** | Future admin dashboard ideas: 3D globe, marble drop, live activity feed, Admin Control (feature flags, content, rate limits, etc.), phasing. Implementation status for map, Kanban, sparkline. | When planning admin dashboard enhancements. |
+| **ARCHITECTURE_SCALE_RISK_DEEP_DIVE.md** | **50k–100k user scale risks:** Discovery/presence state consistency, cross-store consistency (Postgres/Mongo/Redis/WebSocket), entitlement/policy drift. Evidence-based gap analysis, phased remediation, file-level index. | When planning scale architecture or addressing state/policy drift. |
 
 ## Operations & Technical
 
