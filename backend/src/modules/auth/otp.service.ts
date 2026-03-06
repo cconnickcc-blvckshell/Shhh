@@ -64,6 +64,12 @@ export class OTPService {
       return { sent: true, devCode: code };
     }
 
+    // Bypass when Twilio not configured: set OTP_DEV_BYPASS=true in env (remove once Twilio is configured)
+    if (process.env.OTP_DEV_BYPASS === 'true') {
+      logger.warn({ phone: phone.slice(-4), code }, 'OTP bypass (no Twilio) — remove OTP_DEV_BYPASS when Twilio is configured');
+      return { sent: true, devCode: code };
+    }
+
     throw Object.assign(new Error('SMS service not configured'), { statusCode: 503 });
   }
 
