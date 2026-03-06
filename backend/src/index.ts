@@ -2,7 +2,7 @@ import http from 'http';
 import { createApp } from './app';
 import { config } from './config';
 import { logger } from './config/logger';
-import { getPool } from './config/database';
+import { getPool, resetPool } from './config/database';
 import { getRedis } from './config/redis';
 import { connectMongoDB } from './config/mongodb';
 import { setupWebSocket } from './websocket';
@@ -64,13 +64,27 @@ async function main() {
   validateProductionDataServices();
   logger.info({ env: config.nodeEnv }, 'Starting Shhh API server...');
 
-  try {
-    const pool = getPool();
-    await pool.query('SELECT 1');
-    logger.info('PostgreSQL connected');
-  } catch (err) {
-    logger.error({ err }, 'Failed to connect to PostgreSQL');
-    process.exit(1);
+  const maxRetries = 5;
+  const retryDelayMs = 15000;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const pool = getPool();
+      await pool.query('SELECT 1');
+      logger.info('PostgreSQL connected');
+      break;
+    } catch (err) {
+      logger.warn({ err, attempt, maxRetries }, 'PostgreSQL connection failed');
+      resetPool();
+      if (attempt === maxRetries) {
+        logger.error(
+          { err },
+          'Failed to connect to PostgreSQL. Check: DATABASE_URL (use Supabase pooler port 6543), DATABASE_SSL=true, Supabase project not paused, IP allowed.'
+        );
+        process.exit(1);
+      }
+      logger.info({ delayMs: retryDelayMs, nextAttempt: attempt + 1 }, 'Retrying PostgreSQL connection...');
+      await new Promise((r) => setTimeout(r, retryDelayMs));
+    }
   }
 
   try {

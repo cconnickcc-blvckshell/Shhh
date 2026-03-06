@@ -28,11 +28,15 @@ export function getPool(): Pool {
       : true;
     const connectionString = useSsl ? stripSslModeFromUrl(rawUrl) : rawUrl;
     const ssl = useSsl ? { rejectUnauthorized } : undefined;
+    const isCloud = !/localhost|127\.0\.0\.1/.test(rawUrl);
+    const defaultPoolSize = isCloud ? 10 : 20; // Supabase free tier ~15 conn limit
     pool = new Pool({
       connectionString,
-      max: parseInt(process.env.DATABASE_POOL_SIZE || '20', 10),
+      max: parseInt(process.env.DATABASE_POOL_SIZE || String(defaultPoolSize), 10),
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
+      connectionTimeoutMillis: isCloud ? 60000 : 10000, // cloud: 60s for cold start / network latency
+      keepAlive: isCloud,
+      keepAliveInitialDelayMillis: 10000,
       ...(ssl && { ssl }),
     });
 
@@ -46,6 +50,14 @@ export function getPool(): Pool {
 export async function closePool(): Promise<void> {
   if (pool) {
     await pool.end();
+    pool = null;
+  }
+}
+
+/** Reset pool so next getPool() creates a fresh one. Use for connection retries. */
+export function resetPool(): void {
+  if (pool) {
+    pool.end().catch(() => {});
     pool = null;
   }
 }
