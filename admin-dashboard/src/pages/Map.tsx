@@ -140,7 +140,7 @@ export default function Map() {
   }
 
   return (
-    <div role="main" aria-label="Command center map" style={{ display: 'flex', flexDirection: 'column', gap: theme.space[4], height: 'calc(100vh - 48px)' }}>
+    <div role="main" aria-label="Command center map" className="page-map-container" style={{ display: 'flex', flexDirection: 'column', gap: theme.space[4], height: 'calc(100vh - 48px)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: theme.space[3] }}>
         <h2 style={{
           fontFamily: theme.font.display,

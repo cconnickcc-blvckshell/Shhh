@@ -94,12 +94,15 @@ export default function Dashboard() {
         Command Center
       </h2>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-        gap: theme.space[4],
-        marginBottom: theme.space[6],
-      }}>
+      <div
+        className="dashboard-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gap: theme.space[4],
+          marginBottom: theme.space[6],
+        }}
+      >
         {cards.map(c => {
           const history = (c as any).historyKey ? historyRef.current[(c as any).historyKey] : [];
           return (

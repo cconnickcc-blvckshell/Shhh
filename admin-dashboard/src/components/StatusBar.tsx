@@ -16,6 +16,7 @@ export function StatusBar() {
 
   return (
     <div
+      className="status-bar-inner"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -102,7 +103,7 @@ export function StatusBar() {
         </Link>
       </div>
 
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: theme.space[4] }}>
+      <div className="status-bar-mobile-extra" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: theme.space[4] }}>
         <span style={{ color: theme.colors.textDim, fontSize: theme.fontSize.xs }}>
           Updated {formatLastUpdated(status.lastUpdated)}
         </span>
