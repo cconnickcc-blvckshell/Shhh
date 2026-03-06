@@ -140,6 +140,31 @@ export class AuthService {
     );
   }
 
+  /** Dev bypass: when OTP_DEV_BYPASS=true or NODE_ENV=development, return tokens for first admin user. No OTP required. */
+  async adminBypassLogin() {
+    const bypassAllowed =
+      process.env.OTP_DEV_BYPASS === 'true' || process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    if (!bypassAllowed) {
+      throw Object.assign(
+        new Error('Admin bypass not enabled. Set OTP_DEV_BYPASS=true in Render environment variables.'),
+        { statusCode: 403 }
+      );
+    }
+    const result = await query(
+      `SELECT id, verification_tier FROM users
+       WHERE role IN ('admin', 'moderator', 'superadmin') AND is_active = true AND deleted_at IS NULL
+       ORDER BY CASE role WHEN 'superadmin' THEN 3 WHEN 'admin' THEN 2 WHEN 'moderator' THEN 1 ELSE 0 END DESC
+       LIMIT 1`,
+      []
+    );
+    if (result.rows.length === 0) {
+      throw Object.assign(new Error('No admin user found. Run seed first.'), { statusCode: 404 });
+    }
+    const { id: userId, verification_tier: tier } = result.rows[0];
+    const tokens = await this.generateTokens(userId, tier);
+    return { userId, ...tokens };
+  }
+
   /** Test-only: mint JWT for a user by ID without OTP. Used by load test harness. */
   async mintTokenForTest(userId: string) {
     const result = await query(

@@ -199,6 +199,7 @@ docker run -p 3000:3000 --env-file .env shhh-backend
 | **ECONNREFUSED** (MongoDB) | Add `MONGODB_URL` in Render. Use [MongoDB Atlas](https://mongodb.com/cloud/atlas) (free tier). |
 | **ENOENT / address: "%20--tls%20-u%20redis://..."** (Redis) | You pasted the redis-cli command. Use only the URL. For Upstash use `rediss://default:PASSWORD@host:6379` (double s = TLS). |
 | **self-signed certificate in certificate chain** (PostgreSQL) | Add `DATABASE_SSL_REJECT_UNAUTHORIZED=false` in Render Environment. Some cloud Postgres use internal CAs. |
+| **Admin dashboard "Skip login" fails** | 1) **Render:** Add `OTP_DEV_BYPASS=true` in Environment → Redeploy. 2) **Vercel:** Add `VITE_API_URL=https://your-backend.onrender.com` in Environment Variables → Redeploy. 3) **CORS:** Add `https://shhh-admin.vercel.app` (or your admin URL) to `CORS_ORIGINS` on Render. 4) **DB:** Run `npm run seed` against production DB so at least one admin exists. |
 
 ### Render: Required Environment Variables
 
@@ -212,3 +213,4 @@ Render containers have **no local databases**. You must set these in **Dashboard
 | `JWT_SECRET`, `JWT_REFRESH_SECRET`, `PHONE_HASH_PEPPER` | `openssl rand -hex 32` (three different values) |
 | `CORS_ORIGINS` | Your frontend URL(s), comma-separated, no trailing slash |
 | `NODE_ENV` | `production` |
+| `OTP_DEV_BYPASS` | `true` — Enables one-click "Skip login" on admin dashboard (remove when Twilio configured) |

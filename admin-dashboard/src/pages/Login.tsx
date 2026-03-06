@@ -29,6 +29,27 @@ export default function Login() {
     }
   };
 
+  const handleBypass = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await adminApi.bypassLogin();
+      setToken(res.data.accessToken);
+      const statsRes = await adminApi.getOverview();
+      if (statsRes.data) {
+        navigate('/');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Bypass failed';
+      const isNetwork = /fetch|network|cors/i.test(msg) || msg === 'Failed to fetch';
+      setError(isNetwork
+        ? `${msg} — Ensure VITE_API_URL points to your Render backend (Vercel → Settings → Environment Variables)`
+        : msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleVerifyAndLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -97,6 +118,30 @@ export default function Login() {
           }}>
             Command Center
           </div>
+        </div>
+
+        <GlassButton
+          type="button"
+          variant="secondary"
+          onClick={handleBypass}
+          disabled={loading}
+          style={{
+            width: '100%',
+            padding: `${theme.space[3]} ${theme.space[4]}`,
+            marginBottom: theme.space[6],
+            borderStyle: 'dashed',
+          }}
+        >
+          {loading ? '...' : 'Skip login (dev bypass)'}
+        </GlassButton>
+
+        <div style={{
+          color: theme.colors.textDim,
+          fontSize: theme.fontSize.xs,
+          textAlign: 'center',
+          marginBottom: theme.space[4],
+        }}>
+          — or sign in with phone —
         </div>
 
         {step === 'phone' ? (

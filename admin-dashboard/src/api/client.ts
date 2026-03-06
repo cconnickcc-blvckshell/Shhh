@@ -41,7 +41,8 @@ export async function api<T = unknown>(path: string, options: RequestInit = {}):
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
-    throw new Error(err.error?.message || 'Request failed');
+    const msg = err?.error?.message || err?.message || res.statusText || 'Request failed';
+    throw new Error(msg);
   }
 
   if (res.status === 204) return {} as T;
@@ -52,6 +53,8 @@ export const adminApi = {
   sendCode: (phone: string) => api<{ data: { sent: boolean; devCode?: string } }>('/v1/auth/phone/send-code', { method: 'POST', body: JSON.stringify({ phone }) }),
   verify: (phone: string, code: string) => api<{ data: { verified: boolean; sessionToken?: string } }>('/v1/auth/phone/verify', { method: 'POST', body: JSON.stringify({ phone, code }) }),
   login: (phone: string, sessionToken?: string) => api<{ data: { accessToken: string; userId: string } }>('/v1/auth/login', { method: 'POST', body: JSON.stringify({ phone, ...(sessionToken && { sessionToken }) }) }),
+  /** Dev bypass: one-click login when OTP_DEV_BYPASS=true on backend. No phone/OTP required. */
+  bypassLogin: () => api<{ data: { accessToken: string; userId: string } }>('/v1/auth/admin-bypass', { method: 'POST', body: JSON.stringify({}) }),
   getHealth: () => api<{ status: string; version: string; modules: string[] }>('/health'),
 
   // Dashboard

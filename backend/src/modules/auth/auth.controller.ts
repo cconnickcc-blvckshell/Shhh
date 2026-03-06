@@ -107,4 +107,13 @@ export class AuthController {
       next(err);
     }
   }
+
+  async adminBypass(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await authService.adminBypassLogin();
+      res.json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
