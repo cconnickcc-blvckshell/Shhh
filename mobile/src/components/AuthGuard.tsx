@@ -30,9 +30,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       router.replace('/(auth)');
       return;
     }
-    if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)');
-    }
+    // When authenticated and in auth group, let AuthLayout handle redirect
+    // (onboarding vs tabs). Do NOT redirect here — avoids race with
+    // registerEmail/login flows and prevents "stale" navigation state errors.
   }, [hydrated, pathname, isAuthenticated]);
 
   if (!hydrated) {

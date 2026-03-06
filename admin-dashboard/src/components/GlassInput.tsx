@@ -4,7 +4,7 @@ interface GlassInputProps {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  type?: 'text' | 'password';
+  type?: 'text' | 'password' | 'email';
   maxLength?: number;
   disabled?: boolean;
   label?: string;

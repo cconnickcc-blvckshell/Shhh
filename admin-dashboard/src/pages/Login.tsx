@@ -5,9 +5,14 @@ import { GlassInput } from '../components/GlassInput';
 import { GlassButton } from '../components/GlassButton';
 import { theme } from '../theme';
 
+type AuthMode = 'phone' | 'email';
+
 export default function Login() {
+  const [authMode, setAuthMode] = useState<AuthMode>('phone');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [step, setStep] = useState<'phone' | 'code'>('phone');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -77,6 +82,31 @@ export default function Login() {
     }
   };
 
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await adminApi.loginEmail(email.trim().toLowerCase(), password);
+      setToken(res.data.accessToken);
+
+      try {
+        const statsRes = await adminApi.getOverview();
+        if (statsRes.data) {
+          navigate('/');
+        }
+      } catch {
+        setToken('');
+        clearToken();
+        setError('Access denied. Admin or moderator role required.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{
       display: 'flex',
@@ -85,8 +115,7 @@ export default function Login() {
       minHeight: '100vh',
       padding: theme.space[6],
     }}>
-      <form
-        onSubmit={step === 'phone' ? handleSendCode : handleVerifyAndLogin}
+      <div
         style={{
           width: '100%',
           maxWidth: 420,
@@ -144,74 +173,155 @@ export default function Login() {
             textAlign: 'center',
             marginBottom: theme.space[4],
           }}>
-            — or sign in with phone —
+            — or sign in with phone or email —
           </div>
         )}
 
-        {step === 'phone' ? (
-          <GlassInput
-            label="Admin phone"
-            value={phone}
-            onChange={setPhone}
-            placeholder="+15550000001"
-          />
+        <div style={{ display: 'flex', gap: theme.space[2], marginBottom: theme.space[4] }}>
+          <button
+            type="button"
+            onClick={() => { setAuthMode('phone'); setError(''); setStep('phone'); setCode(''); }}
+            style={{
+              flex: 1,
+              padding: theme.space[2],
+              borderRadius: theme.radius.md,
+              border: `1px solid ${authMode === 'phone' ? theme.colors.primary : theme.colors.border}`,
+              background: authMode === 'phone' ? theme.colors.primaryMuted : 'transparent',
+              color: authMode === 'phone' ? theme.colors.primary : theme.colors.textMuted,
+              fontSize: theme.fontSize.sm,
+              cursor: 'pointer',
+              fontWeight: authMode === 'phone' ? theme.fontWeight.semibold : theme.fontWeight.normal,
+            }}
+          >
+            Phone
+          </button>
+          <button
+            type="button"
+            onClick={() => { setAuthMode('email'); setError(''); }}
+            style={{
+              flex: 1,
+              padding: theme.space[2],
+              borderRadius: theme.radius.md,
+              border: `1px solid ${authMode === 'email' ? theme.colors.primary : theme.colors.border}`,
+              background: authMode === 'email' ? theme.colors.primaryMuted : 'transparent',
+              color: authMode === 'email' ? theme.colors.primary : theme.colors.textMuted,
+              fontSize: theme.fontSize.sm,
+              cursor: 'pointer',
+              fontWeight: authMode === 'email' ? theme.fontWeight.semibold : theme.fontWeight.normal,
+            }}
+          >
+            Email
+          </button>
+        </div>
+
+        {authMode === 'email' ? (
+          <form onSubmit={handleEmailLogin}>
+            <GlassInput
+              label="Email"
+              value={email}
+              onChange={setEmail}
+              placeholder="admin@example.com"
+              type="email"
+            />
+            <GlassInput
+              label="Password"
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••"
+              type="password"
+            />
+            {error && (
+              <div style={{
+                background: theme.colors.dangerMuted,
+                border: `1px solid ${theme.colors.danger}`,
+                borderRadius: theme.radius.md,
+                padding: theme.space[3],
+                color: theme.colors.danger,
+                fontSize: theme.fontSize.sm,
+                marginBottom: theme.space[4],
+              }}>
+                {error}
+              </div>
+            )}
+            <GlassButton
+              type="submit"
+              variant="primary"
+              style={{ width: '100%', padding: `${theme.space[3]} ${theme.space[4]}` }}
+              disabled={loading || !email.trim() || password.length < 8}
+            >
+              {loading ? 'Signing in...' : 'Sign in with email'}
+            </GlassButton>
+          </form>
         ) : (
           <>
-            <GlassInput
-              label="Verification code"
-              value={code}
-              onChange={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000"
-              maxLength={6}
-            />
-            {devCode && (
-              <p style={{
-                color: theme.colors.textMuted,
-                fontSize: theme.fontSize.sm,
-                marginBottom: theme.space[3],
-              }}>
-                Dev code: {devCode}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => { setStep('phone'); setCode(''); setError(''); }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: theme.colors.textMuted,
-                fontSize: theme.fontSize.sm,
-                cursor: 'pointer',
-                marginBottom: theme.space[3],
-              }}
-            >
-              ← Change phone
-            </button>
+            <form onSubmit={step === 'phone' ? handleSendCode : handleVerifyAndLogin}>
+              {step === 'phone' ? (
+                <GlassInput
+                  label="Admin phone"
+                  value={phone}
+                  onChange={setPhone}
+                  placeholder="+15550000001"
+                />
+              ) : (
+                <>
+                  <GlassInput
+                    label="Verification code"
+                    value={code}
+                    onChange={(v) => setCode(v.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    maxLength={6}
+                  />
+                  {devCode && (
+                    <p style={{
+                      color: theme.colors.textMuted,
+                      fontSize: theme.fontSize.sm,
+                      marginBottom: theme.space[3],
+                    }}>
+                      Dev code: {devCode}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setStep('phone'); setCode(''); setError(''); }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: theme.colors.textMuted,
+                      fontSize: theme.fontSize.sm,
+                      cursor: 'pointer',
+                      marginBottom: theme.space[3],
+                    }}
+                  >
+                    ← Change phone
+                  </button>
+                </>
+              )}
+
+              {error && (
+                <div style={{
+                  background: theme.colors.dangerMuted,
+                  border: `1px solid ${theme.colors.danger}`,
+                  borderRadius: theme.radius.md,
+                  padding: theme.space[3],
+                  color: theme.colors.danger,
+                  fontSize: theme.fontSize.sm,
+                  marginBottom: theme.space[4],
+                }}>
+                  {error}
+                </div>
+              )}
+
+              <GlassButton
+                type="submit"
+                variant="primary"
+                style={{ width: '100%', padding: `${theme.space[3]} ${theme.space[4]}` }}
+                disabled={loading || (step === 'phone' ? !phone : code.length !== 6)}
+              >
+                {loading ? 'Verifying...' : step === 'phone' ? 'Send code' : 'Verify & Login'}
+              </GlassButton>
+            </form>
           </>
         )}
-
-        {error && (
-          <div style={{
-            background: theme.colors.dangerMuted,
-            border: `1px solid ${theme.colors.danger}`,
-            borderRadius: theme.radius.md,
-            padding: theme.space[3],
-            color: theme.colors.danger,
-            fontSize: theme.fontSize.sm,
-            marginBottom: theme.space[4],
-          }}>
-            {error}
-          </div>
-        )}
-
-        <GlassButton
-          type="submit"
-          variant="primary"
-          style={{ width: '100%', padding: `${theme.space[3]} ${theme.space[4]}` }}
-          disabled={loading || (step === 'phone' ? !phone : code.length !== 6)}
-        >
-          {loading ? 'Verifying...' : step === 'phone' ? 'Send code' : 'Verify & Login'}
-        </GlassButton>
 
         <p style={{
           color: theme.colors.textDim,
@@ -221,7 +331,7 @@ export default function Login() {
         }}>
           Admin or moderator role required.
         </p>
-      </form>
+      </div>
     </div>
   );
 }
