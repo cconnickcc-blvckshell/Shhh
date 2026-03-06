@@ -22,6 +22,12 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 
 | Document | Purpose | When to read/update |
 |----------|---------|---------------------|
+| **CSUITE_MASTER_AUDIT_REPORT.md** | **C-suite master audit** — Consolidates 5-agent audit (bugs, docs, security, UX/UI, SEO). Prioritized remediation roadmap. | When presenting to leadership or planning remediation. |
+| **CSUITE_ADVERSARIAL_AUDIT_REPORT.md** | Agent 1: Bug & discrepancy sweep — 28 issues with proof, severity, recommendations. | When fixing bugs or assessing correctness. |
+| **DOCUMENTATION_AUDIT_REPORT.md** | Agent 2: Documentation coverage, gap analysis, in-code comments. | When improving docs or API coverage. |
+| **SECURITY_AUDIT_ADVERSARIAL.md** | Agent 3: Security vulnerabilities — 17 findings with CVSS, proof, remediation. | When hardening security or responding to findings. |
+| **UX_UI_AUDIT_REPORT.md** | Agent 4: Screen-by-screen UX/UI findings, workflows, accessibility. | When improving UX or fixing UI issues. |
+| **SEO_SCHEMA_AUDIT_REPORT.md** | Agent 5: SEO opportunities, schema coverage, meta tags, structured data. | When improving discoverability or schema. |
 | **CONSOLIDATED_CTO_REVIEW.md** | **Single source of truth** merging all audits; P0/P1 gates; contradictions resolved; actionable release plan. | When making go/no-go decisions or planning gates. |
 | **PRODUCTION_READINESS_GRADE_REPORT.md** | Executive-grade assessment with proof, suggestions, future roadmap, decision framework for CEO/CTO/COO. | When assessing production readiness or presenting to leadership. |
 | **E2E_CAPABILITY_AUDIT_REPORT.md** | **E2E audit** of what exists vs partial vs missing (mobile, admin, backend). No optimistic gloss. | When assessing ship-readiness or planning fixes. |

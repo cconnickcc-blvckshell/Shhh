@@ -64,10 +64,10 @@ export default function ProfileScreen() {
     {
       text: 'SEND ALERT',
       style: 'destructive',
-      onPress: async () => {
+        onPress: async () => {
         try {
-          const lat = location?.coords?.latitude;
-          const lng = location?.coords?.longitude;
+          const lat = location?.latitude;
+          const lng = location?.longitude;
           const res = await safetyApi.panic(lat, lng) as { data?: { message?: string; contactsNotified?: number } };
           const msg = res?.data?.message || 'Alert recorded.';
           Alert.alert('Alert Recorded', msg);
