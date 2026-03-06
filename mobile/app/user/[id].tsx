@@ -203,7 +203,16 @@ export default function UserDetailScreen() {
 
         {/* Action buttons */}
         <View style={s.actions}>
-          <TouchableOpacity style={s.actionCircle} onPress={() => { if (id) { usersApi.block(id); router.back(); } }}>
+          <TouchableOpacity
+            style={s.actionCircle}
+            onPress={() => {
+              if (!id) return;
+              Alert.alert('Block user', `Block ${profile.displayName}? You won't see each other.`, [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Block', style: 'destructive', onPress: () => { usersApi.block(id); router.back(); } },
+              ]);
+            }}
+          >
             <Ionicons name="close" size={26} color="rgba(255,255,255,0.4)" />
           </TouchableOpacity>
           <TouchableOpacity style={s.actionCircleSmall} onPress={() => setShowWhisper(!showWhisper)}>
@@ -231,7 +240,16 @@ export default function UserDetailScreen() {
         )}
 
         {/* Report */}
-        <TouchableOpacity style={s.reportBtn} onPress={() => { if (id) { usersApi.report(id, 'inappropriate'); Alert.alert('Reported', 'Thank you for keeping the community safe'); } }}>
+        <TouchableOpacity
+          style={s.reportBtn}
+          onPress={() => {
+            if (!id) return;
+            Alert.alert('Report user', `Report ${profile.displayName}? This helps keep our community safe.`, [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Report', style: 'destructive', onPress: () => { usersApi.report(id, 'inappropriate'); Alert.alert('Reported', 'Thank you for keeping the community safe'); } },
+            ]);
+          }}
+        >
           <Text style={s.reportText}>Report this user</Text>
         </TouchableOpacity>
 

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { router, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useIdTokenAuthRequest } from 'expo-auth-session/providers/google';
@@ -181,10 +181,19 @@ export default function LoginScreen() {
   );
 
   if (Platform.OS === 'web' && !showLoginForm) {
-    return <WebEntryShell onEnter={() => {
-      try { sessionStorage.setItem('shhh_entered', '1'); } catch {}
-      setShowLoginForm(true);
-    }} />;
+    return (
+      <WebEntryShell
+        onEnter={() => {
+          try { sessionStorage.setItem('shhh_entered', '1'); } catch {}
+          setShowLoginForm(true);
+        }}
+        onSignUp={() => {
+          try { sessionStorage.setItem('shhh_entered', '1'); } catch {}
+          setShowLoginForm(true);
+          router.push('/(auth)/register');
+        }}
+      />
+    );
   }
 
   const handleAuthSelect = async (method: AuthMethod) => {
@@ -259,9 +268,11 @@ export default function LoginScreen() {
             </View>
             <AuthOptions onSelect={handleAuthSelect} isLoading={isLoading} />
             {error && <View style={styles.errorBox} accessibilityLiveRegion="polite" accessibilityLabel={`Error: ${error}`}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
-            <TouchableOpacity style={styles.linkWrap} onPress={() => router.push('/(auth)/register')} accessibilityLabel="Sign up" accessibilityRole="link">
-              <Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text>
-            </TouchableOpacity>
+            <Link href="/(auth)/register" asChild>
+              <TouchableOpacity style={styles.linkWrap} accessibilityLabel="Sign up" accessibilityRole="link">
+                <Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text>
+              </TouchableOpacity>
+            </Link>
           </View>
         </View>
       </AuthScreenBackground>
@@ -298,9 +309,11 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.linkWrap} onPress={() => router.push('/(auth)/register')} accessibilityLabel="Sign up" accessibilityRole="link">
-            <Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text>
-          </TouchableOpacity>
+          <Link href="/(auth)/register" asChild>
+            <TouchableOpacity style={styles.linkWrap} accessibilityLabel="Sign up" accessibilityRole="link">
+              <Text style={styles.linkText}>Don't have an account? </Text><Text style={styles.linkBold}>Sign up</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
       </KeyboardAvoidingView>
     </AuthScreenBackground>

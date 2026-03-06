@@ -3,6 +3,23 @@ import { Registry, Counter, Histogram, Gauge } from 'prom-client';
 
 export const register = new Registry();
 
+/** V4: When METRICS_SECRET is set, require Bearer token or ?secret= query param. */
+export function metricsAuth(req: Request, res: Response, next: NextFunction) {
+  const secret = process.env.METRICS_SECRET;
+  if (!secret) {
+    next();
+    return;
+  }
+  const authHeader = req.headers.authorization;
+  const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const querySecret = typeof req.query.secret === 'string' ? req.query.secret : null;
+  if (bearer === secret || querySecret === secret) {
+    next();
+    return;
+  }
+  res.status(401).set('WWW-Authenticate', 'Bearer').send('Unauthorized');
+}
+
 const httpRequestsTotal = new Counter({
   name: 'http_requests_total',
   help: 'Total HTTP requests',

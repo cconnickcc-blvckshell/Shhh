@@ -200,7 +200,7 @@ docker run -p 3000:3000 --env-file .env shhh-backend
 | **ENOENT / address: "%20--tls%20-u%20redis://..."** (Redis) | You pasted the redis-cli command. Use only the URL. For Upstash use `rediss://default:PASSWORD@host:6379` (double s = TLS). |
 | **self-signed certificate in certificate chain** (PostgreSQL) | Add `DATABASE_SSL_REJECT_UNAUTHORIZED=false` in Render Environment. Some cloud Postgres use internal CAs. |
 | **Connection terminated due to connection timeout** (PostgreSQL) | 1) **Supabase paused:** Free tier projects pause after inactivity — open Supabase Dashboard to wake. 2) **Use pooler:** `DATABASE_URL` must use port **6543** (pooler), not 5432. Format: `postgresql://postgres.[REF]:[PWD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require`. 3) **DATABASE_SSL=true** in Render. 4) **Pool size:** Add `DATABASE_POOL_SIZE=5` if Supabase free tier (15 conn limit). 5) **Try direct URL** as fallback: port 5432, `db.[REF].supabase.co` — sometimes more reliable than pooler. |
-| **Admin dashboard "Skip login" fails** | 1) **Render:** Add `OTP_DEV_BYPASS=true` in Environment → Redeploy. 2) **Vercel:** Add `VITE_API_URL=https://your-backend.onrender.com` in Environment Variables → Redeploy. 3) **CORS:** Add `https://shhh-admin.vercel.app` (or your admin URL) to `CORS_ORIGINS` on Render. 4) **DB:** Run `npm run seed` against production DB so at least one admin exists. |
+| **Admin dashboard "Skip login" fails** | 1) **Render:** Do NOT set `OTP_DEV_BYPASS` in production; backend exits if set. Configure Twilio for OTP. 2) **Local dev:** Set `VITE_ALLOW_BYPASS=true` in admin-dashboard; bypass works only when `NODE_ENV=test`. 3) **Vercel:** Add `VITE_API_URL=https://your-backend.onrender.com`. 4) **CORS:** Add admin URL to `CORS_ORIGINS`. 5) **DB:** Run `npm run seed` so at least one admin exists. |
 
 ### Render: Required Environment Variables
 
@@ -214,4 +214,4 @@ Render containers have **no local databases**. You must set these in **Dashboard
 | `JWT_SECRET`, `JWT_REFRESH_SECRET`, `PHONE_HASH_PEPPER` | `openssl rand -hex 32` (three different values) |
 | `CORS_ORIGINS` | Your frontend URL(s), comma-separated, no trailing slash |
 | `NODE_ENV` | `production` |
-| `OTP_DEV_BYPASS` | `true` — Enables one-click "Skip login" on admin dashboard (remove when Twilio configured) |
+| `OTP_DEV_BYPASS` | **Do not set in production** — backend exits. Use only for local dev; configure Twilio for production OTP. |

@@ -8,6 +8,7 @@ interface GlassInputProps {
   maxLength?: number;
   disabled?: boolean;
   label?: string;
+  id?: string;
   style?: React.CSSProperties;
 }
 
@@ -19,24 +20,30 @@ export function GlassInput({
   maxLength,
   disabled,
   label,
+  id,
   style,
 }: GlassInputProps) {
+  const inputId = id ?? (label ? `glass-input-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined);
   return (
     <div style={{ marginBottom: theme.space[4] }}>
       {label && (
-        <label style={{
-          display: 'block',
-          color: theme.colors.textMuted,
-          fontSize: theme.fontSize.xs,
-          fontWeight: theme.fontWeight.semibold,
-          letterSpacing: '1.2px',
-          textTransform: 'uppercase',
-          marginBottom: theme.space[2],
-        }}>
+        <label
+          htmlFor={inputId}
+          style={{
+            display: 'block',
+            color: theme.colors.textMuted,
+            fontSize: theme.fontSize.xs,
+            fontWeight: theme.fontWeight.semibold,
+            letterSpacing: '1.2px',
+            textTransform: 'uppercase',
+            marginBottom: theme.space[2],
+          }}
+        >
           {label}
         </label>
       )}
       <input
+        id={inputId}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

@@ -59,15 +59,17 @@ export class OTPService {
       }
     }
 
-    if (config.nodeEnv === 'development' || config.nodeEnv === 'test') {
-      logger.info({ phone: phone.slice(-4), code }, 'OTP (dev mode - no Twilio)');
+    // Never return devCode when NODE_ENV=production (V2 remediation)
+    const mayReturnDevCode = config.nodeEnv === 'development' || config.nodeEnv === 'test';
+    if (mayReturnDevCode) {
+      logger.info({ phone: phone.slice(-4) }, 'OTP (dev mode - no Twilio)');
       return { sent: true, devCode: code };
     }
 
-    // Bypass when Twilio not configured: set OTP_DEV_BYPASS=true in env (remove once Twilio is configured)
+    // OTP_DEV_BYPASS blocked in production by validateProductionSecrets; defense-in-depth: never return devCode in prod
     if (process.env.OTP_DEV_BYPASS === 'true') {
-      logger.warn({ phone: phone.slice(-4), code }, 'OTP bypass (no Twilio) — remove OTP_DEV_BYPASS when Twilio is configured');
-      return { sent: true, devCode: code };
+      logger.warn({ phone: phone.slice(-4) }, 'OTP bypass (no Twilio) — remove OTP_DEV_BYPASS when Twilio is configured');
+      return { sent: true, ...(mayReturnDevCode ? { devCode: code } : {}) };
     }
 
     throw Object.assign(new Error('SMS service not configured'), { statusCode: 503 });

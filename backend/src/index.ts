@@ -27,6 +27,9 @@ function validateProductionSecrets() {
   if (UNSAFE_DEFAULTS.includes(jwtRefresh)) bad.push('JWT_REFRESH_SECRET');
   if (UNSAFE_DEFAULTS.includes(pepper)) bad.push('PHONE_HASH_PEPPER');
   if (!corsOrigins || corsOrigins.trim() === '') bad.push('CORS_ORIGINS');
+  if (process.env.OTP_DEV_BYPASS === 'true') {
+    bad.push('OTP_DEV_BYPASS (must not be true in production; remove once Twilio is configured)');
+  }
 
   if (bad.length > 0) {
     logger.error({ missing: bad }, 'Production requires: JWT_SECRET, JWT_REFRESH_SECRET, PHONE_HASH_PEPPER, CORS_ORIGINS (comma-separated).');

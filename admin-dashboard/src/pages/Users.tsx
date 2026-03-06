@@ -15,6 +15,14 @@ export default function Users() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const PAGE_SIZE = 20;
+
+  const showSuccess = (msg: string) => {
+    setSuccessMessage(msg);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -35,6 +43,18 @@ export default function Users() {
   useEffect(() => { load(); }, [page, filter]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setPage(1); load(); };
+
+  const handleToggleActive = (u: any) => {
+    adminApi.toggleUserActive(u.id, !u.is_active)
+      .then(() => { load(); showSuccess(u.is_active ? 'User banned.' : 'User unbanned.'); })
+      .catch(() => setError('Failed to update user.'));
+  };
+
+  const handleRoleChange = (u: any, role: string) => {
+    adminApi.setUserRole(u.id, role)
+      .then(() => { load(); showSuccess(`Role set to ${role}.`); })
+      .catch(() => setError('Failed to update role. Admin only.'));
+  };
 
   if (error) return <AdminError message={error} onRetry={load} />;
   if (loading && users.length === 0) return <SkeletonTable rows={10} />;
@@ -60,6 +80,25 @@ export default function Users() {
         }} id="users-title">
           Users ({total})
         </h2>
+        {successMessage && (
+          <div style={{
+            position: 'fixed',
+            top: theme.space[4],
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: theme.colors.successMuted || 'rgba(52, 211, 153, 0.2)',
+            border: `1px solid ${theme.colors.success || '#34D399'}`,
+            borderRadius: theme.radius.md,
+            padding: `${theme.space[2]} ${theme.space[4]}`,
+            color: theme.colors.success || '#34D399',
+            fontSize: theme.fontSize.sm,
+            fontWeight: theme.fontWeight.semibold,
+            zIndex: 1000,
+            boxShadow: theme.glass.shadow,
+          }}>
+            {successMessage}
+          </div>
+        )}
         <form onSubmit={handleSearch} style={{ display: 'flex', gap: theme.space[2] }}>
           <input
             value={search}
@@ -127,12 +166,14 @@ export default function Users() {
                 <td style={{ padding: `${theme.space[3]} ${theme.space[4]}`, color: theme.colors.textDim, fontSize: theme.fontSize.xs }}>{new Date(u.created_at).toLocaleDateString()}</td>
                 <td style={{ padding: `${theme.space[3]} ${theme.space[4]}` }}>
                   <div style={{ display: 'flex', gap: theme.space[1] }}>
-                    <GlassButton variant={u.is_active ? 'danger' : 'success'} onClick={() => adminApi.toggleUserActive(u.id, !u.is_active).then(load)} style={{ padding: `${theme.space[1]} ${theme.space[2]}`, fontSize: theme.fontSize.xs }}>
+                    <GlassButton variant={u.is_active ? 'danger' : 'success'} onClick={() => handleToggleActive(u)} style={{ padding: `${theme.space[1]} ${theme.space[2]}`, fontSize: theme.fontSize.xs }}>
                       {u.is_active ? 'Ban' : 'Unban'}
                     </GlassButton>
                     <select
-                      onChange={e => adminApi.setUserRole(u.id, e.target.value).then(load)}
+                      onChange={e => handleRoleChange(u, e.target.value)}
                       value={u.role}
+                      title="Admin only — moderators cannot change roles"
+                      aria-label={`Set role for ${u.display_name}`}
                       style={{
                         padding: theme.space[1],
                         borderRadius: theme.radius.sm,
@@ -157,7 +198,7 @@ export default function Users() {
       <div style={{ display: 'flex', justifyContent: 'center', gap: theme.space[2], marginTop: theme.space[4] }}>
         <GlassButton variant="secondary" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Prev</GlassButton>
         <span style={{ color: theme.colors.textMuted, alignSelf: 'center', fontSize: theme.fontSize.sm }}>Page {page}</span>
-        <GlassButton variant="secondary" onClick={() => setPage(p => p + 1)}>Next →</GlassButton>
+        <GlassButton variant="secondary" disabled={page * PAGE_SIZE >= total} onClick={() => setPage(p => p + 1)}>Next →</GlassButton>
       </div>
     </div>
   );

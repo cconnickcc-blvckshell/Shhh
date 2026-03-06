@@ -86,11 +86,12 @@ router.delete('/push-token', authenticate, validate(z.object({
 });
 
 router.get('/admin-bypass-status', (_req, res) => {
-  const bypassAllowed =
-    process.env.OTP_DEV_BYPASS === 'true' || process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+  // V3: In production, return nothing useful (no bypass hint)
+  const isProduction = process.env.NODE_ENV === 'production';
+  const bypassAllowed = !isProduction && process.env.NODE_ENV === 'test';
   res.json({
     bypassAvailable: bypassAllowed,
-    hint: !bypassAllowed ? 'Set OTP_DEV_BYPASS=true in Render → Environment' : undefined,
+    ...(isProduction ? {} : !bypassAllowed ? { hint: 'Bypass only in NODE_ENV=test' } : {}),
   });
 });
 router.post('/admin-bypass', authRateLimiter, controller.adminBypass);

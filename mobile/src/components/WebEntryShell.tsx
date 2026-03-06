@@ -28,7 +28,7 @@ const TRUST_POINTS = [
   'Open safety reporting with 24hr SLA',
 ];
 
-export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
+export function WebEntryShell({ onEnter, onSignUp }: { onEnter: () => void; onSignUp?: () => void }) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
 
@@ -52,7 +52,7 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
             resizeMode="contain"
           />
           <View style={s.navRight}>
-            <Pressable onPress={onEnter} style={s.navSignUpBtn}>
+            <Pressable onPress={onSignUp ?? onEnter} style={s.navSignUpBtn}>
               <Text style={s.navSignUpText}>Sign Up</Text>
             </Pressable>
             <Pressable onPress={onEnter} style={s.navLoginBtn}>
@@ -73,7 +73,7 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
           </Text>
 
           <View style={s.heroCTARow}>
-            <Pressable onPress={onEnter} style={s.heroCTA}>
+            <Pressable onPress={onSignUp ?? onEnter} style={s.heroCTA}>
               <Text style={s.heroCTAText}>Enter Shhh</Text>
               <Ionicons name="arrow-forward" size={18} color="#fff" />
             </Pressable>
@@ -162,7 +162,7 @@ export function WebEntryShell({ onEnter }: { onEnter: () => void }) {
       <View style={[s.section, s.ctaSection]}>
         <Text style={s.ctaTitle}>Your secret is safe</Text>
         <Text style={s.ctaSub}>Join the community that knows when to disappear.</Text>
-        <Pressable onPress={onEnter} style={s.finalCTA}>
+        <Pressable onPress={onSignUp ?? onEnter} style={s.finalCTA}>
           <Text style={s.finalCTAText}>Get Started</Text>
           <Ionicons name="arrow-forward" size={18} color="#fff" />
         </Pressable>
