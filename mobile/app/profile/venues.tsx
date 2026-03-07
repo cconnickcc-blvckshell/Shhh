@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { venuesApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell, Card } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
+import { SafeState } from '../../src/components/ui';
 
 export default function MyVenuesScreen() {
   const [venues, setVenues] = useState<any[]>([]);
@@ -15,15 +19,28 @@ export default function MyVenuesScreen() {
     return () => { cancelled = true; };
   }, []);
 
+  if (loading && venues.length === 0) {
+    return (
+      <PremiumDarkBackground style={styles.wrapper}>
+        <PageShell>
+          <SafeState variant="loading" message="Loading venues..." />
+        </PageShell>
+      </PremiumDarkBackground>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>My Venues</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <PremiumDarkBackground style={styles.wrapper}>
+      <PageShell>
+        <SubPageHeader
+          title="Venues"
+          subtitle="Venues you manage"
+          rightAction={
+            <TouchableOpacity onPress={() => router.push('/profile/create-venue')} style={styles.headerBtn}>
+              <Ionicons name="add-circle" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          }
+        />
 
       <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/profile/create-venue')} activeOpacity={0.8}>
         <Ionicons name="add-circle" size={22} color="#fff" />
@@ -31,9 +48,7 @@ export default function MyVenuesScreen() {
       </TouchableOpacity>
 
       <Text style={styles.sectionTitle}>Venues I manage</Text>
-      {loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
-      ) : venues.length === 0 ? (
+      {venues.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="business-outline" size={48} color={colors.textMuted} />
           <Text style={styles.emptyText}>No venues yet</Text>
@@ -42,7 +57,8 @@ export default function MyVenuesScreen() {
       ) : (
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           {venues.map((v) => (
-            <TouchableOpacity key={v.id} style={styles.card} onPress={() => router.push(`/profile/venue-dashboard/${v.id}`)} activeOpacity={0.8}>
+            <Card key={v.id} style={styles.venueCard}>
+            <TouchableOpacity onPress={() => router.push(`/profile/venue-dashboard/${v.id}`)} activeOpacity={0.8}>
               <View style={styles.cardRow}>
                 <Text style={styles.cardTitle}>{v.name}</Text>
                 <View style={[styles.roleBadge, v.myRole === 'owner' && styles.roleOwner]}>
@@ -52,18 +68,18 @@ export default function MyVenuesScreen() {
               {v.tagline && <Text style={styles.cardTagline}>{v.tagline}</Text>}
               <Text style={styles.cardMeta}>Dashboard →</Text>
             </TouchableOpacity>
+            </Card>
           ))}
         </ScrollView>
       )}
-    </View>
+      </PageShell>
+    </PremiumDarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.md },
-  backBtn: { padding: spacing.sm },
-  title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
+  wrapper: { flex: 1 },
+  headerBtn: { padding: spacing.xs },
   createBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
     backgroundColor: colors.primary, marginHorizontal: spacing.lg, paddingVertical: 14, borderRadius: borderRadius.lg,
@@ -72,7 +88,7 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '600', marginTop: spacing.xl, marginHorizontal: spacing.lg, marginBottom: spacing.sm },
   list: { flex: 1 },
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
-  card: { backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.lg, marginBottom: spacing.md },
+  venueCard: { marginBottom: spacing.md },
   cardRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 },
   cardTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700', flex: 1 },
   roleBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },

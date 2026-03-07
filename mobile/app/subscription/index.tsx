@@ -1,9 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
 
 const TIER_DETAILS = [
   { id: 'free', name: 'Free', price: '$0', icon: 'person-outline', color: 'rgba(255,255,255,0.3)',
@@ -46,20 +49,21 @@ export default function SubscriptionScreen() {
         Alert.alert('Checkout', 'No checkout URL returned. Try again later.');
       }
     } catch (err: any) {
-      Alert.alert('Info', err.message || 'Stripe not configured yet. Coming soon!');
+      const msg = err.message || 'Stripe not configured yet.';
+      if (/not configured|coming soon/i.test(msg)) {
+        Alert.alert('Coming Soon', 'Premium plans are launching soon. We\'ll notify you when they\'re available.');
+      } else {
+        Alert.alert('Info', msg);
+      }
     }
   };
 
   return (
-    <ScrollView style={s.container} bounces={false}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
-        <Text style={s.title}>Premium</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <PremiumDarkBackground style={s.wrapper}>
+      <PageShell>
+        <SubPageHeader title="Premium" subtitle="More privacy. More control." />
 
+      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} bounces={false}>
       <View style={s.heroSection}>
         <Text style={s.heroTitle}>More privacy.{'\n'}More control.</Text>
         <Text style={s.heroSub}>Pay for discretion, not exposure.</Text>
@@ -102,18 +106,19 @@ export default function SubscriptionScreen() {
       <Text style={s.disclaimer}>Cancel anytime. No hidden fees.</Text>
       <View style={{ height: 40 }} />
     </ScrollView>
+      </PageShell>
+    </PremiumDarkBackground>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 8 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
-  title: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  heroSection: { paddingHorizontal: 20, paddingVertical: 30, alignItems: 'center' },
+  wrapper: { flex: 1 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: spacing.xxl },
+  heroSection: { paddingHorizontal: spacing.lg, paddingVertical: 30, alignItems: 'center' },
   heroTitle: { color: '#fff', fontSize: 28, fontWeight: '900', textAlign: 'center', lineHeight: 36 },
   heroSub: { color: 'rgba(255,255,255,0.4)', fontSize: 14, marginTop: 8 },
-  tierCard: { marginHorizontal: 16, marginBottom: 12, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', position: 'relative', overflow: 'hidden' },
+  tierCard: { marginHorizontal: spacing.lg, marginBottom: 12, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', position: 'relative', overflow: 'hidden' },
   tierCurrent: { borderColor: colors.primaryLight },
   tierPopular: { borderColor: colors.primaryLight, backgroundColor: 'rgba(147,51,234,0.06)' },
   popularBadge: { position: 'absolute', top: 0, right: 0, backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 4, borderBottomLeftRadius: 10 },

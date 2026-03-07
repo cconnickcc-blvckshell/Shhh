@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { couplesApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
+import { SafeState } from '../../src/components/ui';
 
 export default function CoupleScreen() {
   const [couple, setCouple] = useState<any>(null);
@@ -68,15 +71,20 @@ export default function CoupleScreen() {
     } catch (err: any) { Alert.alert('Error', err.message); }
   };
 
-  if (loading) return <View style={styles.container}><Text style={styles.loadingText}>Loading...</Text></View>;
+  if (loading) {
+    return (
+      <PremiumDarkBackground style={styles.wrapper}>
+        <PageShell>
+          <SafeState variant="loading" message="Loading..." />
+        </PageShell>
+      </PremiumDarkBackground>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={colors.text} /></TouchableOpacity>
-        <Text style={styles.title}>Couple Settings</Text>
-        <View style={{ width: 24 }} />
-      </View>
+    <PremiumDarkBackground style={styles.wrapper}>
+      <PageShell>
+        <SubPageHeader title="Couple" subtitle="Link with a partner" />
 
       {couple && couple.status === 'active' ? (
         <View style={styles.body}>
@@ -140,16 +148,14 @@ export default function CoupleScreen() {
           </View>
         </View>
       )}
-    </View>
+      </PageShell>
+    </PremiumDarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  loadingText: { color: colors.textMuted, textAlign: 'center', marginTop: 40 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.lg },
-  title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
-  body: { padding: spacing.lg },
+  wrapper: { flex: 1 },
+  body: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   coupleCard: { backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.xl, alignItems: 'center', marginBottom: spacing.lg },
   partnersRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginBottom: spacing.md },
   partnerAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },

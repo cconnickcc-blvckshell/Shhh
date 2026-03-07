@@ -45,10 +45,11 @@ Master list of improvements for the Me (Profile) section. Status: ✅ Done | ⬜
 | 14 | Album: Add "Add photo" in album detail | ✅ |
 | 15 | Album: `albumsApi.addMedia` in mobile client | ✅ |
 | 16 | Profile menu: Remove duplicate Venues/My Venues | ✅ |
-| 17 | Create venue: Add location picker (replace DEFAULT_LAT/LNG) | ⬜ |
-| 18 | Create/Edit event: Date/time pickers | ⬜ |
-| 19 | Verification: Implement Tier 2 ID flow | ⬜ |
-| 20 | Subscription: Handle "Stripe not configured" | ⬜ |
+| 17 | Hosting: Edit button on event cards → event-edit | ✅ |
+| 18 | Create venue: Add location picker (replace DEFAULT_LAT/LNG) | ⬜ |
+| 19 | Create/Edit event: Date/time pickers | ⬜ |
+| 20 | Verification: Implement Tier 2 ID flow | ⬜ |
+| 21 | Subscription: Handle "Stripe not configured" with friendly message | ✅ |
 
 ---
 
@@ -56,18 +57,18 @@ Master list of improvements for the Me (Profile) section. Status: ✅ Done | ⬜
 
 | Page | PageShell | PremiumDark | SubPageHeader | SafeState |
 |------|-----------|-------------|---------------|-----------|
-| profile/hosting | ⬜ | ✅ | ⬜ | ⬜ |
-| profile/venues | ⬜ | ⬜ | ⬜ | ⬜ |
+| profile/hosting | ✅ | ✅ | ✅ | ✅ |
+| profile/venues | ✅ | ✅ | ✅ | ✅ |
 | profile/create-venue | ⬜ | ✅ | ⬜ | ⬜ |
 | profile/venue-dashboard/[id] | ⬜ | ⬜ | ⬜ | ⬜ |
 | profile/venue-edit/[id] | ⬜ | ✅ | ⬜ | ⬜ |
 | profile/create-event | ⬜ | ✅ | ⬜ | ⬜ |
 | profile/event-edit/[id] | ⬜ | ✅ | ⬜ | ⬜ |
-| couple | ⬜ | ⬜ | ⬜ | ⬜ |
-| verify | ⬜ | ⬜ | ⬜ | ⬜ |
-| whispers | ⬜ | ⬜ | ⬜ | ⬜ |
+| couple | ✅ | ✅ | ✅ | ✅ |
+| verify | ✅ | ✅ | ✅ | ✅ |
+| whispers | ✅ | ✅ | ✅ | ⬜ |
 | groups | ⬜ | ✅ | ⬜ | ⬜ |
-| subscription | ⬜ | ⬜ | ⬜ | ⬜ |
+| subscription | ✅ | ✅ | ✅ | ⬜ |
 | content/guides | ⬜ | ⬜ | ⬜ | ⬜ |
 | content/norms | ⬜ | ⬜ | ⬜ | ⬜ |
 

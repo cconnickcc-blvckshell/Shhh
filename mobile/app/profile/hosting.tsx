@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { eventsApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell, Card } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
+import { SafeState } from '../../src/components/ui';
 
 export default function HostingScreen() {
   const [events, setEvents] = useState<any[]>([]);
@@ -16,16 +19,28 @@ export default function HostingScreen() {
     return () => { cancelled = true; };
   }, []);
 
+  if (loading && events.length === 0) {
+    return (
+      <PremiumDarkBackground style={styles.wrapper}>
+        <PageShell>
+          <SafeState variant="loading" message="Loading your events..." />
+        </PageShell>
+      </PremiumDarkBackground>
+    );
+  }
+
   return (
-    <PremiumDarkBackground>
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Hosting</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <PremiumDarkBackground style={styles.wrapper}>
+      <PageShell>
+        <SubPageHeader
+          title="Hosting"
+          subtitle="Events you're hosting"
+          rightAction={
+            <TouchableOpacity onPress={() => router.push('/profile/create-event')} style={styles.headerBtn}>
+              <Ionicons name="add-circle" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          }
+        />
 
       <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/profile/create-event')} activeOpacity={0.8}>
         <Ionicons name="add-circle" size={22} color="#fff" />
@@ -33,9 +48,7 @@ export default function HostingScreen() {
       </TouchableOpacity>
 
       <Text style={styles.sectionTitle}>Events I'm hosting</Text>
-      {loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
-      ) : events.length === 0 ? (
+      {events.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="calendar-outline" size={48} color={colors.textMuted} />
           <Text style={styles.emptyText}>No events yet</Text>
@@ -44,27 +57,32 @@ export default function HostingScreen() {
       ) : (
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           {events.map((evt) => (
-            <TouchableOpacity key={evt.id} style={styles.card} onPress={() => router.push(`/event/${evt.id}`)} activeOpacity={0.8}>
-              <Text style={styles.cardTitle}>{evt.title}</Text>
-              {evt.venue_name && <Text style={styles.cardVenue}>📍 {evt.venue_name}</Text>}
-              <Text style={styles.cardMeta}>
-                {evt.starts_at ? new Date(evt.starts_at).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}
-                {evt.attendee_count != null && ` · ${evt.attendee_count} going`}
-              </Text>
-            </TouchableOpacity>
+            <Card key={evt.id} style={styles.eventCard}>
+              <View style={styles.eventCardContent}>
+                <TouchableOpacity onPress={() => router.push(`/event/${evt.id}`)} activeOpacity={0.8} style={styles.eventCardText}>
+                  <Text style={styles.cardTitle}>{evt.title}</Text>
+                  {evt.venue_name && <Text style={styles.cardVenue}>📍 {evt.venue_name}</Text>}
+                  <Text style={styles.cardMeta}>
+                    {evt.starts_at ? new Date(evt.starts_at).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}
+                    {evt.attendee_count != null && ` · ${evt.attendee_count} going`}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push(`/profile/event-edit/${evt.id}`)} hitSlop={12} style={styles.editBtn}>
+                  <Ionicons name="pencil" size={18} color={colors.primaryLight} />
+                </TouchableOpacity>
+              </View>
+            </Card>
           ))}
         </ScrollView>
       )}
-    </View>
+      </PageShell>
     </PremiumDarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.md },
-  backBtn: { padding: spacing.sm },
-  title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
+  wrapper: { flex: 1 },
+  headerBtn: { padding: spacing.xs },
   createBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
     backgroundColor: colors.primary, marginHorizontal: spacing.lg, paddingVertical: 14, borderRadius: borderRadius.lg,
@@ -73,7 +91,10 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '600', marginTop: spacing.xl, marginHorizontal: spacing.lg, marginBottom: spacing.sm },
   list: { flex: 1 },
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
-  card: { backgroundColor: 'rgba(14,11,22,0.9)', borderRadius: borderRadius.lg, padding: spacing.lg, marginBottom: spacing.md, borderWidth: 1, borderColor: 'rgba(147,51,234,0.2)' },
+  eventCard: { marginBottom: spacing.md },
+  eventCardContent: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md },
+  eventCardText: { flex: 1 },
+  editBtn: { padding: spacing.xs },
   cardTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
   cardVenue: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: 4 },
   cardMeta: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 4 },

@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/api/client';
 import { usePhotoUpload } from '../../src/hooks/usePhotoUpload';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 import { mapApiError } from '../../src/utils/errorMapper';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell, Card } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
+import { SafeState } from '../../src/components/ui';
 
 const TIERS = [
   { tier: 0, label: 'Basic', desc: 'Phone verified — browse only', icon: 'phone-portrait', color: colors.textMuted },
@@ -29,6 +32,16 @@ export default function VerificationScreen() {
 
   useEffect(() => { load(); }, []);
 
+  if (loading && !status) {
+    return (
+      <PremiumDarkBackground style={styles.wrapper}>
+        <PageShell>
+          <SafeState variant="loading" message="Loading verification status..." />
+        </PageShell>
+      </PremiumDarkBackground>
+    );
+  }
+
   const submitPhotoVerification = async (useCamera: boolean) => {
     const result = useCamera
       ? await takePhotoAndUpload('photos')
@@ -47,20 +60,17 @@ export default function VerificationScreen() {
   const currentTier = status?.currentTier || 0;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={colors.text} /></TouchableOpacity>
-        <Text style={styles.title}>Verification</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <View style={styles.progressCard}>
+    <PremiumDarkBackground style={styles.wrapper}>
+      <PageShell>
+        <SubPageHeader title="Verification" subtitle="Unlock more features" />
+        <ScrollView style={styles.container} contentContainerStyle={styles.content} bounces={false}>
+      <Card style={styles.progressCard}>
         <Text style={styles.progressLabel}>Current Level</Text>
         <Text style={styles.progressTier}>Tier {currentTier}</Text>
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${(currentTier / 3) * 100}%` }]} />
         </View>
-      </View>
+      </Card>
 
       {TIERS.map((t) => {
         const isComplete = currentTier >= t.tier;
@@ -68,7 +78,7 @@ export default function VerificationScreen() {
         const pending = status?.verifications?.find((v: any) => (t.tier === 1 && v.type === 'photo' || t.tier === 2 && v.type === 'id') && v.status === 'pending');
 
         return (
-          <View key={t.tier} style={[styles.tierCard, isComplete && styles.tierComplete, isCurrent && styles.tierCurrent]}>
+          <Card key={t.tier} style={[styles.tierCard, isComplete && styles.tierComplete, isCurrent && styles.tierCurrent]}>
             <View style={[styles.tierIcon, { backgroundColor: isComplete ? t.color + '25' : colors.surfaceLight }]}>
               <Ionicons name={t.icon as any} size={22} color={isComplete ? t.color : colors.textMuted} />
             </View>
@@ -95,7 +105,7 @@ export default function VerificationScreen() {
             ) : (
               <Ionicons name="lock-closed" size={20} color={colors.textMuted} />
             )}
-          </View>
+          </Card>
         );
       })}
 
@@ -112,21 +122,22 @@ export default function VerificationScreen() {
           ))}
         </View>
       )}
-    </ScrollView>
+        </ScrollView>
+      </PageShell>
+    </PremiumDarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
-  title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
-  progressCard: { backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.lg, marginBottom: spacing.lg, alignItems: 'center' },
+  wrapper: { flex: 1 },
+  container: { flex: 1 },
+  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  progressCard: { marginBottom: spacing.lg, alignItems: 'center' },
   progressLabel: { color: colors.textMuted, fontSize: fontSize.xs },
   progressTier: { color: colors.primary, fontSize: fontSize.xxl, fontWeight: '800', marginVertical: spacing.sm },
   progressBar: { width: '100%', height: 6, backgroundColor: colors.surfaceLight, borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
-  tierCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.sm },
+  tierCard: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   tierComplete: { borderWidth: 1, borderColor: colors.border },
   tierCurrent: { borderWidth: 1, borderColor: colors.primary },
   tierIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },

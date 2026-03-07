@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, Alert } from 'react-native';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell, Card } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
 
 export default function WhisperInboxScreen() {
   const [tab, setTab] = useState<'inbox' | 'sent'>('inbox');
@@ -37,12 +39,9 @@ export default function WhisperInboxScreen() {
   };
 
   return (
-    <View style={s.container}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <Text style={s.title}>Whispers</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <PremiumDarkBackground style={s.wrapper}>
+      <PageShell>
+        <SubPageHeader title="Whispers" subtitle="Anonymous messages" />
 
       <View style={s.tabs}>
         <TouchableOpacity style={[s.tab, tab === 'inbox' && s.tabActive]} onPress={() => setTab('inbox')}>
@@ -123,16 +122,14 @@ export default function WhisperInboxScreen() {
           </View>
         }
       />
-    </View>
+      </PageShell>
+    </PremiumDarkBackground>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 8 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
-  title: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  tabs: { flexDirection: 'row', marginHorizontal: 16, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3, marginBottom: 8 },
+  wrapper: { flex: 1 },
+  tabs: { flexDirection: 'row', marginHorizontal: spacing.lg, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3, marginBottom: 8 },
   tab: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 8 },
   tabActive: { backgroundColor: colors.primary },
   tabText: { color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: '600' },
