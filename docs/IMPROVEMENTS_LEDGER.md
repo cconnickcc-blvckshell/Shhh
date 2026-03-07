@@ -2,7 +2,7 @@
 
 > **Purpose:** Single ledger for planned implementations, ideas, and enhancements. All entries scored for feasibility, impact, and effort.  
 > **Last updated:** March 2026  
-> **Source:** GPT operational review, archived docs (GAME_CHANGER_ROADMAP, ADMIN_DASHBOARD_FUTURE_PLAN, ME_SECTION_IMPROVEMENTS, FEATURE_ADDITIONS_CRITIQUE, ARCHITECTURE_SCALE_RISK_DEEP_DIVE, CSUITE_MASTER_AUDIT, etc.)
+> **Source:** GPT operational review, GPT polish review, archived docs (GAME_CHANGER_ROADMAP, ADMIN_DASHBOARD_FUTURE_PLAN, ME_SECTION_IMPROVEMENTS, FEATURE_ADDITIONS_CRITIQUE, ARCHITECTURE_SCALE_RISK_DEEP_DIVE, CSUITE_MASTER_AUDIT, etc.)
 
 ---
 
@@ -315,11 +315,224 @@
 
 ---
 
-## Part C: Strategic Note — Venues as the Weapon
+## Part C: Polish & Interaction Quality (GPT Review)
+
+*"The difference between a side project and a premium product is rarely giant features. It's thousands of tiny behaviors that make the system feel predictable, responsive, and trustworthy."*
+
+### C.1 Instant Feedback Loops (Optimistic UI)
+
+**Idea:** Message sent → bubble appears immediately with "sending"; like pressed → heart animates; photo upload → progress indicator appears. App behaves as if action succeeded while network catches up.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 5 | 5 | 3 | P1 | Not started |
+
+**Notes:** Backend ready; mobile needs optimistic flows for messaging, likes, uploads.
+
+---
+
+### C.2 State Transparency
+
+**Idea:** "Connecting…" when WebSocket reconnects; "Uploading photo 63%"; "Retrying message…"; "last seen 2m ago"; "typing…"; "message delivered."
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 5 | 5 | 2 | P1 | Partial (typing, presence exist) |
+
+**Notes:** Reconnect banner, upload progress, retry states missing.
+
+---
+
+### C.3 Failure Resilience
+
+**Idea:** Failed message → "Tap to retry"; offline → messages queue, UI shows "offline", sync when back. User shouldn't think about network.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 4 | 5 | 3 | P1 | Not started |
+
+**Notes:** No offline queue or retry UI; idempotency makes retries safe.
+
+---
+
+### C.4 Correct Unread Counts Everywhere
+
+**Idea:** Unread counts consistent across chat list, conversation, push, badges, WebSocket. One drift = lost trust.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 3 | 5 | 2 | P0 | Partial (getUnreadTotal, badge exist) |
+
+**Notes:** Overlaps A.2 State Synchronization; needs sync protocol.
+
+---
+
+### C.5 Intelligent Notifications
+
+**Idea:** Multiple messages → one "3 new messages"; "John and 2 others liked you"; no push if conversation already open.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 4 | 5 | 3 | P1 | Partial (InAppToast suppresses when in conversation) |
+
+**Notes:** Overlaps A.1 Notification Orchestration; server-side aggregation missing.
+
+---
+
+### C.6 Empty States That Guide Behavior
+
+**Idea:** "Nothing near you tonight yet. Start something → Create an event." instead of "No events found." Micro-onboarding moments.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 5 | 4 | 2 | P2 | Not started |
+
+**Notes:** Discovery, events, albums, whispers need tailored empty states + CTAs.
+
+---
+
+### C.7 Consistent Animation Language
+
+**Idea:** Modals slide up; back slides right; new content fades in. Humans notice inconsistency.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 5 | 4 | 2 | P2 | Not started |
+
+**Notes:** Define shared rules; apply across modals, navigation, content.
+
+---
+
+### C.8 Predictable Navigation Behavior
+
+**Idea:** Back always works same; swipe consistent; tabs preserve scroll position.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 5 | 4 | 1 | P2 | Partial (Expo Router defaults) |
+
+**Notes:** Audit custom nav and deep links.
+
+---
+
+### C.9 Privacy Cues
+
+**Idea:** Blur indicators; "Only visible to matches" badges; "Anonymous mode active." Build trust.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 5 | 5 | 2 | P1 | Partial (blur exists; cues not surfaced) |
+
+**Notes:** Discovery, profile, whispers, venue check-in need badges.
+
+---
+
+### C.10 Progressive Disclosure
+
+**Idea:** Basic profile first; advanced options behind toggle; safety tools when needed.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 5 | 4 | 2 | P2 | Partial |
+
+**Notes:** "Advanced" toggle for event creation, profile.
+
+---
+
+### C.11 Small Social Signals
+
+**Idea:** Typing indicators; read receipts; "Last active"; reaction emojis. Missing = feels empty.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 4 | 4 | 3 | P2 | Partial (typing, presence) |
+
+**Notes:** Read receipts, reactions need schema + UI.
+
+---
+
+### C.12 Polished Onboarding Friction
+
+**Idea:** Minimal info first; show value immediately; delay complexity. Browse discovery before full profile.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 4 | 5 | 3 | P1 | Not started |
+
+**Notes:** Product decision: allow browse without full profile.
+
+---
+
+### C.13 Micro-Copy Quality
+
+**Idea:** "We couldn't send that message. Tap to try again." instead of "Error: invalid request." Human tone.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 5 | 4 | 2 | P2 | Partial (mapApiError exists) |
+
+**Notes:** Centralize error-to-copy mapping; consistent tone.
+
+---
+
+### C.14 Performance Consistency
+
+**Idea:** Smooth scrolling; image loading; screen transitions. Same everywhere.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 4 | 4 | 3 | P2 | Partial |
+
+**Notes:** Virtualization for Discovery, events, albums; image optimization.
+
+---
+
+### C.15 Edge-Case Handling
+
+**Idea:** User deleted mid-conversation; message expires while reading; event cancelled while RSVP'd; mutual block. Handle gracefully.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 4 | 5 | 3 | P1 | Not started |
+
+**Notes:** Deletion/MongoDB gap; expiry UI; cancellation flow; block race.
+
+---
+
+### C.16 Psychological Trick (TBD)
+
+**Idea:** *"One psychological trick that nearly every successful social app uses—something surprisingly simple that dramatically increases engagement—and it would fit your platform extremely well."* — GPT (details pending).
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| TBD | TBD | TBD | TBD | Awaiting GPT details |
+
+**Notes:** Likely candidates: variable reward (pull-to-refresh), social proof, reciprocity, FOMO, scarcity. To be reviewed when GPT provides specifics.
+
+---
+
+## Part D: Strategic Note — Venues as the Weapon
 
 > *"The real strategic weapon in this platform isn't chat or discovery. It's venues. That single system could completely change how the network grows and monetizes if it's designed correctly."*
 
 **Implication:** Prioritize venue-centric improvements (B.1, A.10) when sequencing growth vs. pure feature work.
+
+---
+
+## Part E: Polish Quick Reference
+
+| Rank | Entry | Impact | Feas | Urgency |
+|------|-------|--------|------|---------|
+| 1 | C.4 Unread counts | 5 | 3 | P0 |
+| 2 | C.1 Optimistic UI | 5 | 5 | P1 |
+| 3 | C.2 State transparency | 5 | 5 | P1 |
+| 4 | C.3 Failure resilience | 5 | 4 | P1 |
+| 5 | C.5 Intelligent notifications | 5 | 4 | P1 |
+| 6 | C.9 Privacy cues | 5 | 5 | P1 |
+| 7 | C.12 Onboarding friction | 5 | 4 | P1 |
+| 8 | C.15 Edge-case handling | 5 | 4 | P1 |
+| 9 | C.6 Empty states | 4 | 5 | P2 |
+| 10 | C.7 Animation language | 4 | 5 | P2 |
 
 ---
 
