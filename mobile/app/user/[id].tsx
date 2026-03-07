@@ -186,6 +186,20 @@ export default function UserDetailScreen() {
           </View>
         )}
 
+        {/* Privacy cue */}
+        {profile.profileVisibilityTier === 'after_match' && (
+          <View style={s.privacyCue}>
+            <Ionicons name="lock-closed" size={12} color="rgba(255,255,255,0.5)" />
+            <Text style={s.privacyCueText}>Only visible to matches</Text>
+          </View>
+        )}
+        {profile.profileVisibilityTier === 'after_reveal' && (
+          <View style={s.privacyCue}>
+            <Ionicons name="eye" size={12} color="rgba(255,255,255,0.5)" />
+            <Text style={s.privacyCueText}>Visible after reveal</Text>
+          </View>
+        )}
+
         {/* Bio */}
         {profile.bio && <Text style={s.bio}>{profile.bio}</Text>}
 
@@ -328,6 +342,8 @@ const s = StyleSheet.create({
   intentRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   intentChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(147,51,234,0.1)', borderWidth: 1, borderColor: 'rgba(147,51,234,0.25)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14 },
   intentText: { color: colors.primaryLight, fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
+  privacyCue: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, alignSelf: 'flex-start' },
+  privacyCueText: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600' },
   bio: { color: 'rgba(255,255,255,0.75)', fontSize: 15, lineHeight: 23, marginBottom: 16 },
   section: { marginBottom: 16 },
   sectionLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginBottom: 8 },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Text, StyleSheet, ScrollView } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import { contentApi } from '../../src/api/client';
 import { colors, spacing, fontSize } from '../../src/constants/theme';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
@@ -32,7 +33,7 @@ export default function NormsScreen() {
         <SubPageHeader title={data?.title || 'Community Norms'} />
         <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
           {data?.bodyMd ? (
-            <Text style={s.body}>{data.bodyMd}</Text>
+            <Markdown style={mdStyles}>{data.bodyMd}</Markdown>
           ) : (
             <Text style={s.empty}>No norms available yet.</Text>
           )}
@@ -46,6 +47,14 @@ const s = StyleSheet.create({
   container: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: 48 },
-  body: { color: colors.textSecondary, fontSize: fontSize.md, lineHeight: 24 },
   empty: { color: colors.textMuted, fontSize: fontSize.md },
 });
+
+const mdStyles = {
+  body: { color: colors.textSecondary, fontSize: fontSize.md, lineHeight: 24 },
+  heading1: { color: colors.text, fontSize: 22, fontWeight: '800' as const, marginTop: 24, marginBottom: 8 },
+  heading2: { color: colors.text, fontSize: 18, fontWeight: '700' as const, marginTop: 20, marginBottom: 6 },
+  paragraph: { color: colors.textSecondary, fontSize: fontSize.md, lineHeight: 24, marginBottom: 12 },
+  link: { color: colors.primaryLight },
+  strong: { color: colors.text, fontWeight: '700' as const },
+};

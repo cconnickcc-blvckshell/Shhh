@@ -62,9 +62,16 @@ export default function WhisperInboxScreen() {
             <View style={s.whisperHeader}>
               <View style={s.anonIcon}><Ionicons name="ear" size={16} color={colors.primaryLight} /></View>
               <View style={{ flex: 1 }}>
-                <Text style={s.whisperFrom}>
-                  {tab === 'inbox' ? (item.revealed ? item.from_name : 'Anonymous') : item.to_name}
-                </Text>
+                <View style={s.whisperFromRow}>
+                  <Text style={s.whisperFrom}>
+                    {tab === 'inbox' ? (item.revealed ? item.from_name : 'Anonymous') : item.to_name}
+                  </Text>
+                  {tab === 'inbox' && !item.revealed && (
+                    <View style={s.anonBadge}>
+                      <Text style={s.anonBadgeText}>Anonymous</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={s.whisperDist}>{item.distance || 'nearby'}</Text>
               </View>
               <Text style={s.whisperTime}>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
@@ -141,7 +148,10 @@ const s = StyleSheet.create({
   whisperCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.06)' },
   whisperHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   anonIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(147,51,234,0.15)', alignItems: 'center', justifyContent: 'center' },
+  whisperFromRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   whisperFrom: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  anonBadge: { backgroundColor: 'rgba(147,51,234,0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  anonBadgeText: { color: 'rgba(179,92,255,0.9)', fontSize: 10, fontWeight: '700' },
   whisperDist: { color: 'rgba(255,255,255,0.35)', fontSize: 11 },
   whisperTime: { color: 'rgba(255,255,255,0.25)', fontSize: 11 },
   whisperMsg: { color: 'rgba(255,255,255,0.8)', fontSize: 16, fontStyle: 'italic', lineHeight: 24 },

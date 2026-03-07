@@ -267,16 +267,16 @@
 
 | Id | Idea | Feas | Impact | Effort | Urgency | Status |
 |----|------|------|-------|--------|---------|-------|
-| Edit Profile: Card sections | 5 | 2 | 1 | P3 | Not started |
+| Edit Profile: Card sections | 5 | 2 | 1 | P3 | ✅ Done (Wave 7) |
 | Character count for bio | 5 | 2 | 1 | P3 | ✅ Done (Wave 1) |
 | "Unsaved changes" warning | 5 | 3 | 1 | P2 | ✅ Done (Wave 1) |
-| User ID display + Copy | 5 | 2 | 1 | P3 | Not started |
+| User ID display + Copy | 5 | 2 | 1 | P3 | ✅ Done (Wave 7) |
 | Create venue: location picker | 4 | 4 | 2 | P1 | ✅ Done (Wave 4) |
 | Create/Edit event: date/time pickers | 5 | 4 | 2 | P1 | ✅ Done (Wave 4) |
 | Verification: Tier 2 ID flow | 3 | 5 | 4 | P1 | Not started |
 | Empty state illustrations | 4 | 4 | 2 | P2 | Not started |
 | Success toast on save | 5 | 3 | 1 | P2 | ✅ Done (Wave 1) |
-| Markdown in Guides/Norms | 4 | 3 | 2 | P2 | Not started |
+| Markdown in Guides/Norms | 4 | 3 | 2 | P2 | ✅ Done (Wave 8) |
 | Accessibility (labels, contrast) | 4 | 4 | 3 | P1 | Not started |
 
 ### B.7 Scale & Architecture (from ARCHITECTURE_SCALE_RISK_DEEP_DIVE)
@@ -291,7 +291,7 @@
 
 | Id | Idea | Feas | Impact | Effort | Urgency | Status |
 |----|------|------|-------|--------|---------|-------|
-| MongoDB purge for deleted users | Deletion worker extends to Mongo | 4 | 5 | 2 | P0 | Not started |
+| MongoDB purge for deleted users | Deletion worker extends to Mongo | 4 | 5 | 2 | P0 | Done |
 | JWT in httpOnly cookies (web) | Replace localStorage/sessionStorage | 3 | 4 | 2 | P1 | Not started |
 | /metrics authentication | Bearer or IP allowlist | 5 | 3 | 1 | P1 | Partial (METRICS_SECRET exists) |
 
@@ -442,9 +442,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 5 | 5 | 2 | P1 | Partial (blur exists; cues not surfaced) |
+| 5 | 5 | 2 | P1 | Partial |
 
-**Notes:** Discovery, profile, whispers, venue check-in need badges.
+**Notes:** Wave 7: "Only visible to matches" / "Visible after reveal" on user profile; "Anonymous" badge on whisper cards. Blur exists.
 
 ---
 
@@ -605,3 +605,33 @@
 | 8 | A.3 Idempotency extension | 4 | 5 | 2 |
 | 9 | B.6 Create venue: location picker | 4 | 4 | 2 |
 | 10 | B.6 Create/Edit event: date/time pickers | 4 | 5 | 2 |
+
+---
+
+## What Remains (Post–Wave 8)
+
+**High priority (P0–P1):**
+- **C.4** Unread counts sync protocol (cursor-based reconciliation)
+- **A.1** Notification orchestration (aggregate "3 new messages")
+- **A.2** State synchronization / reconciliation
+- **A.6** Visibility policy engine (single "Can A see B?" authority)
+- **A.9** Analytics instrumentation (conversion funnel, reply rates)
+- **B.6** Verification Tier 2 ID flow
+- **C.12** Polished onboarding friction
+- **C.15** Edge-case handling (user deleted mid-chat, event cancelled)
+- **B.8** JWT in httpOnly cookies (web)
+
+**Medium priority (P2):**
+- **A.5** Feed integrity (velocity checks, GPS plausibility)
+- **A.7** Moderation workflow automation
+- **A.10** Growth mechanics (invite flows, viral loops)
+- **B.5** Admin: 3D Globe, Marble Drop, Admin Control, Tier Funnel, Retention Cohorts
+- **C.7** Full animation application across modals
+- **B.6** Empty state illustrations, Accessibility (labels, contrast)
+- **GC-7.8** "No" as first-class (pass with reason)
+
+**Strategic / larger:**
+- Discovery engine (split contracts)
+- Outbox pattern (Postgres/Mongo/Redis consistency)
+- Entitlements engine
+- Supabase photo buckets

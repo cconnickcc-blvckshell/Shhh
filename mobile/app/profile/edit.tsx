@@ -8,7 +8,7 @@ import { usePhotoUpload } from '../../src/hooks/usePhotoUpload';
 import { useInAppToast } from '../../src/context/InAppToastContext';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
-import { PageShell } from '../../src/components/layout';
+import { PageShell, Card } from '../../src/components/layout';
 import { SubPageHeader } from '../../src/components/SubPageHeader';
 import { colors, spacing, layout } from '../../src/constants/theme';
 
@@ -220,7 +220,7 @@ export default function EditProfileScreen() {
           </View>
 
           {/* About — card section */}
-          <View style={s.card}>
+          <Card style={s.cardSection}>
             <Text style={s.sectionLabel}>ABOUT</Text>
             <Text style={s.label}>Display name</Text>
             <TextInput style={s.input} value={displayName} onChangeText={setDisplayName} placeholder="Your name" placeholderTextColor="rgba(255,255,255,0.2)" />
@@ -252,10 +252,10 @@ export default function EditProfileScreen() {
 
             <Text style={s.label}>Interests</Text>
             <TextInput style={s.input} value={kinks} onChangeText={setKinks} placeholder="social, dancing, parties" placeholderTextColor="rgba(255,255,255,0.2)" />
-          </View>
+          </Card>
 
           {/* Discovery & privacy — card section */}
-          <View style={s.card}>
+          <Card style={s.cardSection}>
             <Text style={s.sectionLabel}>DISCOVERY & PRIVACY</Text>
 
             <Text style={s.label}>Primary vibe</Text>
@@ -295,10 +295,10 @@ export default function EditProfileScreen() {
               </View>
               <Switch value={crossingPathsVisible} onValueChange={setCrossingPathsVisible} trackColor={{ false: 'rgba(255,255,255,0.1)', true: colors.primaryDark }} thumbColor={crossingPathsVisible ? colors.primaryLight : 'rgba(255,255,255,0.5)'} />
             </View>
-          </View>
+          </Card>
 
           {/* Hosting */}
-          <View style={s.card}>
+          <Card style={s.cardSection}>
             <View style={s.switchRow}>
               <View>
                 <Text style={s.switchLabel}>Available to Host</Text>
@@ -306,7 +306,7 @@ export default function EditProfileScreen() {
               </View>
               <Switch value={isHost} onValueChange={setIsHost} trackColor={{ false: 'rgba(255,255,255,0.1)', true: colors.primaryDark }} thumbColor={isHost ? colors.primaryLight : 'rgba(255,255,255,0.5)'} />
             </View>
-          </View>
+          </Card>
 
           <View style={{ height: 40 }} />
         </ScrollView>
@@ -345,19 +345,9 @@ const s = StyleSheet.create({
   uploadProgressBar: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.primary, borderRadius: 12 },
   uploadProgressText: { color: '#fff', fontSize: 10, fontWeight: '700', textAlign: 'center', zIndex: 1 },
 
-  card: {
+  cardSection: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    padding: spacing.lg,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
   },
 
   input: { backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', padding: 16, borderRadius: 12, fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },

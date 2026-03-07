@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../src/stores/auth';
@@ -46,7 +47,7 @@ const mStyles = StyleSheet.create({
 
 export default function ProfileScreen() {
   useScreenView('profile');
-  const { profile, logout, loadProfile, isAuthenticated } = useAuthStore();
+  const { profile, userId, logout, loadProfile, isAuthenticated } = useAuthStore();
   const location = useLocation();
   useEffect(() => {
     if (isAuthenticated && !profile) loadProfile();
@@ -94,6 +95,15 @@ export default function ProfileScreen() {
           <StatPill icon="star" value={profile?.experienceLevel || 'new'} color={colors.host} />
           {profile?.isHost && <StatPill icon="home" value="Host" color={colors.success} />}
         </View>
+
+        {/* User ID + Copy */}
+        {userId && (
+          <TouchableOpacity style={styles.userIdRow} onPress={() => Clipboard.setStringAsync(userId).then(() => Alert.alert('Copied', 'User ID copied to clipboard'))} activeOpacity={0.7}>
+            <Text style={styles.userIdLabel}>User ID</Text>
+            <Text style={styles.userIdValue} numberOfLines={1}>{userId}</Text>
+            <Ionicons name="copy-outline" size={16} color="rgba(255,255,255,0.4)" />
+          </TouchableOpacity>
+        )}
       </Card>
 
       {/* Interests */}
@@ -169,6 +179,9 @@ const styles = StyleSheet.create({
   name: { color: '#F7F2FF', fontSize: 26, fontWeight: '800', marginTop: 18, letterSpacing: -0.5 },
   bio: { color: 'rgba(255,255,255,0.45)', fontSize: 14, marginTop: 8, textAlign: 'center', maxWidth: 280, lineHeight: 22 },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 20 },
+  userIdRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 10 },
+  userIdLabel: { color: 'rgba(255,255,255,0.35)', fontSize: 11, fontWeight: '700', letterSpacing: 1 },
+  userIdValue: { flex: 1, color: 'rgba(255,255,255,0.5)', fontSize: 12, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
   section: { paddingHorizontal: 20, paddingVertical: 18, marginBottom: spacing.md },
   sectionHeader: { color: 'rgba(179,92,255,0.5)', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 10, textTransform: 'uppercase' },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
