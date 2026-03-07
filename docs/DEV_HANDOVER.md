@@ -1,7 +1,7 @@
 # Shhh — Developer Handover Document
 
 > **Version**: 0.6.0 | **Last updated**: March 2026 | **Status**: Active development  
-> **Implementation status:** **docs/AUDIT_AND_STATUS.md** (index), **docs/E2E_CAPABILITY_AUDIT_REPORT.md**, **docs/MASTER_IMPLEMENTATION_CHECKLIST.md**, **docs/ROADMAP.md** (planned work). Update the relevant §4.x and schema/API tables when adding or changing modules.
+> **Implementation status:** **docs/AUDIT_AND_STATUS.md** (index; audit reports in archive), **docs/ROADMAP.md** (planned work). Update the relevant §4.x and schema/API tables when adding or changing modules.
 
 ---
 
@@ -1508,13 +1508,13 @@ albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare}
 
 ### 6.5 Web layout (soft launch)
 
-**Navigation authority:** URL is the single source of truth; `<Tabs>` always mounted and uses `detachInactiveScreens` so only the active scene is attached; sidebar triggers `router.replace`; active tab derived from pathname via `src/lib/tabRoutes.ts`. **Layout spine:** Tab screens root with `PageShell`; optional `ContentColumn`/`Card` (`src/components/layout/`). **Me sub-pages:** Use `SubPageHeader` (back, title, right action), `PremiumDarkBackground`, `PageShell`, `SafeState`. See **docs/ME_SECTION_IMPROVEMENTS.md**. **Screen states:** `SafeState` (loading, empty, error, offline). See **docs/FRONTEND_REFACTOR_STRATEGY.md**.
+**Navigation authority:** URL is the single source of truth; `<Tabs>` always mounted and uses `detachInactiveScreens` so only the active scene is attached; sidebar triggers `router.replace`; active tab derived from pathname via `src/lib/tabRoutes.ts`. **Layout spine:** Tab screens root with `PageShell`; optional `ContentColumn`/`Card` (`src/components/layout/`). **Me sub-pages:** Use `SubPageHeader` (back, title, right action), `PremiumDarkBackground`, `PageShell`, `SafeState`. See **docs/archive/ME_SECTION_IMPROVEMENTS.md**. **Screen states:** `SafeState` (loading, empty, error, offline). See **docs/archive/FRONTEND_REFACTOR_STRATEGY.md**.
 
 When `Platform.OS === 'web'` and viewport width ≥ 1024px (`useBreakpoint().showSidebar`):
 
 - **Sidebar:** `WebSidebar` (`src/components/WebSidebar.tsx`) shows Explore, Chat, Events, Me; drives navigation via `router.replace`; pathname drives active state. Trust line “Private · Verified · Safe” in footer.
 - **Content:** Tabs render with tab bar hidden; content area wrapped in `maxWidth: theme.layout.contentMaxWidth` (1280px), centered.
-- **Entry:** Unauthenticated web users see `WebEntryShell` first from `(auth)/index` (hero line, “Enter”, “Learn how it works” modal); “Enter” reveals login form. See **docs/SOFT_LAUNCH_WEB_PLAN.md**.
+- **Entry:** Unauthenticated web users see `WebEntryShell` first from `(auth)/index` (hero line, “Enter”, “Learn how it works” modal); “Enter” reveals login form. See **docs/archive/SOFT_LAUNCH_WEB_PLAN.md**.
 - **Breakpoints:** `src/constants/breakpoints.ts`; `useBreakpoint()` for isDesktop, isWeb, contentMaxWidth. Discover 5 cols, Events 2 cols, Albums 4 cols on desktop.
 - **Signature interaction:** Discover cards use `useHover()` for glow + scale on hover. Sidebar items have focus ring for keyboard nav.
 
@@ -1546,7 +1546,7 @@ Photos are rendered using standard React Native `<Image>` components. Key detail
 - Profile photos are stored as JSONB in `photos_json` — an array of URL strings
 - Photos served from `/uploads` path on the backend via `express.static`
 - CORS is configured to `origin: '*'` for cross-origin image loading
-- **Blur:** Single authority via GET `/v1/photos/check/:userId`. `ProfilePhoto` receives `canSeeUnblurred` (from hook `useCanSeeUnblurred`); discovery tiles and user profile hero use it. When `canSeeUnblurred` is false or null, photo is blurred (opacity 0.3). See **docs/FRONTEND_REFACTOR_STRATEGY.md** §4 and **docs/UX_UI_SPEC.md** §5.1.
+- **Blur:** Single authority via GET `/v1/photos/check/:userId`. `ProfilePhoto` receives `canSeeUnblurred` (from hook `useCanSeeUnblurred`); discovery tiles and user profile hero use it. When `canSeeUnblurred` is false or null, photo is blurred (opacity 0.3). See **docs/archive/FRONTEND_REFACTOR_STRATEGY.md** §4 and **docs/UX_UI_SPEC.md** §5.1.
 - Thumbnails are generated server-side via Sharp
 
 ---
@@ -2031,7 +2031,7 @@ This distance is rounded to the nearest meter and sent as "245m away" or "nearby
 
 **Backend:** `push.service.ts` registers Expo push tokens, sends notifications via Expo Push API. Preferences stored in `user_profiles.preferences_json` (`push_messages`, `push_whispers`, `neutral_notifications`). Messaging and Whisper services call `PushService.sendPush()` when new content arrives.
 
-**Mobile:** `usePushNotifications` registers token on auth; `UnreadBadgeContext` fetches `GET /v1/conversations/unread-total` and sets app icon badge; `useNotificationResponse` deep-links from notification tap → chat or whispers; `InAppToastContext` shows foreground toast for new messages when not in that conversation. See **docs/PUSH_NOTIFICATIONS.md**.
+**Mobile:** `usePushNotifications` registers token on auth; `UnreadBadgeContext` fetches `GET /v1/conversations/unread-total` and sets app icon badge; `useNotificationResponse` deep-links from notification tap → chat or whispers; `InAppToastContext` shows foreground toast for new messages when not in that conversation. See **docs/archive/PUSH_NOTIFICATIONS.md**.
 
 ---
 
@@ -2273,7 +2273,7 @@ eas build --platform android
 
 ### 16.5 Load Testing (k6)
 
-See `loadtest/README.md` and `docs/LOADTEST.md`. Tiers: smoke (100 VUs, CI), baseline (1000, nightly), stress (10k), soak (4h), chaos.
+See `loadtest/README.md` and `docs/archive/LOADTEST.md`. Tiers: smoke (100 VUs, CI), baseline (1000, nightly), stress (10k), soak (4h), chaos.
 
 - **Seed:** `POST /v1/test/seed` creates users with tier 1 when `TEST_MODE=true`
 - **Response classification:** Status histograms and error class per endpoint at end of run
@@ -2404,7 +2404,7 @@ Used in `backend/src/modules/billing/subscription.service.ts` for Stripe checkou
 
 ### 18.3 Photos / Media — Buckets
 
-**No buckets required.** The app stores uploads on the **local filesystem** (`backend/uploads/`). On Render, the filesystem is ephemeral — uploads are lost on redeploy. For production persistence (albums, shared photos), add S3/Supabase Storage later. See **docs/SUPABASE_PHOTO_BUCKETS.md**.
+**No buckets required.** The app stores uploads on the **local filesystem** (`backend/uploads/`). On Render, the filesystem is ephemeral — uploads are lost on redeploy. For production persistence (albums, shared photos), add S3/Supabase Storage later. See **docs/archive/SUPABASE_PHOTO_BUCKETS.md**.
 
 ### 18.4 Twilio — Trial Limitations
 

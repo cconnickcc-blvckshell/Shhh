@@ -31,3 +31,28 @@ These documents were archived during the March 2026 documentation consolidation.
 | DEPLOYMENT_GUIDE.md | Merged into OPS_GUIDE |
 | ALERTING.md | Merged into OPS_GUIDE |
 | ENV_VARS_REFERENCE.md | Merged into DEV_HANDOVER §18 |
+| ADMIN_DASHBOARD_FUTURE_PLAN.md | Merged into ROADMAP; see UX_UI_SPEC §4 for current admin spec |
+| API_CHANGELOG.md | Historical; update when making breaking API changes |
+| ARCHITECTURE_SCALE_RISK_DEEP_DIVE.md | Scale risk analysis; reference for planning |
+| CONSOLIDATED_CTO_REVIEW.md | Merged into AUDIT_AND_STATUS index |
+| CSUITE_MASTER_AUDIT_REPORT.md | Detailed audit; indexed by AUDIT_AND_STATUS |
+| DATA_FLOWS.md | Sequence diagrams; reference for onboarding |
+| E2E_CAPABILITY_AUDIT_REPORT.md | Indexed by AUDIT_AND_STATUS |
+| FRONTEND_GAP_LIST.md | Gap list; indexed by AUDIT_AND_STATUS |
+| FRONTEND_REFACTOR_STRATEGY.md | Refactor strategy; reference |
+| GAME_CHANGER_ROADMAP.md | Detailed roadmap; merged into ROADMAP |
+| LAUNCH_PLAN.md | Launch blitz plan; reference |
+| MASTER_IMPLEMENTATION_CHECKLIST.md | Indexed by AUDIT_AND_STATUS |
+| ME_SECTION_IMPROVEMENTS.md | Merged into ROADMAP |
+| MOBILE_BUILD_RELEASE.md | EAS/build reference; see OPS_GUIDE |
+| MONETIZATION_AND_RETENTION_PLAN.md | Monetization reference |
+| PUSH_NOTIFICATIONS.md | Push reference; see DEV_HANDOVER §13.5 |
+| REVIEW_CREDENTIALS.md | Test credentials; see OPS_GUIDE |
+| SECURITY_AUDIT_ADVERSARIAL.md | Indexed by AUDIT_AND_STATUS |
+| SEO_SCHEMA_AUDIT_REPORT.md | Indexed by AUDIT_AND_STATUS |
+| SOFT_LAUNCH_WEB_PLAN.md | Web soft launch reference |
+| SUPABASE_PHOTO_BUCKETS.md | Photo bucket planning |
+| SUPABASE_REDIS_MONGO_SETUP.md | Merged into OPS_GUIDE |
+| SYSTEM_REALITY_REPORT.md | CTO audit reference |
+| UX_BEHAVIOR_SPEC.md | Companion to UX_UI_SPEC; invariants, flows |
+| UX_UI_AUDIT_REPORT.md | Indexed by AUDIT_AND_STATUS |

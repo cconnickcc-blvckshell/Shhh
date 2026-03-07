@@ -6,7 +6,7 @@ React + Vite moderation panel for the Shhh geosocial platform. Connects to the b
 
 - Backend API running at `http://localhost:3000` (see root [README](../README.md))
 - Docker services (PostgreSQL, Redis, MongoDB) and migrations applied
-- Seed data with admin-capable users (see [docs/REVIEW_CREDENTIALS.md](../docs/REVIEW_CREDENTIALS.md) for test credentials)
+- Seed data with admin-capable users (see [docs/archive/REVIEW_CREDENTIALS.md](../docs/archive/REVIEW_CREDENTIALS.md) for test credentials)
 
 ## Quick Start
 

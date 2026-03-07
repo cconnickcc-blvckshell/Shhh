@@ -10,7 +10,7 @@
 
 Shhh is a privacy-native, proximity-driven geosocial platform for adults. The backend is a monolithic Node.js (Express 4 + TypeScript) API designed for horizontal scaling, backed by **PostgreSQL** (with PostGIS for geospatial queries), **Redis** (caching, presence, OTP, rate limits, BullMQ job queue), and **MongoDB** (message storage with TTL). The admin dashboard is a React + Vite SPA; the primary client is a React Native + Expo 55 mobile app.
 
-**Target production stack:** Supabase (Postgres + PostGIS) + Redis (Upstash/Redis Cloud) + MongoDB (Atlas). See **docs/SUPABASE_REDIS_MONGO_SETUP.md**.
+**Target production stack:** Supabase (Postgres + PostGIS) + Redis (Upstash/Redis Cloud) + MongoDB (Atlas). See **docs/archive/SUPABASE_REDIS_MONGO_SETUP.md**.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

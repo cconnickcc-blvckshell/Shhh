@@ -16,7 +16,7 @@
 
 ## 1. Me Section Improvements
 
-**Source:** `docs/ME_SECTION_IMPROVEMENTS.md`
+**Source:** `docs/archive/ME_SECTION_IMPROVEMENTS.md`
 
 ### Completed
 
@@ -37,13 +37,13 @@
 | Create venue: Location picker | Phase 4 |
 | Create/Edit event: Date/time pickers | Phase 4 |
 | Verification: Tier 2 ID flow | Phase 4 |
-| Supabase photo buckets | Phase 6 — see `docs/SUPABASE_PHOTO_BUCKETS.md` |
+| Supabase photo buckets | Phase 6 — see `docs/archive/SUPABASE_PHOTO_BUCKETS.md` |
 
 ---
 
 ## 2. Admin Dashboard Enhancements
 
-**Source:** `docs/ADMIN_DASHBOARD_FUTURE_PLAN.md`
+**Source:** `docs/archive/ADMIN_DASHBOARD_FUTURE_PLAN.md`
 
 ### Completed
 
@@ -68,7 +68,7 @@
 
 ## 3. Game-Changer Ideas
 
-**Source:** `docs/GAME_CHANGER_ROADMAP.md`
+**Source:** `docs/archive/GAME_CHANGER_ROADMAP.md`
 
 Prioritized backlog of high-impact ideas. Key themes:
 
@@ -91,4 +91,4 @@ Prioritized backlog of high-impact ideas. Key themes:
 | Admin dashboard | Map, Kanban, sparkline, status bar, shortcuts, design | 3D globe, marble drop, Admin Control |
 | Game-changers | — | Tonight feed, venue themes, discovery cap, etc. |
 
-**Related docs:** `docs/MASTER_IMPLEMENTATION_CHECKLIST.md`, `docs/E2E_CAPABILITY_AUDIT_REPORT.md`, `docs/CSUITE_MASTER_AUDIT_REPORT.md`
+**Related docs:** `docs/archive/MASTER_IMPLEMENTATION_CHECKLIST.md`, `docs/archive/E2E_CAPABILITY_AUDIT_REPORT.md`, `docs/archive/CSUITE_MASTER_AUDIT_REPORT.md`
