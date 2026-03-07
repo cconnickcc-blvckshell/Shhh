@@ -75,6 +75,7 @@ export default function Dashboard() {
     { label: 'Paying Users', value: r.paying_users || 0, color: theme.colors.primary },
     { label: 'Ad Revenue', value: `$${((r.ad_revenue_cents || 0) / 100).toFixed(0)}`, color: theme.colors.warning },
     { label: 'Panic Alerts', value: s.panic_24h || 0, color: s.panic_24h > 0 ? theme.colors.danger : theme.colors.success, historyKey: 'panic' },
+    { label: 'Venue Distress', value: s.venue_distress_24h || 0, color: (s.venue_distress_24h || 0) > 0 ? theme.colors.warning : theme.colors.success },
     { label: 'Pending Reports', value: s.pending_reports || 0, color: s.pending_reports > 0 ? theme.colors.danger : theme.colors.success, historyKey: 'reports' },
     { label: 'Pending Mod', value: s.pending_moderation || 0, color: s.pending_moderation > 0 ? theme.colors.warning : theme.colors.success },
     { label: 'Active Events', value: c.active_events || 0, color: theme.colors.accentPink },

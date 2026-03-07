@@ -66,6 +66,11 @@ export function useSocket() {
     return () => { socketRef.current?.off('album_shared', handler); };
   }, []);
 
+  const onVenueDistress = useCallback((handler: MessageHandler) => {
+    socketRef.current?.on('venue_distress', handler);
+    return () => { socketRef.current?.off('venue_distress', handler); };
+  }, []);
+
   const onReconnect = useCallback((handler: () => void) => {
     socketRef.current?.on('connect', handler);
     return () => { socketRef.current?.off('connect', handler); };
@@ -75,7 +80,7 @@ export function useSocket() {
     socket: socketRef.current,
     joinConversation, leaveConversation,
     sendTyping, stopTyping,
-    onNewMessage, onNotification, onTyping, onAlbumShared,
+    onNewMessage, onNotification, onTyping, onAlbumShared, onVenueDistress,
     onReconnect,
   };
 }

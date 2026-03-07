@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { venuesApi } from '../../../src/api/client';
+import { useSocket } from '../../../src/hooks/useSocket';
 import { colors, spacing, fontSize, borderRadius } from '../../../src/constants/theme';
 
 function StatBlock({ label, value, icon }: { label: string; value: number | string; icon: string }) {
@@ -21,6 +22,8 @@ export default function VenueDashboardScreen() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [distressAlerts, setDistressAlerts] = useState<Array<{ userId: string; venueId: string }>>([]);
+  const socket = useSocket();
 
   const loadVenue = () => id ? venuesApi.get(id).then((r) => setVenue(r.data)).catch(() => setVenue(null)) : Promise.resolve();
   const loadDashboard = () => id ? venuesApi.getDashboard(id).then(setData).catch(() => setData(null)) : Promise.resolve();
@@ -35,6 +38,21 @@ export default function VenueDashboardScreen() {
     load().finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !socket.onVenueDistress) return;
+    const unsub = socket.onVenueDistress((payload: { userId: string; venueId: string }) => {
+      if (payload.venueId === id) {
+        setDistressAlerts((prev) => [...prev, payload]);
+        Alert.alert(
+          'Distress Signal',
+          'A guest has signaled distress at this venue. Please check on them.',
+          [{ text: 'OK' }]
+        );
+      }
+    });
+    return unsub;
+  }, [id, socket.onVenueDistress]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -112,6 +130,18 @@ export default function VenueDashboardScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {distressAlerts.length > 0 && (
+        <View style={[dashStyles.section, { backgroundColor: 'rgba(239,68,68,0.12)', borderRadius: borderRadius.lg, padding: spacing.md, marginHorizontal: spacing.lg }]}>
+          <Text style={[dashStyles.sectionTitle, { color: '#EF4444' }]}>Active Distress Alerts</Text>
+          {distressAlerts.map((a, i) => (
+            <View key={i} style={dashStyles.listItem}>
+              <Text style={dashStyles.listItemTitle}>Guest signaled distress</Text>
+              <Text style={dashStyles.listItemMeta}>Just now — check on them</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       <View style={dashStyles.section}>
         <Text style={dashStyles.sectionTitle}>Right now</Text>

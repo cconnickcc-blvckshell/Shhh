@@ -167,12 +167,24 @@ export class AdminExtendedService {
 
   // ==================== SAFETY ====================
   async getSafetyAlerts() {
-    const [panicAlerts, missedCheckins, recentReports] = await Promise.all([
+    const [panicAlerts, venueDistressAlerts, missedCheckins, recentReports] = await Promise.all([
       query(`
         SELECT sc.*, p.display_name FROM safety_checkins sc
         JOIN user_profiles p ON sc.user_id = p.user_id
         WHERE sc.type = 'panic' AND sc.created_at > NOW() - INTERVAL '24 hours'
         ORDER BY sc.created_at DESC
+      `),
+      query(`
+        SELECT al.id, al.user_id, al.created_at, al.metadata_json,
+          p.display_name,
+          v.name as venue_name,
+          (al.metadata_json->>'venueId')::uuid as venue_id
+        FROM audit_logs al
+        LEFT JOIN user_profiles p ON al.user_id = p.user_id
+        LEFT JOIN venues v ON (al.metadata_json->>'venueId')::uuid = v.id
+        WHERE al.action = 'safety.venue_distress'
+          AND al.created_at > NOW() - INTERVAL '24 hours'
+        ORDER BY al.created_at DESC
       `),
       query(`
         SELECT sc.*, p.display_name FROM safety_checkins sc
@@ -193,6 +205,7 @@ export class AdminExtendedService {
 
     return {
       panicAlerts: panicAlerts.rows,
+      venueDistressAlerts: venueDistressAlerts.rows,
       missedCheckins: missedCheckins.rows,
       pendingReports: recentReports.rows,
     };
@@ -286,6 +299,7 @@ export class AdminExtendedService {
       query(`
         SELECT
           (SELECT COUNT(*) FROM safety_checkins WHERE type = 'panic' AND created_at > NOW() - INTERVAL '24 hours') as panic_24h,
+          (SELECT COUNT(*) FROM audit_logs WHERE action = 'safety.venue_distress' AND created_at > NOW() - INTERVAL '24 hours') as venue_distress_24h,
           (SELECT COUNT(*) FROM reports WHERE status = 'pending') as pending_reports,
           (SELECT COUNT(*) FROM moderation_queue WHERE status = 'pending') as pending_moderation
       `),

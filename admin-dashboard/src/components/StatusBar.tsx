@@ -73,6 +73,20 @@ export function StatusBar() {
             {status.panicAlerts}
           </span>
         </Link>
+        <Link to="/safety" data-status-link style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: theme.space[2], cursor: 'pointer' }}>
+          <span style={{ color: theme.colors.textMuted }}>Distress</span>
+          <span
+            style={{
+              fontFamily: theme.font.display,
+              fontWeight: theme.fontWeight.bold,
+              color: status.venueDistressAlerts > 0 ? theme.colors.warning : theme.colors.textMuted,
+              minWidth: 24,
+              textAlign: 'right',
+            }}
+          >
+            {status.venueDistressAlerts}
+          </span>
+        </Link>
         <Link to="/reports" data-status-link style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: theme.space[2], cursor: 'pointer' }}>
           <span style={{ color: theme.colors.textMuted }}>Reports</span>
           <span

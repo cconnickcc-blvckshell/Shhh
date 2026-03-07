@@ -49,6 +49,23 @@ export default function Safety() {
       </div>
 
       <div style={{ marginBottom: theme.space[6] }}>
+        <h3 style={{ color: theme.colors.warning, fontSize: theme.fontSize.sm, marginBottom: theme.space[3], fontWeight: theme.fontWeight.semibold }}>Venue Distress (24h)</h3>
+        {(alerts.venueDistressAlerts?.length ?? 0) === 0 ? (
+          <GlassCard accent={theme.colors.success}>
+            <div style={{ color: theme.colors.success, fontSize: theme.fontSize.sm }}>No venue distress signals in the last 24 hours ✓</div>
+          </GlassCard>
+        ) : alerts.venueDistressAlerts.map((a: any) => (
+          <GlassCard key={a.id} accent={theme.colors.warning} style={{ marginBottom: theme.space[2] }}>
+            <div style={{ color: theme.colors.text, fontWeight: theme.fontWeight.semibold }}>{a.display_name || 'Unknown'}</div>
+            <div style={{ color: theme.colors.textSecondary, fontSize: theme.fontSize.sm, marginTop: theme.space[1] }}>
+              Venue: {a.venue_name || a.venue_id || 'Unknown'}
+            </div>
+            <div style={{ color: theme.colors.warning, fontSize: theme.fontSize.sm, marginTop: theme.space[1] }}>{new Date(a.created_at).toLocaleString()}</div>
+          </GlassCard>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: theme.space[6] }}>
         <h3 style={{ color: theme.colors.warning, fontSize: theme.fontSize.sm, marginBottom: theme.space[3], fontWeight: theme.fontWeight.semibold }}>Missed Check-ins</h3>
         {alerts.missedCheckins.length === 0 ? (
           <GlassCard accent={theme.colors.success}>

@@ -5,6 +5,7 @@ import { adminApi } from '../api/client';
 type StatusData = {
   onlineNow: number;
   panicAlerts: number;
+  venueDistressAlerts: number;
   pendingReports: number;
   pendingMod: number;
   lastUpdated: Date | null;
@@ -22,6 +23,7 @@ export function CommandCenterProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<StatusData>({
     onlineNow: 0,
     panicAlerts: 0,
+    venueDistressAlerts: 0,
     pendingReports: 0,
     pendingMod: 0,
     lastUpdated: null,
@@ -38,6 +40,7 @@ export function CommandCenterProvider({ children }: { children: ReactNode }) {
         setStatus({
           onlineNow: content.online_now ?? 0,
           panicAlerts: s.panic_24h ?? 0,
+          venueDistressAlerts: s.venue_distress_24h ?? 0,
           pendingReports: s.pending_reports ?? 0,
           pendingMod: s.pending_moderation ?? 0,
           lastUpdated: new Date(),
