@@ -2,8 +2,13 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Platform } from 'react-native';
 import { useAuthStore } from '../stores/auth';
+import { API_BASE } from '../api/client';
 
-const WS_URL = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+/** Derive WebSocket URL from API base (http(s) → ws(s)). */
+function getWsUrl(): string {
+  const base = API_BASE.replace(/\/$/, '');
+  return base.replace(/^http/, 'ws');
+}
 
 type MessageHandler = (data: any) => void;
 
@@ -14,7 +19,7 @@ export function useSocket() {
   useEffect(() => {
     if (!token) return;
 
-    const socket = io(WS_URL, {
+    const socket = io(getWsUrl(), {
       auth: { token },
       transports: ['websocket'],
       reconnection: true,

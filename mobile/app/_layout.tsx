@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -48,7 +48,7 @@ export default function RootLayout() {
       <AuthGuard>
       <UnreadBadgeProvider>
       <InAppToastProvider>
-      <NotificationHandlers />
+      {Platform.OS !== 'web' && <NotificationHandlers />}
       <View style={{ flex: 1 }}>
         <OfflineBanner />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
