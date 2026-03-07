@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { eventsApi, venuesApi } from '../../src/api/client';
 import { useLocation } from '../../src/hooks/useLocation';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
@@ -44,8 +45,12 @@ export default function CreateEventScreen() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [startsAt, setStartsAt] = useState('');
-  const [endsAt, setEndsAt] = useState('');
+  const defaultStart = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  const defaultEnd = new Date(defaultStart.getTime() + 4 * 60 * 60 * 1000);
+  const [startsAt, setStartsAt] = useState<Date>(defaultStart);
+  const [endsAt, setEndsAt] = useState<Date>(defaultEnd);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
   const [venueId, setVenueId] = useState<string | null>(paramVenueId || null);
   const [seriesId, setSeriesId] = useState('');
   const [type, setType] = useState('party');
@@ -97,8 +102,8 @@ export default function CreateEventScreen() {
       Alert.alert('Error', 'Enter a title');
       return;
     }
-    const start = startsAt ? new Date(startsAt) : new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const end = endsAt ? new Date(endsAt) : new Date(start.getTime() + 4 * 60 * 60 * 1000);
+    const start = startsAt;
+    const end = endsAt;
     if (end <= start) {
       Alert.alert('Error', 'End time must be after start time');
       return;
@@ -204,23 +209,57 @@ export default function CreateEventScreen() {
             ))}
           </View>
 
-          <Text style={styles.label}>Start (ISO or leave blank for in 2 hours)</Text>
-          <TextInput
-            style={styles.input}
-            value={startsAt}
-            onChangeText={setStartsAt}
-            placeholder="2026-03-01T19:00:00.000Z"
-            placeholderTextColor={colors.textMuted}
-          />
+          <Text style={styles.label}>Start</Text>
+          {Platform.OS === 'web' ? (
+            <TextInput
+              style={styles.input}
+              value={startsAt.toISOString().slice(0, 16)}
+              onChangeText={(v) => { const d = new Date(v); if (!isNaN(d.getTime())) setStartsAt(d); }}
+              placeholder="2026-03-01T19:00"
+              placeholderTextColor={colors.textMuted}
+            />
+          ) : (
+            <>
+              <TouchableOpacity style={styles.dateBtn} onPress={() => setShowStartPicker(true)}>
+                <Ionicons name="calendar" size={20} color={colors.primaryLight} />
+                <Text style={styles.dateBtnText}>{startsAt.toLocaleString()}</Text>
+              </TouchableOpacity>
+              {showStartPicker && (
+                <DateTimePicker
+                  value={startsAt}
+                  mode="datetime"
+                  minimumDate={new Date()}
+                  onChange={(_, d) => { setStartsAt(d || startsAt); setShowStartPicker(false); }}
+                />
+              )}
+            </>
+          )}
 
-          <Text style={styles.label}>End (ISO or leave blank for start + 4h)</Text>
-          <TextInput
-            style={styles.input}
-            value={endsAt}
-            onChangeText={setEndsAt}
-            placeholder="2026-03-02T00:00:00.000Z"
-            placeholderTextColor={colors.textMuted}
-          />
+          <Text style={styles.label}>End</Text>
+          {Platform.OS === 'web' ? (
+            <TextInput
+              style={styles.input}
+              value={endsAt.toISOString().slice(0, 16)}
+              onChangeText={(v) => { const d = new Date(v); if (!isNaN(d.getTime())) setEndsAt(d); }}
+              placeholder="2026-03-02T00:00"
+              placeholderTextColor={colors.textMuted}
+            />
+          ) : (
+            <>
+              <TouchableOpacity style={styles.dateBtn} onPress={() => setShowEndPicker(true)}>
+                <Ionicons name="calendar" size={20} color={colors.primaryLight} />
+                <Text style={styles.dateBtnText}>{endsAt.toLocaleString()}</Text>
+              </TouchableOpacity>
+              {showEndPicker && (
+                <DateTimePicker
+                  value={endsAt}
+                  mode="datetime"
+                  minimumDate={startsAt}
+                  onChange={(_, d) => { setEndsAt(d || endsAt); setShowEndPicker(false); }}
+                />
+              )}
+            </>
+          )}
 
           <Text style={styles.label}>Capacity (optional)</Text>
           <TextInput
@@ -323,6 +362,8 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.primarySoft, borderColor: colors.borderGlow },
   chipText: { color: colors.textSecondary, fontSize: fontSize.sm },
   chipTextActive: { color: colors.primaryLight, fontWeight: '600' },
+  dateBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
+  dateBtnText: { color: colors.text, fontSize: fontSize.md },
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
   toggleRowActive: { borderColor: colors.borderGlow },
   toggleLabel: { color: colors.text, fontSize: fontSize.md },

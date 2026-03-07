@@ -8,9 +8,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { eventsApi } from '../../../src/api/client';
 import { useAuthStore } from '../../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius } from '../../../src/constants/theme';
@@ -43,8 +45,10 @@ export default function EventEditScreen() {
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [startsAt, setStartsAt] = useState('');
-  const [endsAt, setEndsAt] = useState('');
+  const [startsAt, setStartsAt] = useState<Date>(new Date());
+  const [endsAt, setEndsAt] = useState<Date>(new Date());
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
   const [capacity, setCapacity] = useState('');
   const [vibeTag, setVibeTag] = useState<string | null>(null);
   const [visibilityRule, setVisibilityRule] = useState<string>('open');
@@ -65,8 +69,8 @@ export default function EventEditScreen() {
         }
         setTitle(e.title || '');
         setDescription(e.description || '');
-        setStartsAt(e.starts_at ? new Date(e.starts_at).toISOString().replace('Z', '').slice(0, 16) : '');
-        setEndsAt(e.ends_at ? new Date(e.ends_at).toISOString().replace('Z', '').slice(0, 16) : '');
+        setStartsAt(e.starts_at ? new Date(e.starts_at) : new Date());
+        setEndsAt(e.ends_at ? new Date(e.ends_at) : new Date());
         setCapacity(e.capacity != null ? String(e.capacity) : '');
         setVibeTag(e.vibe_tag || null);
         setVisibilityRule(e.visibility_rule || 'open');
@@ -83,8 +87,8 @@ export default function EventEditScreen() {
       Alert.alert('', 'Enter a title');
       return;
     }
-    const start = startsAt ? new Date(startsAt.includes('T') ? startsAt : `${startsAt}T00:00:00`) : new Date();
-    const end = endsAt ? new Date(endsAt.includes('T') ? endsAt : `${endsAt}T23:59:59`) : new Date(start.getTime() + 4 * 60 * 60 * 1000);
+    const start = startsAt;
+    const end = endsAt;
     if (end <= start) {
       Alert.alert('', 'End time must be after start time');
       return;
@@ -154,22 +158,55 @@ export default function EventEditScreen() {
           />
 
           <Text style={styles.label}>Start</Text>
-          <TextInput
-            style={styles.input}
-            value={startsAt}
-            onChangeText={setStartsAt}
-            placeholder="YYYY-MM-DDTHH:mm"
-            placeholderTextColor={colors.textMuted}
-          />
+          {Platform.OS === 'web' ? (
+            <TextInput
+              style={styles.input}
+              value={startsAt.toISOString().slice(0, 16)}
+              onChangeText={(v) => { const d = new Date(v); if (!isNaN(d.getTime())) setStartsAt(d); }}
+              placeholder="YYYY-MM-DDTHH:mm"
+              placeholderTextColor={colors.textMuted}
+            />
+          ) : (
+            <>
+              <TouchableOpacity style={styles.dateBtn} onPress={() => setShowStartPicker(true)}>
+                <Ionicons name="calendar" size={20} color={colors.primaryLight} />
+                <Text style={styles.dateBtnText}>{startsAt.toLocaleString()}</Text>
+              </TouchableOpacity>
+              {showStartPicker && (
+                <DateTimePicker
+                  value={startsAt}
+                  mode="datetime"
+                  onChange={(_, d) => { setStartsAt(d || startsAt); setShowStartPicker(false); }}
+                />
+              )}
+            </>
+          )}
 
           <Text style={styles.label}>End</Text>
-          <TextInput
-            style={styles.input}
-            value={endsAt}
-            onChangeText={setEndsAt}
-            placeholder="YYYY-MM-DDTHH:mm"
-            placeholderTextColor={colors.textMuted}
-          />
+          {Platform.OS === 'web' ? (
+            <TextInput
+              style={styles.input}
+              value={endsAt.toISOString().slice(0, 16)}
+              onChangeText={(v) => { const d = new Date(v); if (!isNaN(d.getTime())) setEndsAt(d); }}
+              placeholder="YYYY-MM-DDTHH:mm"
+              placeholderTextColor={colors.textMuted}
+            />
+          ) : (
+            <>
+              <TouchableOpacity style={styles.dateBtn} onPress={() => setShowEndPicker(true)}>
+                <Ionicons name="calendar" size={20} color={colors.primaryLight} />
+                <Text style={styles.dateBtnText}>{endsAt.toLocaleString()}</Text>
+              </TouchableOpacity>
+              {showEndPicker && (
+                <DateTimePicker
+                  value={endsAt}
+                  mode="datetime"
+                  minimumDate={startsAt}
+                  onChange={(_, d) => { setEndsAt(d || endsAt); setShowEndPicker(false); }}
+                />
+              )}
+            </>
+          )}
 
           <Text style={styles.label}>Capacity (optional)</Text>
           <TextInput
@@ -259,6 +296,8 @@ const styles = StyleSheet.create({
   label: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '600', marginBottom: 6 },
   input: { backgroundColor: colors.card, borderRadius: borderRadius.md, padding: 14, color: colors.text, fontSize: fontSize.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
+  dateBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
+  dateBtnText: { color: colors.text, fontSize: fontSize.md },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.lg },
   chip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: borderRadius.full, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
   chipActive: { backgroundColor: colors.primarySoft, borderColor: colors.borderGlow },

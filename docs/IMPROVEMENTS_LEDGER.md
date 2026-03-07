@@ -271,8 +271,8 @@
 | Character count for bio | 5 | 2 | 1 | P3 | ✅ Done (Wave 1) |
 | "Unsaved changes" warning | 5 | 3 | 1 | P2 | ✅ Done (Wave 1) |
 | User ID display + Copy | 5 | 2 | 1 | P3 | Not started |
-| Create venue: location picker | 4 | 4 | 2 | P1 | Not started |
-| Create/Edit event: date/time pickers | 5 | 4 | 2 | P1 | Not started |
+| Create venue: location picker | 4 | 4 | 2 | P1 | ✅ Done (Wave 4) |
+| Create/Edit event: date/time pickers | 5 | 4 | 2 | P1 | ✅ Done (Wave 4) |
 | Verification: Tier 2 ID flow | 3 | 5 | 4 | P1 | Not started |
 | Empty state illustrations | 4 | 4 | 2 | P2 | Not started |
 | Success toast on save | 5 | 3 | 1 | P2 | ✅ Done (Wave 1) |

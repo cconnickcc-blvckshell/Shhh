@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { venuesApi } from '../../src/api/client';
+import { useLocation } from '../../src/hooks/useLocation';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
 import { PageShell } from '../../src/components/layout';
@@ -11,9 +13,22 @@ const DEFAULT_LAT = 40.7128;
 const DEFAULT_LNG = -74.006;
 
 export default function CreateVenueScreen() {
+  const location = useLocation();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [lat, setLat] = useState(DEFAULT_LAT);
+  const [lng, setLng] = useState(DEFAULT_LNG);
   const [submitting, setSubmitting] = useState(false);
+
+  const useMyLocation = () => {
+    if (location.loading) return;
+    if (location.error || location.latitude == null) {
+      Alert.alert('Location needed', 'Enable location access in settings to use your current position.');
+      return;
+    }
+    setLat(location.latitude);
+    setLng(location.longitude);
+  };
 
   const submit = async () => {
     const trimmed = name.trim();
@@ -26,8 +41,8 @@ export default function CreateVenueScreen() {
       const res = await venuesApi.create({
         name: trimmed,
         description: description.trim() || undefined,
-        lat: DEFAULT_LAT,
-        lng: DEFAULT_LNG,
+        lat,
+        lng,
         type: 'club',
       });
       setSubmitting(false);
@@ -64,7 +79,20 @@ export default function CreateVenueScreen() {
               multiline
               numberOfLines={3}
             />
-            <Text style={styles.hint}>Location is set to a default; you can update it later in the venue dashboard.</Text>
+            <Text style={styles.label}>Location</Text>
+            <TouchableOpacity style={styles.locationBtn} onPress={useMyLocation} disabled={location.loading}>
+              {location.loading ? (
+                <ActivityIndicator size="small" color={colors.primaryLight} />
+              ) : (
+                <Ionicons name="locate" size={20} color={colors.primaryLight} />
+              )}
+              <Text style={styles.locationBtnText}>
+                {location.loading ? 'Getting location…' : 'Use my location'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.locationHint}>
+              {lat.toFixed(4)}, {lng.toFixed(4)} — update in venue dashboard after creation.
+            </Text>
             <TouchableOpacity style={[styles.submitBtn, submitting && styles.submitDisabled]} onPress={submit} disabled={submitting}>
               <Text style={styles.submitText}>{submitting ? 'Creating…' : 'Create venue'}</Text>
             </TouchableOpacity>
@@ -86,6 +114,9 @@ const styles = StyleSheet.create({
   input: { backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: 14, color: colors.text, fontSize: fontSize.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
   textArea: { minHeight: 88, textAlignVertical: 'top' },
   hint: { color: colors.textSecondary, fontSize: fontSize.xs, marginBottom: spacing.xl },
+  locationBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: colors.card, borderRadius: borderRadius.lg, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(147,51,234,0.3)' },
+  locationBtnText: { color: colors.primaryLight, fontSize: fontSize.md, fontWeight: '600' },
+  locationHint: { color: colors.textSecondary, fontSize: fontSize.xs, marginBottom: spacing.xl },
   submitBtn: { backgroundColor: colors.primary, paddingVertical: 14, borderRadius: borderRadius.lg, alignItems: 'center' },
   submitDisabled: { opacity: 0.7 },
   submitText: { color: '#fff', fontSize: fontSize.md, fontWeight: '700' },
