@@ -33,7 +33,10 @@
 | Item | Phase |
 |------|-------|
 | Typography tokens (fontSize.lg) | Phase 2 |
-| Edit Profile: Card for sections, character count, unsaved warning, User ID + Copy | Phase 3 |
+| Edit Profile: Card for sections, User ID + Copy | Phase 3 |
+| ~~Character count for bio~~ | ✅ Done (Wave 1) |
+| ~~Unsaved changes warning~~ | ✅ Done (Wave 1) |
+| ~~Success toast on save~~ | ✅ Done (Wave 1) |
 | Create venue: Location picker | Phase 4 |
 | Create/Edit event: Date/time pickers | Phase 4 |
 | Verification: Tier 2 ID flow | Phase 4 |
@@ -87,8 +90,9 @@ Prioritized backlog of high-impact ideas. Key themes:
 
 | Area | Done | Pending |
 |------|------|---------|
-| Me section | Layout, design system, most sub-pages | Edit Profile polish, location picker, date pickers, Tier 2 ID |
+| Me section | Layout, design system, most sub-pages, bio char count, unsaved warning, success toast | Edit Profile Card sections, location picker, date pickers, Tier 2 ID |
 | Admin dashboard | Map, Kanban, sparkline, status bar, shortcuts, design | 3D globe, marble drop, Admin Control |
 | Game-changers | — | Tonight feed, venue themes, discovery cap, etc. |
+| Polish (IMPROVEMENTS_LEDGER) | Wave 1: Optimistic UI (chat, like), empty states + CTAs, social proof bar, variable reward partial | Wave 2: State transparency, failure resilience, micro-copy |
 
 **Related docs:** `docs/IMPROVEMENTS_LEDGER.md` (full ledger with feasibility/impact/effort), `docs/archive/MASTER_IMPLEMENTATION_CHECKLIST.md`, `docs/archive/E2E_CAPABILITY_AUDIT_REPORT.md`, `docs/archive/CSUITE_MASTER_AUDIT_REPORT.md`

@@ -130,6 +130,12 @@ export default function AlbumsScreen() {
           <View style={styles.empty}>
             <Ionicons name="images-outline" size={48} color={colors.textMuted} />
             <Text style={styles.emptyText}>{tab === 'mine' ? 'No albums yet' : 'No shared albums'}</Text>
+            <Text style={styles.emptySub}>{tab === 'mine' ? 'Create your first album to share photos' : 'Albums shared with you will appear here'}</Text>
+            {tab === 'mine' && (
+              <TouchableOpacity style={styles.emptyCta} onPress={() => setShowCreate(true)} activeOpacity={0.8}>
+                <Text style={styles.emptyCtaText}>Create album</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
@@ -165,4 +171,7 @@ const styles = StyleSheet.create({
   retryBtnText: { color: '#fff', fontWeight: '600', fontSize: fontSize.sm },
   empty: { alignItems: 'center', paddingTop: 80 },
   emptyText: { color: colors.textMuted, fontSize: fontSize.md, marginTop: spacing.md },
+  emptySub: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: 8, textAlign: 'center', maxWidth: 240 },
+  emptyCta: { marginTop: 16, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
+  emptyCtaText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
 });

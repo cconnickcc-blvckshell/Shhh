@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Switch, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usersApi } from '../../src/api/client';
 import { useAuthStore } from '../../src/stores/auth';
 import { usePhotoUpload } from '../../src/hooks/usePhotoUpload';
+import { useInAppToast } from '../../src/context/InAppToastContext';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
 import { PageShell } from '../../src/components/layout';
 import { SubPageHeader } from '../../src/components/SubPageHeader';
 import { colors, spacing, layout } from '../../src/constants/theme';
+
+const BIO_MAX_LENGTH = 500;
 
 const GENDERS = ['man', 'woman', 'couple', 'trans_man', 'trans_woman', 'non_binary', 'other'];
 const EXP = ['new', 'curious', 'experienced', 'veteran'];
@@ -56,6 +59,36 @@ export default function EditProfileScreen() {
   const [crossingPathsVisible, setCrossingPathsVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const { pickAndUpload, uploading } = usePhotoUpload();
+  const { show: showToast } = useInAppToast();
+
+  const isDirty = useMemo(() => {
+    if (!profile) return false;
+    return (
+      displayName !== (profile.displayName || '') ||
+      bio !== (profile.bio || '') ||
+      gender !== (profile.gender || '') ||
+      sexuality !== (profile.sexuality || '') ||
+      exp !== (profile.experienceLevel || '') ||
+      isHost !== (profile.isHost || false) ||
+      kinks !== ((profile.kinks || []).join(', ')) ||
+      JSON.stringify(photos) !== JSON.stringify(profile.photosJson || []) ||
+      primaryIntent !== (profile.primaryIntent ?? null) ||
+      discoveryVisibleTo !== (profile.discoveryVisibleTo ?? 'all') ||
+      profileVisibilityTier !== (profile.profileVisibilityTier ?? 'all') ||
+      crossingPathsVisible !== (profile.crossingPathsVisible ?? false)
+    );
+  }, [profile, displayName, bio, gender, sexuality, exp, isHost, kinks, photos, primaryIntent, discoveryVisibleTo, profileVisibilityTier, crossingPathsVisible]);
+
+  const handleBack = () => {
+    if (isDirty) {
+      Alert.alert('Unsaved changes', 'You have unsaved changes. Discard?', [
+        { text: 'Keep editing', style: 'cancel' },
+        { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+      ]);
+    } else {
+      router.back();
+    }
+  };
 
   useEffect(() => {
     if (profile) {
@@ -100,6 +133,7 @@ export default function EditProfileScreen() {
         crossingPathsVisible,
       });
       await loadProfile();
+      showToast({ title: 'Saved', body: 'Your profile has been updated.' });
       router.back();
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -124,9 +158,10 @@ export default function EditProfileScreen() {
         <SubPageHeader
           title="Edit Profile"
           backIcon="close"
+          onBackPress={handleBack}
           rightAction={
-            <TouchableOpacity onPress={save} disabled={saving} style={s.saveBtn}>
-              <Text style={[s.saveText, saving && { opacity: 0.4 }]}>{saving ? '...' : 'Save'}</Text>
+            <TouchableOpacity onPress={save} disabled={saving || !isDirty} style={s.saveBtn}>
+              <Text style={[s.saveText, (saving || !isDirty) && { opacity: 0.4 }]}>{saving ? '...' : 'Save'}</Text>
             </TouchableOpacity>
           }
         />
@@ -188,7 +223,8 @@ export default function EditProfileScreen() {
             <TextInput style={s.input} value={displayName} onChangeText={setDisplayName} placeholder="Your name" placeholderTextColor="rgba(255,255,255,0.2)" />
 
             <Text style={s.label}>Bio</Text>
-            <TextInput style={[s.input, s.textArea]} value={bio} onChangeText={setBio} placeholder="About you..." placeholderTextColor="rgba(255,255,255,0.2)" multiline />
+            <TextInput style={[s.input, s.textArea]} value={bio} onChangeText={setBio} placeholder="About you..." placeholderTextColor="rgba(255,255,255,0.2)" multiline maxLength={BIO_MAX_LENGTH} />
+            <Text style={s.charCount}>{bio.length}/{BIO_MAX_LENGTH}</Text>
 
             <Text style={s.label}>Gender</Text>
             <View style={s.chips}>
@@ -320,6 +356,7 @@ const s = StyleSheet.create({
 
   input: { backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', padding: 16, borderRadius: 12, fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   textArea: { minHeight: 90, textAlignVertical: 'top' },
+  charCount: { color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 4, alignSelf: 'flex-end' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     flexDirection: 'row',

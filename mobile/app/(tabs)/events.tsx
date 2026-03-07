@@ -204,6 +204,9 @@ export default function EventsScreen() {
         ListEmptyComponent={
           <View style={s.emptyWrap}>
             <SafeState variant="empty" title="No events nearby" message="Pull down to refresh" icon="flame-outline" />
+            <TouchableOpacity style={s.emptyCta} onPress={() => router.push('/profile/create-event')} activeOpacity={0.8}>
+              <Text style={s.emptyCtaText}>Start something → Create an event</Text>
+            </TouchableOpacity>
           </View>
         }
       />
@@ -214,6 +217,8 @@ export default function EventsScreen() {
 const s = StyleSheet.create({
   listContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 100 },
   emptyWrap: { flex: 1, paddingVertical: 80 },
+  emptyCta: { marginTop: 16, paddingVertical: 14, paddingHorizontal: 24, backgroundColor: 'rgba(124,43,255,0.15)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(179,92,255,0.3)', alignSelf: 'center' },
+  emptyCtaText: { color: '#B35CFF', fontSize: 14, fontWeight: '700' },
 
   eventCard: {
     borderRadius: 20,

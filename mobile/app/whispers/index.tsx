@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, Alert } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
@@ -118,7 +119,10 @@ export default function WhisperInboxScreen() {
           <View style={s.empty}>
             <View style={s.emptyIcon}><Ionicons name="ear-outline" size={36} color={colors.primaryLight} /></View>
             <Text style={s.emptyTitle}>{tab === 'inbox' ? 'No whispers yet' : 'No sent whispers'}</Text>
-            <Text style={s.emptySub}>{tab === 'inbox' ? 'Someone nearby might whisper to you' : 'Tap the ear icon on a profile to whisper'}</Text>
+            <Text style={s.emptySub}>{tab === 'inbox' ? 'Someone nearby might whisper to you. Long-press a profile in Discover to whisper.' : 'Long-press a profile in Discover to send an anonymous whisper.'}</Text>
+            <TouchableOpacity style={s.emptyCta} onPress={() => router.back()} activeOpacity={0.8}>
+              <Text style={s.emptyCtaText}>Go to Discover</Text>
+            </TouchableOpacity>
           </View>
         }
       />
@@ -160,4 +164,6 @@ const s = StyleSheet.create({
   emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(147,51,234,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },
   emptySub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginTop: 4, textAlign: 'center', maxWidth: 240 },
+  emptyCta: { marginTop: 16, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
+  emptyCtaText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });

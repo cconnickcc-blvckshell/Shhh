@@ -264,14 +264,14 @@
 | Id | Idea | Feas | Impact | Effort | Urgency | Status |
 |----|------|------|-------|--------|---------|-------|
 | Edit Profile: Card sections | 5 | 2 | 1 | P3 | Not started |
-| Character count for bio | 5 | 2 | 1 | P3 | Not started |
-| "Unsaved changes" warning | 5 | 3 | 1 | P2 | Not started |
+| Character count for bio | 5 | 2 | 1 | P3 | ✅ Done (Wave 1) |
+| "Unsaved changes" warning | 5 | 3 | 1 | P2 | ✅ Done (Wave 1) |
 | User ID display + Copy | 5 | 2 | 1 | P3 | Not started |
 | Create venue: location picker | 4 | 4 | 2 | P1 | Not started |
 | Create/Edit event: date/time pickers | 5 | 4 | 2 | P1 | Not started |
 | Verification: Tier 2 ID flow | 3 | 5 | 4 | P1 | Not started |
 | Empty state illustrations | 4 | 4 | 2 | P2 | Not started |
-| Success toast on save | 5 | 3 | 1 | P2 | Not started |
+| Success toast on save | 5 | 3 | 1 | P2 | ✅ Done (Wave 1) |
 | Markdown in Guides/Norms | 4 | 3 | 2 | P2 | Not started |
 | Accessibility (labels, contrast) | 4 | 4 | 3 | P1 | Not started |
 
@@ -323,23 +323,31 @@
 
 **Idea:** Message sent → bubble appears immediately with "sending"; like pressed → heart animates; photo upload → progress indicator appears. App behaves as if action succeeded while network catches up.
 
+**Hard boundary:** Optimistic UI only for reversible, low-risk actions. Never for billing, moderation, safety, identity, or destructive actions.
+
+| Good | Not good |
+|------|----------|
+| Message bubble, like tap, save profile draft | Subscription change, account deletion, ban, venue verification, panic |
+
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 5 | 5 | 3 | P1 | Not started |
+| 5 | 5 | 3 | P1 | Partial |
 
-**Notes:** Backend ready; mobile needs optimistic flows for messaging, likes, uploads.
+**Notes:** Wave 1: Chat optimistic messages (sending state), profile like optimistic. Backend ready; uploads still need progress indicator.
 
 ---
 
 ### C.2 State Transparency
 
-**Idea:** "Connecting…" when WebSocket reconnects; "Uploading photo 63%"; "Retrying message…"; "last seen 2m ago"; "typing…"; "message delivered."
+**Idea:** Platform rule — every async action has a shared UI state machine, not ad hoc labels.
+
+**Contract:** Every async action exposes: `idle` | `pending` | `success` | `failed` | `retrying` | `stale/offline`
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
 | 5 | 5 | 2 | P1 | Partial (typing, presence exist) |
 
-**Notes:** Reconnect banner, upload progress, retry states missing.
+**Notes:** Reconnect banner, upload progress, retry states. Reusable state machine, not per-screen labels.
 
 ---
 
@@ -347,11 +355,18 @@
 
 **Idea:** Failed message → "Tap to retry"; offline → messages queue, UI shows "offline", sync when back. User shouldn't think about network.
 
+**Explicit requirements (not hand-wavy):**
+- Client outbox for pending mutations
+- Idempotency key per mutation
+- Retry policy
+- Reconciliation after reconnect
+- Terminal failure state (when retries exhausted)
+
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
 | 4 | 5 | 3 | P1 | Not started |
 
-**Notes:** No offline queue or retry UI; idempotency makes retries safe.
+**Notes:** No offline queue or retry UI; idempotency makes retries safe. See A.3 for idempotency pattern.
 
 ---
 
@@ -359,11 +374,13 @@
 
 **Idea:** Unread counts consistent across chat list, conversation, push, badges, WebSocket. One drift = lost trust.
 
+**Shared invariant:** Unread is not merely UI polish. It is a domain invariant, sync problem, notification problem, and badge problem. Cross-link: **A.2 State Synchronization**.
+
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
 | 3 | 5 | 2 | P0 | Partial (getUnreadTotal, badge exist) |
 
-**Notes:** Overlaps A.2 State Synchronization; needs sync protocol.
+**Notes:** Needs sync protocol; belongs to both polish and core architecture.
 
 ---
 
@@ -385,9 +402,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 5 | 4 | 2 | P2 | Not started |
+| 5 | 4 | 2 | P2 | Done |
 
-**Notes:** Discovery, events, albums, whispers need tailored empty states + CTAs.
+**Notes:** Wave 1: Discovery ("Start something → Create event"), Events, Albums ("Create album"), Whispers ("Go to Discover") — all with CTAs.
 
 ---
 
@@ -521,11 +538,13 @@
 
 **Ethical guardrail:** Real events, real people, real proximity — not fake notifications, artificial scarcity, or manipulative timers.
 
+**Warning — no goblin mode:** No fake counters; no fabricated "someone is nearby" nudges; no synthetic urgency. Only real-world state surfaced better.
+
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 5 | 5 | 2 | P1 | Partial (discovery exists; pulse/refresh/social proof missing) |
+| 5 | 5 | 2 | P1 | Partial |
 
-**Notes:** Pull-to-refresh discovery; "X new people nearby" pulse; social proof badges ("12 nearby", "5 going tonight"). No gamification — just surface real-world unpredictability.
+**Notes:** Wave 1: Social proof bar "X people nearby right now"; pull-to-refresh already existed. Pending: "X new people" pulse on refresh, "5 going tonight" badge.
 
 ---
 

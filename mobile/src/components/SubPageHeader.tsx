@@ -11,6 +11,8 @@ export type SubPageHeaderProps = {
   backIcon?: 'arrow-back' | 'close';
   /** Optional right-side action (e.g. Save button). */
   rightAction?: React.ReactNode;
+  /** Optional custom back handler (e.g. for unsaved-changes warning). */
+  onBackPress?: () => void;
   /** Accessibility role for the title. */
   accessibilityRole?: 'header';
 };
@@ -24,12 +26,14 @@ export function SubPageHeader({
   subtitle,
   backIcon = 'arrow-back',
   rightAction,
+  onBackPress,
   accessibilityRole = 'header',
 }: SubPageHeaderProps) {
+  const handleBack = () => (onBackPress ? onBackPress() : router.back());
   return (
     <View style={styles.wrap}>
       <TouchableOpacity
-        onPress={() => router.back()}
+        onPress={handleBack}
         style={styles.backBtn}
         accessibilityLabel="Go back"
         accessibilityRole="button"

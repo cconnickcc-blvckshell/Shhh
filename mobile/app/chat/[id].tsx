@@ -116,28 +116,46 @@ export default function ChatScreen() {
 
   const send = async () => {
     if (!input.trim() || !convId) return;
+    const content = input.trim();
+    setInput('');
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: Message = {
+      _id: tempId,
+      senderId: userId!,
+      content,
+      contentType: 'text',
+      createdAt: new Date().toISOString(),
+      ...(selfDestruct && { expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString() }),
+    };
+    setMsgs(p => [optimistic, ...p]);
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
     try {
-      const res = await messagingApi.sendMessage(convId, input.trim(), 'text', selfDestruct ? 30 : undefined);
-      setMsgs(p => [res.data, ...p]);
-      setInput('');
+      const res = await messagingApi.sendMessage(convId, content, 'text', selfDestruct ? 30 : undefined);
+      setMsgs(p => p.map(m => m._id === tempId ? res.data : m));
     } catch (err: any) {
+      setMsgs(p => p.filter(m => m._id !== tempId));
+      setInput(content);
       Alert.alert('', mapApiError(err));
     }
   };
 
   const renderMsg = ({ item }: { item: Message }) => {
     const mine = item.senderId === userId;
+    const isSending = (item._id as string).startsWith('temp-');
     const createdAt = (item as any).createdAt ?? (item as any).created_at;
     return (
       <View style={[s.row, mine && s.rowMine]}>
-        <View style={[s.bubble, mine ? s.mine : s.theirs]}>
+        <View style={[s.bubble, mine ? s.mine : s.theirs, isSending && s.bubbleSending]}>
           {item.expiresAt && (
             <View style={s.sdLabel}><Ionicons name="timer" size={10} color={colors.host} /><Text style={s.sdText}>Self-destructing</Text></View>
           )}
           <Text style={s.msgText}>{item.content}</Text>
-          <Text style={[s.time, !mine && { color: colors.textMuted }]}>
-            {createdAt ? new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-          </Text>
+          <View style={s.timeRow}>
+            {isSending && <View style={s.sendingDot} />}
+            <Text style={[s.time, !mine && { color: colors.textMuted }]}>
+              {createdAt ? new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending…'}
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -218,6 +236,9 @@ const s = StyleSheet.create({
   bubble: { maxWidth: '78%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20 },
   mine: { backgroundColor: colors.primary, borderBottomRightRadius: 6 },
   theirs: { backgroundColor: colors.surfaceElevated, borderBottomLeftRadius: 6, borderWidth: 0.5, borderColor: colors.border },
+  bubbleSending: { opacity: 0.85 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, alignSelf: 'flex-end' },
+  sendingDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.6)' },
   sdLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
   sdText: { color: colors.host, fontSize: fontSize.xxs, fontWeight: '600' },
   msgText: { color: colors.text, fontSize: fontSize.md, lineHeight: 21 },

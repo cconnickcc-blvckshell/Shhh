@@ -73,9 +73,11 @@ export function InAppToastProvider({ children }: { children: ReactNode }) {
           <View style={s.toastInner}>
             <Text style={s.toastTitle} numberOfLines={1}>{toast.title}</Text>
             <Text style={s.toastBody} numberOfLines={2}>{toast.body}</Text>
-            <TouchableOpacity style={s.toastBtn} onPress={onView} activeOpacity={0.7}>
-              <Text style={s.toastBtnText}>View</Text>
-            </TouchableOpacity>
+            {(toast.conversationId || toast.whisperId) && (
+              <TouchableOpacity style={s.toastBtn} onPress={onView} activeOpacity={0.7}>
+                <Text style={s.toastBtnText}>View</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </Animated.View>
       )}
@@ -108,3 +110,8 @@ const s = StyleSheet.create({
   toastBtn: { alignSelf: 'flex-start', marginTop: spacing.sm, paddingVertical: 4 },
   toastBtnText: { color: colors.primaryLight, fontSize: fontSize.sm, fontWeight: '600' },
 });
+
+export function useInAppToast() {
+  const ctx = useContext(ToastContext);
+  return ctx ?? { show: (_: ToastData) => {} };
+}

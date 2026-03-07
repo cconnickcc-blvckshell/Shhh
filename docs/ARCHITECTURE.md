@@ -167,7 +167,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   ├── hooks/useOAuth.ts        # Apple sign-in flow (expo-apple-authentication)
 │   │   ├── hooks/useScreenView.ts   # Fires screen_view on mount (analytics stub)
 │   │   ├── components/layout/       # PageShell, ContentColumn, Card, SectionLabel (layout spine)
-│   │   ├── components/SubPageHeader.tsx # Back, title, subtitle, right action (Me sub-pages)
+│   │   ├── components/SubPageHeader.tsx # Back, title, subtitle, right action, onBackPress (unsaved warning)
 │   │   ├── context/UnreadBadgeContext.tsx # Unread message count, tab badge, setBadgeCountAsync
 │   │   ├── context/InAppToastContext.tsx  # Foreground toast for new messages (WebSocket)
 │   │   ├── hooks/useNotificationResponse.ts # Deep link from notification tap → chat/whispers

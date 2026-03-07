@@ -81,11 +81,16 @@ export default function UserDetailScreen() {
   const handleLike = async () => {
     if (!id) return;
     Vibration.vibrate(15);
-    const res = await usersApi.like(id);
     setLiked(true);
-    if (res.data.matched) {
-      Vibration.vibrate([0, 80, 40, 80]);
-      Alert.alert('It\'s a Match! 💜', `You and ${profile.displayName} are interested in each other`);
+    try {
+      const res = await usersApi.like(id);
+      if (res.data.matched) {
+        Vibration.vibrate([0, 80, 40, 80]);
+        Alert.alert('It\'s a Match! 💜', `You and ${profile.displayName} are interested in each other`);
+      }
+    } catch (err: any) {
+      setLiked(false);
+      Alert.alert('', mapApiError(err));
     }
   };
 

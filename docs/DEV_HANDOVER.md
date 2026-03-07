@@ -1450,6 +1450,7 @@ The mobile app uses **expo-router** (file-based routing). All screens are in `mo
 | `usePushNotifications` | `src/hooks/usePushNotifications.ts` | Requests notification permissions, registers Expo push token via `/v1/auth/push-token`. Re-registers on app resume (AppState). |
 | `useNotificationResponse` | `src/hooks/useNotificationResponse.ts` | Handles notification tap → deep link to chat or whispers. |
 | `useUnreadBadge` | `src/context/UnreadBadgeContext.tsx` | Unread message count for tab badge; calls `setBadgeCountAsync` for app icon badge. |
+| `useInAppToast` | `src/context/InAppToastContext.tsx` | Programmatic toast (e.g. success on save). `show({ title, body })` — no View button when no conversationId/whisperId. |
 
 ### 6.3 State Management (Zustand)
 

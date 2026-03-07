@@ -373,6 +373,12 @@ export default function DiscoverScreen() {
           </ScrollView>
         </View>
       )}
+      {users.length > 0 && (
+        <View style={s.socialProofBar}>
+          <Ionicons name="people" size={14} color={colors.primaryLight} />
+          <Text style={s.socialProofText}>{users.length} {users.length === 1 ? 'person' : 'people'} nearby right now</Text>
+        </View>
+      )}
       {atDiscoveryCap && users.length > 0 && (
         <View style={s.capBanner}>
           <Ionicons name="information-circle" size={18} color={colors.host} />
@@ -396,6 +402,9 @@ export default function DiscoverScreen() {
         ListEmptyComponent={
           <View style={s.emptyWrap}>
             <SafeState variant="empty" title="No one nearby" message="Pull down to refresh" icon="compass-outline" />
+            <TouchableOpacity style={s.emptyCta} onPress={() => router.push('/(tabs)/events')} activeOpacity={0.8}>
+              <Text style={s.emptyCtaText}>Start something → Create an event</Text>
+            </TouchableOpacity>
           </View>
         }
       />
@@ -457,6 +466,10 @@ const s = StyleSheet.create({
   whisperSend: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   whisperClose: { padding: 4 },
   emptyWrap: { flex: 1, paddingVertical: 80 },
+  socialProofBar: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.md, paddingVertical: 8, backgroundColor: 'rgba(124,43,255,0.06)', borderBottomWidth: 0.5, borderBottomColor: 'rgba(124,43,255,0.1)' },
+  socialProofText: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
+  emptyCta: { marginTop: spacing.lg, paddingVertical: 14, paddingHorizontal: 24, backgroundColor: 'rgba(124,43,255,0.15)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(179,92,255,0.3)' },
+  emptyCtaText: { color: colors.primaryLight, fontSize: 14, fontWeight: '700' },
   capBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: spacing.md, paddingVertical: 10, backgroundColor: 'rgba(251,191,36,0.12)', borderBottomWidth: 0.5, borderBottomColor: 'rgba(251,191,36,0.2)' },
   capBannerText: { flex: 1, color: colors.text, fontSize: fontSize.sm },
   adWrap: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.06)' },
