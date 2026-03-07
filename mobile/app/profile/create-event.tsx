@@ -60,6 +60,7 @@ export default function CreateEventScreen() {
   const [visibilityTierMin, setVisibilityTierMin] = useState('');
   const [visibilityRadiusKm, setVisibilityRadiusKm] = useState('');
   const [locationRevealedAfterRsvp, setLocationRevealedAfterRsvp] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [saving, setSaving] = useState(false);
   const [venues, setVenues] = useState<any[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(false);
@@ -284,6 +285,18 @@ export default function CreateEventScreen() {
             ))}
           </View>
 
+          <TouchableOpacity
+            style={styles.advancedToggle}
+            onPress={() => setShowAdvanced(!showAdvanced)}
+            accessibilityRole="button"
+            accessibilityLabel={showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
+          >
+            <Ionicons name={showAdvanced ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primaryLight} />
+            <Text style={styles.advancedToggleText}>{showAdvanced ? 'Hide advanced' : 'Show advanced options'}</Text>
+          </TouchableOpacity>
+
+          {showAdvanced && (
+          <>
           <Text style={styles.label}>Visibility</Text>
           <View style={styles.chipRow}>
             {VISIBILITY_OPTIONS.map((v) => (
@@ -332,6 +345,8 @@ export default function CreateEventScreen() {
               color={locationRevealedAfterRsvp ? colors.primaryLight : colors.textMuted}
             />
           </TouchableOpacity>
+          </>
+          )}
 
           <TouchableOpacity style={[styles.createBtn, saving && styles.createBtnDisabled]} onPress={handleCreate} disabled={saving}>
             <Text style={styles.createBtnText}>{saving ? 'Creating…' : 'Create event'}</Text>
@@ -367,6 +382,8 @@ const styles = StyleSheet.create({
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: colors.card, borderRadius: borderRadius.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
   toggleRowActive: { borderColor: colors.borderGlow },
   toggleLabel: { color: colors.text, fontSize: fontSize.md },
+  advancedToggle: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, marginBottom: spacing.lg },
+  advancedToggleText: { color: colors.primaryLight, fontSize: fontSize.sm, fontWeight: '600' },
   createBtn: { backgroundColor: colors.primary, paddingVertical: 16, borderRadius: borderRadius.lg, alignItems: 'center', marginTop: spacing.md },
   createBtnDisabled: { opacity: 0.6 },
   createBtnText: { color: '#fff', fontSize: fontSize.md, fontWeight: '700' },

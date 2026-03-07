@@ -273,7 +273,7 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Exit paths** | Back (close): if isDirty → Alert "Unsaved changes" / Discard. Save → usersApi.updateMe, loadProfile, router.back(), in-app toast "Saved". |
 | **Data dependencies (API)** | GET via store (profile). PUT `/v1/users/me` (displayName, bio, gender, sexuality, experienceLevel, isHost, kinks, photosJson). POST (upload) via usePhotoUpload → `/v1/media/upload`. |
 | **Store state** | useAuthStore: profile, loadProfile. Local: form state, photos[], saving. usePhotoUpload: pickAndUpload, uploading, progress. |
-| **Layout** | ScrollView: header (close with onBackPress, "Edit Profile", Save disabled when !isDirty or saving). **Card** sections for About, Discovery & Privacy, Hosting. Photo grid (6 slots): **progress bar** when uploading (0–100%). Bio: char count (500 max). |
+| **Layout** | ScrollView: header (close with onBackPress, "Edit Profile", Save disabled when !isDirty or saving). **Card** sections for About (incl. Primary vibe), Discovery & Privacy, Hosting. **Progressive disclosure:** "Show advanced options" toggle reveals Discovery & Privacy and Hosting; Primary vibe always in About. Photo grid (6 slots): **progress bar** when uploading (0–100%). Bio: char count (500 max). |
 | **Components** | **ProfilePhoto** (storagePath for single photo in slot). **Card** (layout). Inline: chips for gender/exp. |
 | **Interactions** | Add photo (slot 0–5): pickAndUpload; progress bar during upload. Remove photo (tap on filled slot). Chips select one. Save validates and PUT. Back: unsaved changes → confirm discard. |
 | **States** | **Loading**: Save shows "..." when saving. **Uploading**: slot shows progress bar. **Error**: Alert on save failure. **Saved**: in-app toast. |
@@ -484,7 +484,7 @@ Admin is React + Vite, react-router-dom. **Routes** under Layout: `/`, `/users`,
 |-------|-------------|
 | **Intent** | Command center overview — KPIs, health. |
 | **API** | `getOverview()` → fallback `getStats()`, `getHealth()`. |
-| **Layout** | Grid of GlassCards: Online Now, Total Users, New (24h), MRR, Paying Users, Ad Revenue, Panic Alerts, Venue Distress, Pending Reports, Pending Mod, Active Events, Active Venues, Whispers (24h). Sparklines for Online, Total, Panic, Reports. Health card: version, modules. |
+| **Layout** | **Tier Funnel** card (Signups → Verified → Premium). Grid of GlassCards: Online Now, Total Users, New (24h), MRR, Paying Users, Ad Revenue, Panic Alerts, Venue Distress, Pending Reports, Pending Mod, Active Events, Active Venues, Whispers (24h). Sparklines for Online, Total, Panic, Reports. Health card: version, modules. |
 | **Refresh** | Listens for `command-center-refresh`. |
 | **States** | SkeletonCards, AdminError. |
 

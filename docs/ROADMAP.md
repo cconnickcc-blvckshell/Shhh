@@ -39,6 +39,8 @@
 | ~~Success toast on save~~ | ✅ Done (Wave 1) |
 | ~~Create venue: Location picker~~ | ✅ Done (Wave 4) |
 | ~~Create/Edit event: Date/time pickers~~ | ✅ Done (Wave 4) |
+| ~~Create event: Progressive disclosure (advanced options)~~ | ✅ Done (Wave 12) |
+| ~~Edit Profile: Progressive disclosure (Discovery & Privacy, Hosting)~~ | ✅ Done (Wave 12) |
 | Verification: Tier 2 ID flow | Phase 4 |
 | Supabase photo buckets | Phase 6 — see `docs/archive/SUPABASE_PHOTO_BUCKETS.md` |
 
@@ -57,6 +59,7 @@
 - Keyboard shortcuts (R, 1-9, M, D)
 - Skeleton loaders
 - Neon glassmorphism design
+- **Tier Funnel** (Wave 12): Signups → Verified → Premium card on Dashboard
 
 ### Planned
 

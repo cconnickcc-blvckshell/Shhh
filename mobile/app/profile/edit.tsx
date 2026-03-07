@@ -57,6 +57,7 @@ export default function EditProfileScreen() {
   const [discoveryVisibleTo, setDiscoveryVisibleTo] = useState<string>('all');
   const [profileVisibilityTier, setProfileVisibilityTier] = useState<string>('all');
   const [crossingPathsVisible, setCrossingPathsVisible] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [saving, setSaving] = useState(false);
   const { pickAndUpload, uploading, progress } = usePhotoUpload();
   const { show: showToast } = useInAppToast();
@@ -252,11 +253,6 @@ export default function EditProfileScreen() {
 
             <Text style={s.label}>Interests</Text>
             <TextInput style={s.input} value={kinks} onChangeText={setKinks} placeholder="social, dancing, parties" placeholderTextColor="rgba(255,255,255,0.2)" />
-          </Card>
-
-          {/* Discovery & privacy — card section */}
-          <Card style={s.cardSection}>
-            <Text style={s.sectionLabel}>DISCOVERY & PRIVACY</Text>
 
             <Text style={s.label}>Primary vibe</Text>
             <Text style={s.hint}>How you show up in Discover</Text>
@@ -268,6 +264,18 @@ export default function EditProfileScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+          </Card>
+
+          <TouchableOpacity style={s.advancedToggle} onPress={() => setShowAdvanced(!showAdvanced)} accessibilityRole="button" accessibilityLabel={showAdvanced ? 'Hide advanced options' : 'Show advanced options'}>
+            <Ionicons name={showAdvanced ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primaryLight} />
+            <Text style={s.advancedToggleText}>{showAdvanced ? 'Hide advanced' : 'Show advanced options'}</Text>
+          </TouchableOpacity>
+
+          {showAdvanced && (
+          <>
+          {/* Discovery & privacy — card section */}
+          <Card style={s.cardSection}>
+            <Text style={s.sectionLabel}>DISCOVERY & PRIVACY</Text>
 
             <Text style={s.label}>Who can see you in Discover?</Text>
             <View style={s.chips}>
@@ -307,6 +315,8 @@ export default function EditProfileScreen() {
               <Switch value={isHost} onValueChange={setIsHost} trackColor={{ false: 'rgba(255,255,255,0.1)', true: colors.primaryDark }} thumbColor={isHost ? colors.primaryLight : 'rgba(255,255,255,0.5)'} />
             </View>
           </Card>
+          </>
+          )}
 
           <View style={{ height: 40 }} />
         </ScrollView>
@@ -345,6 +355,8 @@ const s = StyleSheet.create({
   uploadProgressBar: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.primary, borderRadius: 12 },
   uploadProgressText: { color: '#fff', fontSize: 10, fontWeight: '700', textAlign: 'center', zIndex: 1 },
 
+  advancedToggle: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, marginHorizontal: spacing.lg, marginBottom: spacing.md },
+  advancedToggleText: { color: colors.primaryLight, fontSize: 14, fontWeight: '600' },
   cardSection: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,

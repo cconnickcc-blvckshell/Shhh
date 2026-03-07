@@ -93,6 +93,72 @@ export default function Dashboard() {
         Command Center
       </h2>
 
+      {/* Tier Funnel: Signup → Verified → Premium */}
+      <GlassCard
+        accent={theme.colors.primary}
+        style={{
+          marginBottom: theme.space[6],
+          padding: theme.space[4],
+        }}
+      >
+        <div style={{
+          color: theme.colors.textMuted,
+          fontSize: theme.fontSize.xs,
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          fontWeight: theme.fontWeight.semibold,
+          marginBottom: theme.space[3],
+        }}>
+          Tier Funnel
+        </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'stretch',
+          gap: theme.space[2],
+          flexWrap: 'wrap',
+        }}>
+          <div style={{
+            flex: 1,
+            minWidth: 120,
+            background: 'rgba(124,43,255,0.15)',
+            borderRadius: theme.radius.md,
+            padding: theme.space[3],
+            borderLeft: `4px solid ${theme.colors.info}`,
+          }}>
+            <div style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.xs, marginBottom: 4 }}>Signups</div>
+            <div style={{ fontFamily: theme.font.display, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, color: theme.colors.text }}>
+              {u.total ?? u.total_users ?? 0}
+            </div>
+          </div>
+          <div style={{
+            flex: 1,
+            minWidth: 120,
+            background: 'rgba(124,43,255,0.15)',
+            borderRadius: theme.radius.md,
+            padding: theme.space[3],
+            borderLeft: `4px solid ${theme.colors.primary}`,
+          }}>
+            <div style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.xs, marginBottom: 4 }}>Verified</div>
+            <div style={{ fontFamily: theme.font.display, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, color: theme.colors.text }}>
+              {u.verified ?? u.verified_users ?? 0}
+            </div>
+          </div>
+          <div style={{
+            flex: 1,
+            minWidth: 120,
+            background: 'rgba(124,43,255,0.15)',
+            borderRadius: theme.radius.md,
+            padding: theme.space[3],
+            borderLeft: `4px solid ${theme.colors.success}`,
+          }}>
+            <div style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.xs, marginBottom: 4 }}>Premium</div>
+            <div style={{ fontFamily: theme.font.display, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, color: theme.colors.text }}>
+              {r.paying_users ?? 0}
+            </div>
+          </div>
+        </div>
+      </GlassCard>
+
       <div
         className="dashboard-grid"
         style={{

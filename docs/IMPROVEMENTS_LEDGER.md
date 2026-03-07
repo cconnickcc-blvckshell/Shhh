@@ -259,7 +259,7 @@
 | Marble Drop | Signup visualization | 4 | 2 | 2 | P3 | Not started |
 | Admin Control | Feature flags, content, rate limits in DB | 4 | 5 | 3 | P1 | Not started |
 | Live Activity Feed | Scrolling feed of recent actions | 4 | 3 | 2 | P2 | Not started |
-| Tier Funnel | Signup → verified → premium | 5 | 4 | 2 | P2 | Not started |
+| Tier Funnel | Signup → verified → premium | 5 | 4 | 2 | P2 | Done (Wave 12) |
 | Trust Score Distribution | Histogram, outliers | 5 | 3 | 2 | P2 | Not started |
 | Retention Cohorts | D1/D7 by cohort | 4 | 4 | 3 | P2 | Not started |
 
@@ -454,9 +454,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 5 | 4 | 2 | P2 | Partial |
+| 5 | 4 | 2 | P2 | Done |
 
-**Notes:** "Advanced" toggle for event creation, profile.
+**Notes:** Wave 12: "Show advanced options" toggle on Create Event (visibility, tier, radius, location revealed) and Edit Profile (Discovery & Privacy, Hosting). Primary vibe moved to About for always-visible access.
 
 ---
 
@@ -608,7 +608,7 @@
 
 ---
 
-## What Remains (Post–Wave 8)
+## What Remains (Post–Wave 12)
 
 **High priority (P0–P1):**
 - **C.4** Unread counts sync protocol (cursor-based reconciliation)
@@ -625,7 +625,7 @@
 - **A.5** Feed integrity (velocity checks, GPS plausibility)
 - **A.7** Moderation workflow automation
 - **A.10** Growth mechanics (invite flows, viral loops)
-- **B.5** Admin: 3D Globe, Marble Drop, Admin Control, Tier Funnel, Retention Cohorts
+- **B.5** Admin: 3D Globe, Marble Drop, Admin Control, ~~Tier Funnel~~ ✅, Retention Cohorts
 - **C.7** Full animation application across modals
 - ~~**B.6** Empty state illustrations, Accessibility~~ Partial (Wave 11: accessibility labels on key buttons, SafeState, CTAs)
 - ~~**GC-7.8** "No" as first-class (pass with reason)~~ ✅ Wave 9
