@@ -167,8 +167,10 @@ export default function EditProfileScreen() {
                           <ActivityIndicator size="small" color={colors.primaryLight} />
                         ) : (
                           <>
-                            <Ionicons name="add" size={24} color={colors.primaryLight} />
-                            {isMain && <Text style={s.photoLabel}>Main</Text>}
+                            <View style={s.addIconRing}>
+                              <Ionicons name="add" size={22} color={colors.primaryLight} />
+                            </View>
+                            {isMain && <Text style={s.photoLabel}>Main photo</Text>}
                           </>
                         )}
                       </View>
@@ -278,39 +280,45 @@ const s = StyleSheet.create({
   wrapper: { flex: 1 },
   pageShell: { flex: 1, backgroundColor: 'transparent' },
   container: { flex: 1, backgroundColor: 'transparent' },
-  scrollContent: { paddingBottom: 24 },
+  scrollContent: { paddingBottom: 24, maxWidth: layout.contentMaxWidth, alignSelf: 'center', width: '100%' },
   saveBtn: { backgroundColor: colors.primary, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20 },
   saveText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 
-  sectionLabel: { color: 'rgba(179,92,255,0.5)', fontSize: 11, fontWeight: '800', letterSpacing: 2, marginBottom: 12 },
-  label: { color: 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginTop: 20, marginBottom: 8 },
-  hint: { color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: -4, marginBottom: 8 },
+  sectionLabel: { color: 'rgba(179,92,255,0.6)', fontSize: 11, fontWeight: '800', letterSpacing: 2.5, marginBottom: 14 },
+  label: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginTop: 20, marginBottom: 8 },
+  hint: { color: 'rgba(255,255,255,0.3)', fontSize: 12, marginTop: -4, marginBottom: 8 },
 
-  photoSection: { paddingHorizontal: spacing.lg, paddingVertical: 16 },
+  photoSection: { paddingHorizontal: spacing.lg, paddingVertical: 20, alignItems: 'center' },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
   photoSlot: {
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(179,92,255,0.15)',
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
-  photoMain: { borderColor: 'rgba(179,92,255,0.25)', borderWidth: 1 },
-  photoRemoveBtn: { position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center' },
-  photoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  photoLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: '700' },
+  photoMain: { borderColor: 'rgba(179,92,255,0.35)', borderWidth: 2 },
+  photoRemoveBtn: { position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(0,0,0,0.75)', alignItems: 'center', justifyContent: 'center' },
+  photoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  addIconRing: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(179,92,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(179,92,255,0.25)' },
+  photoLabel: { color: 'rgba(179,92,255,0.5)', fontSize: 11, fontWeight: '700' },
 
   card: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     padding: spacing.lg,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
-  input: { backgroundColor: 'rgba(255,255,255,0.04)', color: '#fff', padding: 16, borderRadius: 14, fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  input: { backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', padding: 16, borderRadius: 12, fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   textArea: { minHeight: 90, textAlignVertical: 'top' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {

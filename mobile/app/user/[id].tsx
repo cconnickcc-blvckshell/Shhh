@@ -1,10 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, useWindowDimensions, Vibration, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, usersApi, messagingApi, ApiError } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { ConnectionWindowModal } from '../../src/components/ConnectionWindowModal';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
 import { useDiscoverFiltersStore } from '../../src/stores/discoverFilters';
 import { colors, spacing, fontSize, borderRadius, layout } from '../../src/constants/theme';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
@@ -51,18 +55,25 @@ export default function UserDetailScreen() {
   useEffect(() => { load(); }, [load]);
 
   if (loading && !profile) {
-    return <View style={s.container}><View style={s.loadingWrap}><Ionicons name="hourglass-outline" size={24} color="rgba(255,255,255,0.2)" /></View></View>;
+    return (
+      <PremiumDarkBackground style={{ flex: 1 }}>
+        <PageShell><View style={s.loadingWrap}><Ionicons name="hourglass-outline" size={28} color={colors.primaryLight} /></View></PageShell>
+      </PremiumDarkBackground>
+    );
   }
   if (loadError && !profile) {
     return (
-      <View style={s.container}>
-        <View style={s.errorWrap}>
-          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
-          <Text style={s.errorMsg}>{loadError}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={load}><Text style={s.retryBtnText}>Try again</Text></TouchableOpacity>
-          <TouchableOpacity style={s.backLink} onPress={() => router.back()}><Text style={s.backLinkText}>Go back</Text></TouchableOpacity>
-        </View>
-      </View>
+      <PremiumDarkBackground style={{ flex: 1 }}>
+        <PageShell>
+          <SubPageHeader title="Profile" />
+          <View style={s.errorWrap}>
+            <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+            <Text style={s.errorMsg}>{loadError}</Text>
+            <TouchableOpacity style={s.retryBtn} onPress={load}><Text style={s.retryBtnText}>Try again</Text></TouchableOpacity>
+            <TouchableOpacity style={s.backLink} onPress={() => router.back()}><Text style={s.backLinkText}>Go back</Text></TouchableOpacity>
+          </View>
+        </PageShell>
+      </PremiumDarkBackground>
     );
   }
   if (!profile) return null;
@@ -111,27 +122,38 @@ export default function UserDetailScreen() {
   const presence = profile.presenceState ? PRESENCE_LABELS[profile.presenceState] : null;
   const shieldColor = profile.verificationStatus === 'reference_verified' ? '#34D399' : profile.verificationStatus === 'id_verified' ? '#A855F7' : profile.verificationStatus === 'photo_verified' ? '#60A5FA' : null;
 
+  const hasPhotos = profile.photosJson?.length > 0;
+  const heroAspect = 1 / 1.45;
+
   return (
   <>
-    <ScrollView style={s.container} bounces={false}>
-      {/* Hero photo — capped on desktop so it doesn't blow up */}
+    <PremiumDarkBackground style={{ flex: 1 }}>
+      <PageShell>
+        <SubPageHeader title={profile.displayName} subtitle={profile.gender ? `${profile.gender}${profile.age ? ` · ${profile.age}` : ''}` : undefined} />
+    <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} bounces={false}>
+      {/* Hero photo — intentional aspect, gradient overlay when empty */}
       <View style={[s.heroWrap, isDesktop && s.heroWrapDesktop]}>
-        <View style={[s.hero, { height: heroSize * 0.9, width: heroSize }]}>
-          <ProfilePhoto photosJson={profile.photosJson} fill borderRadius={0} size={heroSize} canSeeUnblurred={canSeeUnblurred ?? undefined} />
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
-        </TouchableOpacity>
-
+        <View style={[s.hero, { width: heroSize, aspectRatio: 1 / heroAspect }]}>
+          {hasPhotos ? (
+            <ProfilePhoto photosJson={profile.photosJson} fill borderRadius={0} size={heroSize} canSeeUnblurred={canSeeUnblurred ?? undefined} />
+          ) : (
+            <LinearGradient colors={['#1a0a2e', '#0d0618', '#050508']} style={StyleSheet.absoluteFill}>
+              <View style={s.heroPlaceholder}>
+                <Ionicons name="person" size={64} color="rgba(179,92,255,0.25)" />
+                <Text style={s.heroPlaceholderText}>No photos yet</Text>
+              </View>
+            </LinearGradient>
+          )}
         {/* Presence badge */}
         {presence && (
-          <View style={[s.presenceBadge, { backgroundColor: presence.color + '20', borderColor: presence.color + '40' }]}>
+          <View style={[s.presenceBadge, { backgroundColor: presence.color + '25', borderColor: presence.color + '50' }]}>
             <View style={[s.presenceDotSmall, { backgroundColor: presence.color }]} />
             <Text style={[s.presenceLabel, { color: presence.color }]}>{presence.label}</Text>
           </View>
         )}
 
-        {/* Bottom gradient info */}
-        <View style={s.heroBottom}>
+        {/* Bottom gradient overlay */}
+        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={s.heroBottom}>
           <View style={s.nameRow}>
             <Text style={s.name}>{profile.displayName}</Text>
             {profile.age && <Text style={s.age}>{profile.age}</Text>}
@@ -142,7 +164,7 @@ export default function UserDetailScreen() {
             {profile.showAsRole && profile.showAsRole !== 'n_a' && <><Text style={s.metaDot}>·</Text><Text style={s.metaText}>{profile.showAsRole}</Text></>}
             {profile.showAsRelationship && <><Text style={s.metaDot}>·</Text><Text style={s.metaText}>{profile.showAsRelationship}</Text></>}
           </View>
-        </View>
+        </LinearGradient>
         </View>
       </View>
 
@@ -174,15 +196,15 @@ export default function UserDetailScreen() {
           </View>
         )}
 
-        {/* Stats row */}
+        {/* Stats row — glass card */}
         <View style={s.statsRow}>
           <View style={s.statItem}>
-            <Text style={s.statValue}>{profile.experienceLevel}</Text>
+            <Text style={s.statValue}>{String(profile.experienceLevel || 'New').replace('_', ' ')}</Text>
             <Text style={s.statLabel}>Experience</Text>
           </View>
           <View style={s.statDivider} />
           <View style={s.statItem}>
-            <Text style={s.statValue}>{profile.references?.total || 0}</Text>
+            <Text style={s.statValue}>{profile.references?.total ?? 0}</Text>
             <Text style={s.statLabel}>References</Text>
           </View>
           <View style={s.statDivider} />
@@ -259,6 +281,8 @@ export default function UserDetailScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+      </PageShell>
+    </PremiumDarkBackground>
 
     <ConnectionWindowModal
       visible={!!connectionWindowModal}
@@ -272,28 +296,30 @@ export default function UserDetailScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 200 },
-  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 120 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 24 },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 120 },
+  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingTop: 60 },
   errorMsg: { color: colors.text, fontSize: 14, textAlign: 'center', marginTop: spacing.md },
   retryBtn: { marginTop: spacing.lg, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
   retryBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
   backLink: { marginTop: spacing.md, paddingVertical: 8 }, backLinkText: { color: colors.textMuted, fontSize: 14 },
-  heroWrap: {},
+  heroWrap: { marginBottom: 0 },
   heroWrapDesktop: { alignItems: 'center', maxWidth: layout.contentMaxWidth, alignSelf: 'center', width: '100%' },
-  hero: { position: 'relative', backgroundColor: '#0A0A12', overflow: 'hidden' },
-  backBtn: { position: 'absolute', top: 50, left: 16, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', zIndex: 10 },
-  presenceBadge: { position: 'absolute', top: 50, right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, borderWidth: 1, zIndex: 10 },
+  hero: { position: 'relative', backgroundColor: '#0a0812', overflow: 'hidden', borderRadius: 0 },
+  heroPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  heroPlaceholderText: { color: 'rgba(179,92,255,0.35)', fontSize: 13, fontWeight: '600' },
+  presenceBadge: { position: 'absolute', top: 16, right: 16, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, zIndex: 10 },
   presenceDotSmall: { width: 6, height: 6, borderRadius: 3 },
   presenceLabel: { fontSize: 11, fontWeight: '700' },
-  heroBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, paddingTop: 60, backgroundColor: 'rgba(0,0,0,0.6)' },
+  heroBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingTop: 80 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { color: '#fff', fontSize: 24, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   age: { color: 'rgba(255,255,255,0.8)', fontSize: 22, fontWeight: '300' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 0, marginTop: 4 },
   metaText: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
   metaDot: { color: 'rgba(255,255,255,0.3)', fontSize: 13, marginHorizontal: 6 },
-  body: { padding: 16 },
+  body: { padding: spacing.lg, maxWidth: layout.contentMaxWidth, alignSelf: 'center', width: '100%' },
   intentRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   intentChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(147,51,234,0.1)', borderWidth: 1, borderColor: 'rgba(147,51,234,0.25)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14 },
   intentText: { color: colors.primaryLight, fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
@@ -303,17 +329,17 @@ const s = StyleSheet.create({
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tag: { backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
   tagText: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600' },
-  statsRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 14, padding: 16, marginBottom: 12 },
+  statsRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   statItem: { flex: 1, alignItems: 'center' },
-  statValue: { color: '#fff', fontSize: 15, fontWeight: '700', textTransform: 'capitalize' },
-  statLabel: { color: 'rgba(255,255,255,0.35)', fontSize: 10, marginTop: 2, textTransform: 'uppercase' },
-  statDivider: { width: 1, height: 24, backgroundColor: 'rgba(255,255,255,0.08)' },
+  statValue: { color: '#fff', fontSize: 16, fontWeight: '800', textTransform: 'capitalize' },
+  statLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10, marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 },
+  statDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.1)' },
   trustRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
   trustText: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
-  actions: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16, paddingVertical: 16 },
-  actionCircle: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
-  actionCircleSmall: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(147,51,234,0.2)', borderWidth: 1, borderColor: 'rgba(147,51,234,0.3)', alignItems: 'center', justifyContent: 'center' },
-  actionCirclePrimary: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  actions: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20, paddingVertical: 24 },
+  actionCircle: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  actionCircleSmall: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(147,51,234,0.15)', borderWidth: 1, borderColor: 'rgba(179,92,255,0.3)', alignItems: 'center', justifyContent: 'center' },
+  actionCirclePrimary: { width: 68, height: 68, borderRadius: 34, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(179,92,255,0.4)', shadowColor: colors.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 12 },
   whisperBox: { backgroundColor: 'rgba(147,51,234,0.06)', borderWidth: 1, borderColor: 'rgba(147,51,234,0.2)', borderRadius: 14, padding: 14, marginBottom: 16 },
   whisperHint: { color: 'rgba(255,255,255,0.35)', fontSize: 12, marginBottom: 8 },
   whisperInputRow: { flexDirection: 'row', gap: 8 },
