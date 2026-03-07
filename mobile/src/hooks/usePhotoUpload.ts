@@ -71,6 +71,11 @@ export function usePhotoUpload() {
     setUploading(true);
     setProgress(0);
 
+    let progressInterval: ReturnType<typeof setInterval> | null = null;
+    progressInterval = setInterval(() => {
+      setProgress((p) => Math.min(p + 12, 85));
+    }, 200);
+
     try {
       const formData = new FormData();
 
@@ -97,6 +102,7 @@ export function usePhotoUpload() {
         body: formData,
       });
 
+      if (progressInterval) clearInterval(progressInterval);
       setProgress(100);
 
       if (!res.ok) {
@@ -113,6 +119,7 @@ export function usePhotoUpload() {
         storagePath: storagePath || null,
       };
     } catch (err: any) {
+      if (progressInterval) clearInterval(progressInterval);
       Alert.alert('Upload Failed', err.message);
       return null;
     } finally {

@@ -19,7 +19,7 @@ export default function AlbumDetailScreen() {
   const [watermarkMode, setWatermarkMode] = useState<'off' | 'subtle' | 'invisible'>('subtle');
   const [notifyOnView, setNotifyOnView] = useState(true);
   const { width } = useWindowDimensions();
-  const { pickAndUpload, uploading } = usePhotoUpload();
+  const { pickAndUpload, uploading, progress } = usePhotoUpload();
   const cols = 3;
   const tileSize = (width - spacing.md * 2 - 4 * (cols - 1)) / cols;
   const isOwner = album && userId && album.owner_id === userId;
@@ -91,7 +91,14 @@ export default function AlbumDetailScreen() {
           <View style={styles.headerActions}>
             {isOwner && (
               <TouchableOpacity onPress={addPhoto} disabled={uploading} style={styles.addPhotoBtn}>
-                {uploading ? <ActivityIndicator size="small" color={colors.primaryLight} /> : <Ionicons name="add-circle" size={26} color={colors.primary} />}
+                {uploading ? (
+                  <View style={styles.uploadPill}>
+                    <View style={[styles.uploadPillBar, { width: `${progress}%` }]} />
+                    <Text style={styles.uploadPillText}>{progress}%</Text>
+                  </View>
+                ) : (
+                  <Ionicons name="add-circle" size={26} color={colors.primary} />
+                )}
               </TouchableOpacity>
             )}
             <TouchableOpacity onPress={() => setShowShare(!showShare)}>
@@ -211,4 +218,7 @@ const styles = StyleSheet.create({
   emptyText: { color: colors.textMuted, fontSize: fontSize.md, marginTop: spacing.md },
   emptyAddBtn: { marginTop: spacing.lg, paddingVertical: 14, paddingHorizontal: spacing.xl, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
   emptyAddBtnText: { color: '#fff', fontWeight: '700', fontSize: fontSize.sm },
+  uploadPill: { width: 56, height: 24, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 12, overflow: 'hidden', justifyContent: 'center' },
+  uploadPillBar: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.primary, borderRadius: 12 },
+  uploadPillText: { color: '#fff', fontSize: 9, fontWeight: '700', textAlign: 'center', zIndex: 1 },
 });

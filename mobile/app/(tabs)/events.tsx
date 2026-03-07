@@ -180,7 +180,20 @@ export default function EventsScreen() {
         ListHeaderComponent={
           tonightFeed && (tonightFeed.events?.length > 0 || tonightFeed.venues?.length > 0) ? (
             <View style={s.tonightSection}>
-              <Text style={s.tonightLabel}>{'TONIGHT'}</Text>
+              <View style={s.tonightHeader}>
+                <Text style={s.tonightLabel}>{'TONIGHT'}</Text>
+                {(() => {
+                  const eventCount = tonightFeed.events?.reduce((a: number, e: any) => a + (e.attendee_count || 0), 0) ?? 0;
+                  const venueCount = tonightFeed.venues?.reduce((a: number, v: any) => a + (v.currentAttendees || 0), 0) ?? 0;
+                  const total = eventCount + venueCount;
+                  return total > 0 ? (
+                    <View style={s.tonightBadge}>
+                      <Ionicons name="people" size={12} color="#B35CFF" />
+                      <Text style={s.tonightBadgeText}>{total} going tonight</Text>
+                    </View>
+                  ) : null;
+                })()}
+              </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tonightScroll}>
                 {tonightFeed.events?.slice(0, 5).map((ev: any) => (
                   <TouchableOpacity key={ev.id} style={s.tonightCard} onPress={() => router.push(`/event/${ev.id}`)}>
@@ -318,7 +331,10 @@ const s = StyleSheet.create({
   filterChipTextActive: { color: '#B35CFF' },
 
   tonightSection: { marginBottom: 20, paddingTop: 4 },
-  tonightLabel: { color: 'rgba(179,92,255,0.5)', fontSize: 11, fontWeight: '800', letterSpacing: 2, marginBottom: 12 },
+  tonightHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  tonightLabel: { color: 'rgba(179,92,255,0.5)', fontSize: 11, fontWeight: '800', letterSpacing: 2 },
+  tonightBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(124,43,255,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  tonightBadgeText: { color: '#B35CFF', fontSize: 11, fontWeight: '700' },
   tonightScroll: { gap: 10 },
   tonightCard: {
     width: 150,

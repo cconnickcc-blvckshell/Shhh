@@ -337,7 +337,7 @@
 |------|--------|--------|---------|--------|
 | 5 | 5 | 3 | P1 | Partial |
 
-**Notes:** Wave 1: Chat optimistic messages (sending state), profile like optimistic. Backend ready; uploads still need progress indicator.
+**Notes:** Wave 5: Photo upload progress indicator (edit profile, album). Chat, like done. Backend ready.
 
 ---
 
@@ -418,9 +418,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 5 | 4 | 2 | P2 | Not started |
+| 5 | 4 | 2 | P2 | Partial |
 
-**Notes:** Define shared rules; apply across modals, navigation, content.
+**Notes:** Wave 5: `animation` constants in theme (modalDuration, fadeDuration, navDuration). Full application across modals pending.
 
 ---
 
@@ -548,7 +548,7 @@
 |------|--------|--------|---------|--------|
 | 5 | 5 | 2 | P1 | Partial |
 
-**Notes:** Wave 1: Social proof bar "X people nearby right now"; pull-to-refresh already existed. Pending: "X new people" pulse on refresh, "5 going tonight" badge.
+**Notes:** Wave 5: "X new people nearby" toast on refresh; "X going tonight" badge on Events. Social proof bar, pull-to-refresh done.
 
 ---
 
@@ -558,9 +558,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 4 | 4 | 3 | P2 | Not started |
+| 4 | 4 | 3 | P2 | Partial |
 
-**Notes:** Swipe-right → messages; swipe on discovery cards (like/pass); gesture-based navigation. React Native gesture handlers; test on iOS/Android.
+**Notes:** Wave 6: Swipe-right on discovery tile = like; swipe-left = pass. Swipe from left edge = open messages. Native only.
 
 ---
 

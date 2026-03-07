@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useWindowDimensions, Alert, TextInput, Vibration, ActivityIndicator, Platform, ScrollView } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { discoverApi, api, adsApi, storiesApi } from '../../src/api/client';
+import { discoverApi, api, adsApi, storiesApi, usersApi } from '../../src/api/client';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { useAuthStore } from '../../src/stores/auth';
 import { useLocation } from '../../src/hooks/useLocation';
@@ -17,6 +18,7 @@ import { SafeState } from '../../src/components/ui';
 import { mapApiError } from '../../src/utils/errorMapper';
 import { useScreenView } from '../../src/hooks/useScreenView';
 import { useDiscoverFiltersStore } from '../../src/stores/discoverFilters';
+import { useInAppToast } from '../../src/context/InAppToastContext';
 import { VenueAdCard } from '../../src/components/VenueAdCard';
 
 const HOVER_DURATION_MS = 160;
@@ -57,13 +59,15 @@ type SortMode = 'nearest' | 'active';
 const FALLBACK_LAT = 40.7128;
 const FALLBACK_LNG = -74.006;
 
-/** Discover tile with signature hover: glow + depth (SOFT_LAUNCH_WEB_PLAN §4.5). */
+/** Discover tile with signature hover: glow + depth. Swipe right = like, swipe left = pass (native only). */
 function DiscoverTile({
   item,
   tileW,
   tileH,
   onPress,
   onLongPress,
+  onSwipeRight,
+  onSwipeLeft,
   tileStyle,
   presenceBar,
   topRow,
@@ -85,6 +89,8 @@ function DiscoverTile({
   tileH: number;
   onPress: () => void;
   onLongPress: () => void;
+  onSwipeRight?: () => void;
+  onSwipeLeft?: () => void;
   tileStyle: any;
   presenceBar: any;
   topRow: any;
@@ -104,6 +110,7 @@ function DiscoverTile({
   const { isHovered, hoverProps } = useHover();
   const canSeeUnblurred = useCanSeeUnblurred(item.userId);
   const hoverProgress = useSharedValue(0);
+  const translateX = useSharedValue(0);
   useEffect(() => {
     hoverProgress.value = withTiming(isHovered ? 1 : 0, {
       duration: HOVER_DURATION_MS,
@@ -111,17 +118,41 @@ function DiscoverTile({
     });
   }, [isHovered, hoverProgress]);
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + 0.02 * hoverProgress.value }],
+    transform: [
+      { translateX: translateX.value },
+      { scale: 1 + 0.02 * hoverProgress.value },
+    ],
     shadowColor: '#7C2BFF',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4 * hoverProgress.value,
     shadowRadius: 8 + 8 * hoverProgress.value,
     zIndex: hoverProgress.value > 0 ? 1 : 0,
   }));
+  const panGesture = useMemo(() => {
+    if (Platform.OS === 'web' || (!onSwipeRight && !onSwipeLeft)) return null;
+    return Gesture.Pan()
+      .activeOffsetX(15)
+      .failOffsetY([-20, 20])
+      .onUpdate((e) => { translateX.value = Math.max(-80, Math.min(80, e.translationX * 0.5)); })
+      .onEnd((e) => {
+        'worklet';
+        const t = e.translationX;
+        const v = e.velocityX;
+        if (t > 40 && v > 30 && onSwipeRight) {
+          translateX.value = withTiming(400, { duration: 120 }, () => { translateX.value = 0; });
+          runOnJS(onSwipeRight)();
+        } else if (t < -40 && v < -30 && onSwipeLeft) {
+          translateX.value = withTiming(-400, { duration: 120 }, () => { translateX.value = 0; });
+          runOnJS(onSwipeLeft)();
+        } else {
+          translateX.value = withTiming(0);
+        }
+      });
+  }, [onSwipeRight, onSwipeLeft, translateX]);
   const presenceColor = item.presenceState ? PRESENCE_COLORS[item.presenceState] : null;
   const topIntent = item.activeIntents?.[0] ? INTENT_ICONS[item.activeIntents[0]] : null;
   const isWeb = Platform.OS === 'web';
-  return (
+  const tileContent = (
     <TouchableOpacity
       style={[tileStyle, { width: tileW, height: tileH }]}
       activeOpacity={0.92}
@@ -133,7 +164,7 @@ function DiscoverTile({
       accessibilityRole="button"
       accessibilityHint="Double tap to view profile. Long press to whisper."
     >
-      <Animated.View style={[isWeb ? animatedStyle : undefined, { flex: 1 }]}>
+      <Animated.View style={[panGesture || isWeb ? animatedStyle : undefined, { flex: 1 }]}>
       <ProfilePhoto photosJson={item.photosJson} fill borderRadius={0} size={tileW} canSeeUnblurred={canSeeUnblurred ?? undefined} preferThumbnail />
       {presenceColor && <View style={[presenceBar, { backgroundColor: presenceColor }]} />}
       <View style={topRow}>
@@ -162,6 +193,10 @@ function DiscoverTile({
       </Animated.View>
     </TouchableOpacity>
   );
+  if (panGesture) {
+    return <GestureDetector gesture={panGesture}>{tileContent}</GestureDetector>;
+  }
+  return tileContent;
 }
 
 export default function DiscoverScreen() {
@@ -191,6 +226,7 @@ export default function DiscoverScreen() {
   const primaryIntent = profile?.primaryIntent ?? undefined;
 
   const setFilterContext = useDiscoverFiltersStore((s) => s.setFilterContext);
+  const { show: showToast } = useInAppToast();
 
   const [atDiscoveryCap, setAtDiscoveryCap] = useState(false);
   const [discoverAd, setDiscoverAd] = useState<any>(null);
@@ -212,9 +248,11 @@ export default function DiscoverScreen() {
       adsApi.getFeed(lat, lng).then((r) => setDiscoverAd(r.data)).catch(() => setDiscoverAd(null));
       storiesApi.nearby(lat, lng, radiusKm).then((r) => setNearbyStories(r.data || [])).catch(() => setNearbyStories([]));
       discoverApi.crossingPaths(2).then((r) => setCrossingPaths(r.data || [])).catch(() => setCrossingPaths([]));
+      return list.length;
     } catch (err: any) {
       setLoadError(mapApiError(err));
       setUsers([]);
+      return 0;
     } finally {
       setLoading(false);
     }
@@ -230,7 +268,17 @@ export default function DiscoverScreen() {
   useEffect(() => {
     if (discoverAd?.id) adsApi.recordImpression(discoverAd.id, 'discover_feed').catch(() => {});
   }, [discoverAd?.id]);
-  const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); adsApi.getFeed(lat, lng).then((r) => setDiscoverAd(r.data)).catch(() => {}); storiesApi.nearby(lat, lng, radiusKm).then((r) => setNearbyStories(r.data || [])).catch(() => {}); discoverApi.crossingPaths(2).then((r) => setCrossingPaths(r.data || [])).catch(() => {}); setRefreshing(false); };
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setLoadError(null);
+    const prevCount = users.length;
+    const newCount = await load();
+    setRefreshing(false);
+    if (newCount > prevCount && prevCount > 0) {
+      const diff = newCount - prevCount;
+      showToast({ title: 'New people nearby', body: `${diff} ${diff === 1 ? 'person' : 'people'} just appeared.` });
+    }
+  };
 
   const sortedUsers = useMemo(() => {
     if (sortMode === 'active') {
@@ -259,6 +307,24 @@ export default function DiscoverScreen() {
     } catch (err: any) { Alert.alert('', mapApiError(err)); }
   };
 
+  const handleSwipeRight = useCallback(async (item: NearbyUser) => {
+    Vibration.vibrate(15);
+    try {
+      const res = await usersApi.like(item.userId);
+      setUsers((prev) => prev.filter((u) => u.userId !== item.userId));
+      if (res.data.matched) {
+        Vibration.vibrate([0, 80, 40, 80]);
+        Alert.alert("It's a Match! 💜", `You and ${item.displayName} are interested in each other`);
+      }
+    } catch {}
+  }, []);
+
+  const handleSwipeLeft = useCallback((item: NearbyUser) => {
+    Vibration.vibrate(10);
+    usersApi.pass(item.userId).catch(() => {});
+    setUsers((prev) => prev.filter((u) => u.userId !== item.userId));
+  }, []);
+
   const renderTile = ({ item }: { item: NearbyUser }) => (
     <DiscoverTile
       item={item}
@@ -266,6 +332,8 @@ export default function DiscoverScreen() {
       tileH={tileH}
       onPress={() => router.push(`/user/${item.userId}`)}
       onLongPress={() => handleLongPress(item)}
+      onSwipeRight={() => handleSwipeRight(item)}
+      onSwipeLeft={() => handleSwipeLeft(item)}
       tileStyle={[s.tile, { marginBottom: gap }, isDesktop && { borderRadius: borderRadius.xl }]}
       presenceBar={s.presenceBar}
       topRow={s.topRow}
@@ -284,8 +352,26 @@ export default function DiscoverScreen() {
     />
   );
 
+  const swipeRightToMessages = useMemo(() => {
+    if (Platform.OS === 'web') return null;
+    return Gesture.Pan()
+      .activeOffsetX(15)
+      .failOffsetY([-25, 25])
+      .onEnd((e) => {
+        if (e.translationX > 60 && e.velocityX > 80) {
+          router.push('/(tabs)/messages');
+        }
+      });
+  }, []);
+
   return (
     <PageShell>
+      {/* Swipe-right edge to open messages (native only) */}
+      {swipeRightToMessages && (
+        <GestureDetector gesture={swipeRightToMessages}>
+          <View style={s.swipeEdge} />
+        </GestureDetector>
+      )}
       {/* Quick whisper overlay */}
       {whisperTarget && (
         <View style={s.whisperOverlay}>
@@ -482,4 +568,5 @@ const s = StyleSheet.create({
   crossingPathsScroll: { paddingHorizontal: spacing.md, gap: 10, flexDirection: 'row', alignItems: 'center' },
   crossingPathCard: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: 'rgba(147,51,234,0.12)', borderWidth: 1, borderColor: 'rgba(147,51,234,0.25)', maxWidth: 220 },
   crossingPathText: { color: colors.text, fontSize: fontSize.sm, flex: 1 },
+  swipeEdge: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 24, zIndex: 10 },
 });

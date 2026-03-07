@@ -120,3 +120,17 @@ export const layout = {
   contentMaxWidth: 1280,
   sidebarWidth: 240,
 } as const;
+
+/**
+ * Animation timing — shared language for modals, transitions, content.
+ * Modals: slide up. Back: slide right. New content: fade in.
+ * @see docs/IMPROVEMENTS_LEDGER.md C.7
+ */
+export const animation = {
+  /** Modal slide-up duration */
+  modalDuration: 280,
+  /** Content fade-in duration */
+  fadeDuration: 200,
+  /** Back/slide transition duration */
+  navDuration: 250,
+} as const;

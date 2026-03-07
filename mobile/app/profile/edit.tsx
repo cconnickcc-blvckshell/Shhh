@@ -58,7 +58,7 @@ export default function EditProfileScreen() {
   const [profileVisibilityTier, setProfileVisibilityTier] = useState<string>('all');
   const [crossingPathsVisible, setCrossingPathsVisible] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { pickAndUpload, uploading } = usePhotoUpload();
+  const { pickAndUpload, uploading, progress } = usePhotoUpload();
   const { show: showToast } = useInAppToast();
 
   const isDirty = useMemo(() => {
@@ -199,7 +199,10 @@ export default function EditProfileScreen() {
                     ) : (
                       <View style={s.photoEmpty}>
                         {uploading ? (
-                          <ActivityIndicator size="small" color={colors.primaryLight} />
+                          <View style={s.uploadProgressWrap}>
+                            <View style={[s.uploadProgressBar, { width: `${progress}%` }]} />
+                            <Text style={s.uploadProgressText}>{progress}%</Text>
+                          </View>
                         ) : (
                           <>
                             <View style={s.addIconRing}>
@@ -338,6 +341,9 @@ const s = StyleSheet.create({
   photoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
   addIconRing: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(179,92,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(179,92,255,0.25)' },
   photoLabel: { color: 'rgba(179,92,255,0.5)', fontSize: 11, fontWeight: '700' },
+  uploadProgressWrap: { width: '80%', height: 24, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 12, overflow: 'hidden', justifyContent: 'center' },
+  uploadProgressBar: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.primary, borderRadius: 12 },
+  uploadProgressText: { color: '#fff', fontSize: 10, fontWeight: '700', textAlign: 'center', zIndex: 1 },
 
   card: {
     marginHorizontal: spacing.lg,
