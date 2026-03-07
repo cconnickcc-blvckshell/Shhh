@@ -260,7 +260,7 @@
 | Admin Control | Feature flags, content, rate limits in DB | 4 | 5 | 3 | P1 | Not started |
 | Live Activity Feed | Scrolling feed of recent actions | 4 | 3 | 2 | P2 | Not started |
 | Tier Funnel | Signup → verified → premium | 5 | 4 | 2 | P2 | Done (Wave 12) |
-| Trust Score Distribution | Histogram, outliers | 5 | 3 | 2 | P2 | Not started |
+| Trust Score Distribution | Histogram, outliers | 5 | 3 | 2 | P2 | Done (Wave 13) |
 | Retention Cohorts | D1/D7 by cohort | 4 | 4 | 3 | P2 | Not started |
 
 ### B.6 Me Section (from ME_SECTION_IMPROVEMENTS)
@@ -293,7 +293,7 @@
 |----|------|------|-------|--------|---------|-------|
 | MongoDB purge for deleted users | Deletion worker extends to Mongo | 4 | 5 | 2 | P0 | Done |
 | JWT in httpOnly cookies (web) | Replace localStorage/sessionStorage | 3 | 4 | 2 | P1 | Not started |
-| /metrics authentication | Bearer or IP allowlist | 5 | 3 | 1 | P1 | Partial (METRICS_SECRET exists) |
+| /metrics authentication | Bearer or IP allowlist | 5 | 3 | 1 | P1 | Done |
 
 ### B.9 Feature Additions (from FEATURE_ADDITIONS_CRITIQUE)
 
@@ -492,7 +492,7 @@
 |------|--------|--------|---------|--------|
 | 5 | 4 | 2 | P2 | Partial |
 
-**Notes:** Wave 2: mapApiError expanded (timeout, 404, 500, network); human tone. OfflineBanner copy improved.
+**Notes:** Wave 2: mapApiError expanded (timeout, 404, 500, network); human tone. OfflineBanner copy improved. Wave 13: Added 403/401, whisper expired, profile not found.
 
 ---
 
@@ -560,7 +560,7 @@
 |------|--------|--------|---------|--------|
 | 4 | 4 | 3 | P2 | Partial |
 
-**Notes:** Wave 6: Swipe-right on discovery tile = like; swipe-left = pass. Swipe from left edge = open messages. Native only.
+**Notes:** Wave 6: Swipe-right on discovery tile = like; swipe-left = pass. Swipe from left edge = open messages. Wave 13: Swipe-left on whisper card (inbox, pending) = Ignore. Native only.
 
 ---
 
@@ -608,7 +608,7 @@
 
 ---
 
-## What Remains (Post–Wave 12)
+## What Remains (Post–Wave 13)
 
 **High priority (P0–P1):**
 - **C.4** Unread counts sync protocol (cursor-based reconciliation)
@@ -619,13 +619,13 @@
 - **B.6** Verification Tier 2 ID flow
 - **C.12** Polished onboarding friction
 - ~~**C.15** Edge-case handling~~ Partial (Wave 10: event 404, chat 404)
-- **B.8** JWT in httpOnly cookies (web)
+- **B.8** JWT in httpOnly cookies (web) — ~~/metrics auth~~ ✅
 
 **Medium priority (P2):**
 - **A.5** Feed integrity (velocity checks, GPS plausibility)
 - **A.7** Moderation workflow automation
 - **A.10** Growth mechanics (invite flows, viral loops)
-- **B.5** Admin: 3D Globe, Marble Drop, Admin Control, ~~Tier Funnel~~ ✅, Retention Cohorts
+- **B.5** Admin: 3D Globe, Marble Drop, Admin Control, ~~Tier Funnel~~ ✅, ~~Trust Score Distribution~~ ✅, Retention Cohorts
 - **C.7** Full animation application across modals
 - ~~**B.6** Empty state illustrations, Accessibility~~ Partial (Wave 11: accessibility labels on key buttons, SafeState, CTAs)
 - ~~**GC-7.8** "No" as first-class (pass with reason)~~ ✅ Wave 9

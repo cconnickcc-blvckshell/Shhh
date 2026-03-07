@@ -425,8 +425,8 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Exit paths** | Back. Reply → POST respond, refresh. Ignore → POST ignore, refresh. View Profile → `/user/[from_user_id]`. ListEmpty CTA → Go to Discover. |
 | **Data dependencies (API)** | GET `/v1/whispers/inbox`, GET `/v1/whispers/sent`. POST `/v1/whispers/:id/respond` (response, reveal). POST `/v1/whispers/:id/ignore`. |
 | **Store state** | None. Local: tab, whispers[], responseText, respondingTo. |
-| **Layout** | Header, tabs (Inbox | Sent), FlatList: card (**"Anonymous" badge** when inbox and !revealed), from/to name, distance, time, message, response if any, Reply/Ignore or reply box with Reply Anon / Reply & Reveal. ListEmpty: icon, title, subtitle, "Go to Discover" CTA. |
-| **Components** | Inline. Anonymous badge for unrevealed senders in inbox. |
+| **Layout** | Header, tabs (Inbox | Sent), FlatList: card (**"Anonymous" badge** when inbox and !revealed), from/to name, distance, time, message, response if any, Reply/Ignore or reply box with Reply Anon / Reply & Reveal. **Swipe-left** on pending inbox whisper (native) reveals Ignore action. ListEmpty: icon, title, subtitle, "Go to Discover" CTA. |
+| **Components** | Swipeable (native), inline. Anonymous badge for unrevealed senders in inbox. |
 | **Interactions** | Tab switch; Reply → expand input; Reply Anon / Reply & Reveal → POST; Ignore → POST; View Profile when revealed. |
 | **States** | **Empty**: "No whispers yet" / "No sent whispers" with CTA. **Error**: Alert on respond/ignore. |
 | **Edge cases** | Expired whispers: status from API; UI shows all. |
@@ -484,7 +484,7 @@ Admin is React + Vite, react-router-dom. **Routes** under Layout: `/`, `/users`,
 |-------|-------------|
 | **Intent** | Command center overview — KPIs, health. |
 | **API** | `getOverview()` → fallback `getStats()`, `getHealth()`. |
-| **Layout** | **Tier Funnel** card (Signups → Verified → Premium). Grid of GlassCards: Online Now, Total Users, New (24h), MRR, Paying Users, Ad Revenue, Panic Alerts, Venue Distress, Pending Reports, Pending Mod, Active Events, Active Venues, Whispers (24h). Sparklines for Online, Total, Panic, Reports. Health card: version, modules. |
+| **Layout** | **Tier Funnel** card (Signups → Verified → Premium). **Trust Score Distribution** histogram (0-20, 21-40, 41-60, 61-80, 81-100, N/A). Grid of GlassCards: Online Now, Total Users, New (24h), MRR, Paying Users, Ad Revenue, Panic Alerts, Venue Distress, Pending Reports, Pending Mod, Active Events, Active Venues, Whispers (24h). Sparklines for Online, Total, Panic, Reports. Health card: version, modules. |
 | **Refresh** | Listens for `command-center-refresh`. |
 | **States** | SkeletonCards, AdminError. |
 

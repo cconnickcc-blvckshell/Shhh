@@ -106,6 +106,10 @@ router.get('/stats/cities', async (_req: Request, res: Response, next: NextFunct
   try { res.json({ data: await svc.getStatsCities() }); } catch (err) { next(err); }
 });
 
+router.get('/stats/trust-scores', async (_req: Request, res: Response, next: NextFunction) => {
+  try { res.json({ data: await svc.getTrustScoreDistribution() }); } catch (err) { next(err); }
+});
+
 // Settings
 router.get('/settings/ads', async (_req: Request, res: Response, next: NextFunction) => {
   try { res.json({ data: await svc.getAdControls() }); } catch (err) { next(err); }

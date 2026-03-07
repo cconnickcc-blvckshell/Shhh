@@ -327,4 +327,21 @@ export class AdminExtendedService {
       system: system.rows[0],
     };
   }
+
+  /** Trust score distribution for admin dashboard histogram. */
+  async getTrustScoreDistribution() {
+    const result = await query(`
+      SELECT
+        COUNT(*) FILTER (WHERE COALESCE(ts.score, 0) BETWEEN 0 AND 20)::int as bucket_0_20,
+        COUNT(*) FILTER (WHERE COALESCE(ts.score, 0) BETWEEN 21 AND 40)::int as bucket_21_40,
+        COUNT(*) FILTER (WHERE COALESCE(ts.score, 0) BETWEEN 41 AND 60)::int as bucket_41_60,
+        COUNT(*) FILTER (WHERE COALESCE(ts.score, 0) BETWEEN 61 AND 80)::int as bucket_61_80,
+        COUNT(*) FILTER (WHERE COALESCE(ts.score, 0) BETWEEN 81 AND 100)::int as bucket_81_100,
+        COUNT(*) FILTER (WHERE ts.score IS NULL)::int as no_score
+      FROM users u
+      LEFT JOIN trust_scores ts ON u.id = ts.user_id
+      WHERE u.deleted_at IS NULL
+    `);
+    return result.rows[0];
+  }
 }

@@ -109,6 +109,7 @@ export const adminApi = {
   // Map / Geo
   getPresenceGeo: () => api<{ data: Array<{ userId: string; lat: number; lng: number; lastSeen: string; presenceState?: string }> }>('/v1/admin/presence/geo'),
   getStatsCities: () => api<{ data: Array<{ lat: number; lng: number; activeCount: number; newThisWeek: number }> }>('/v1/admin/stats/cities'),
+  getTrustScoreDistribution: () => api<{ data: { bucket_0_20: number; bucket_21_40: number; bucket_41_60: number; bucket_61_80: number; bucket_81_100: number; no_score: number } }>('/v1/admin/stats/trust-scores'),
 
   // Audit
   getAuditLogs: (limit = 100) => api<{ data: any[] }>(`/v1/admin/audit-logs?limit=${limit}`),

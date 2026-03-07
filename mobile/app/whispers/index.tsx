@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, Alert, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Swipeable } from 'react-native-gesture-handler';
 import { api } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
@@ -57,7 +58,19 @@ export default function WhisperInboxScreen() {
         data={whispers}
         keyExtractor={i => i.id}
         contentContainerStyle={{ padding: 16 }}
-        renderItem={({ item }) => (
+        renderItem={({ item }) => {
+          const renderRightActions = (progress: unknown, dragX: unknown, swipeable: { close: () => void }) => (
+            <TouchableOpacity
+              style={s.swipeIgnore}
+              onPress={() => { ignore(item.id); swipeable.close(); }}
+              accessibilityRole="button"
+              accessibilityLabel="Ignore whisper"
+            >
+              <Ionicons name="close-circle" size={24} color="#fff" />
+              <Text style={s.swipeIgnoreText}>Ignore</Text>
+            </TouchableOpacity>
+          );
+          const card = (
           <View style={s.whisperCard}>
             <View style={s.whisperHeader}>
               <View style={s.anonIcon}><Ionicons name="ear" size={16} color={colors.primaryLight} /></View>
@@ -121,7 +134,20 @@ export default function WhisperInboxScreen() {
               </TouchableOpacity>
             )}
           </View>
-        )}
+          );
+          if (Platform.OS !== 'web' && tab === 'inbox' && item.status === 'pending') {
+            return (
+              <Swipeable
+                renderRightActions={renderRightActions}
+                friction={2}
+                rightThreshold={80}
+              >
+                {card}
+              </Swipeable>
+            );
+          }
+          return card;
+        }}
         ListEmptyComponent={
           <View style={s.empty}>
             <View style={s.emptyIcon}><Ionicons name="ear-outline" size={36} color={colors.primaryLight} /></View>
@@ -176,4 +202,15 @@ const s = StyleSheet.create({
   emptySub: { color: 'rgba(255,255,255,0.35)', fontSize: 13, marginTop: 4, textAlign: 'center', maxWidth: 240 },
   emptyCta: { marginTop: 16, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
   emptyCtaText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  swipeIgnore: {
+    backgroundColor: 'rgba(220,38,38,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    marginBottom: 10,
+    borderRadius: 16,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  swipeIgnoreText: { color: '#fff', fontSize: 12, fontWeight: '700', marginTop: 4 },
 });

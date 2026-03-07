@@ -10,6 +10,7 @@ const MAX_HISTORY = 24;
 
 export default function Dashboard() {
   const [data, setData] = useState<any>(null);
+  const [trustScores, setTrustScores] = useState<{ bucket_0_20: number; bucket_21_40: number; bucket_41_60: number; bucket_61_80: number; bucket_81_100: number; no_score: number } | null>(null);
   const [health, setHealth] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +46,7 @@ export default function Dashboard() {
           .catch(() => { setError('Failed to load dashboard. Check API connection.'); setLoading(false); });
       });
     adminApi.getHealth().then(setHealth).catch(() => {});
+    adminApi.getTrustScoreDistribution().then(r => setTrustScores(r.data)).catch(() => {});
   };
 
   useEffect(() => {
@@ -158,6 +160,54 @@ export default function Dashboard() {
           </div>
         </div>
       </GlassCard>
+
+      {/* Trust Score Distribution */}
+      {trustScores && (
+        <GlassCard accent={theme.colors.primary} style={{ marginBottom: theme.space[6], padding: theme.space[4] }}>
+          <div style={{
+            color: theme.colors.textMuted,
+            fontSize: theme.fontSize.xs,
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            fontWeight: theme.fontWeight.semibold,
+            marginBottom: theme.space[3],
+          }}>
+            Trust Score Distribution
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
+            {[
+              { key: '0-20', val: trustScores.bucket_0_20, color: theme.colors.danger },
+              { key: '21-40', val: trustScores.bucket_21_40, color: theme.colors.warning },
+              { key: '41-60', val: trustScores.bucket_41_60, color: theme.colors.info },
+              { key: '61-80', val: trustScores.bucket_61_80, color: theme.colors.primary },
+              { key: '81-100', val: trustScores.bucket_81_100, color: theme.colors.success },
+              { key: 'N/A', val: trustScores.no_score, color: theme.colors.textMuted },
+            ].map(({ key, val, color }) => {
+              const max = Math.max(
+                trustScores.bucket_0_20, trustScores.bucket_21_40, trustScores.bucket_41_60,
+                trustScores.bucket_61_80, trustScores.bucket_81_100, trustScores.no_score, 1
+              );
+              const h = max > 0 ? Math.max(4, (val / max) * 64) : 0;
+              return (
+                <div key={key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div
+                    style={{
+                      width: '100%',
+                      height: h,
+                      backgroundColor: color,
+                      borderRadius: 4,
+                      opacity: 0.8,
+                    }}
+                    title={`${key}: ${val}`}
+                  />
+                  <span style={{ fontSize: 10, color: theme.colors.textMuted, marginTop: 4 }}>{key}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: theme.colors.text }}>{val}</span>
+                </div>
+              );
+            })}
+          </div>
+        </GlassCard>
+      )}
 
       <div
         className="dashboard-grid"
