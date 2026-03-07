@@ -50,4 +50,14 @@ export const config = {
       ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
       : (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8081', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:8081']),
   },
+
+  /** Supabase Storage (bucket: media). When set, uploads go to Supabase instead of local disk. */
+  storage: {
+    supabaseUrl: process.env.SUPABASE_URL || '',
+    supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    /** Public base URL for media (e.g. https://xxx.supabase.co/storage/v1/object/public/media). Expose to mobile via API or env. */
+    mediaBaseUrl: process.env.SUPABASE_URL
+      ? `${process.env.SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/media`
+      : '',
+  },
 } as const;

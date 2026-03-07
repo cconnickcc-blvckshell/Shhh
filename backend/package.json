@@ -13,9 +13,11 @@
     "test:watch": "jest --watch --forceExit --detectOpenHandles",
     "migrate": "tsx src/database/migrate.ts",
     "seed": "tsx src/database/seed.ts",
+    "backfill:locations": "tsx src/database/backfill-locations.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
     "argon2": "^0.41.1",
     "bullmq": "^5.70.1",
     "compression": "^1.7.4",

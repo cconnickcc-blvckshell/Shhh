@@ -17,6 +17,8 @@ const PATTERNS: Array<{ pattern: RegExp | string; message: string }> = [
   { pattern: /blocked|block/i, message: 'This action isn\'t available.' },
   { pattern: /timeout|timed out/i, message: 'Request timed out. Tap to try again.' },
   { pattern: /invalid request|bad request|400/i, message: 'Something went wrong. Please try again.' },
+  { pattern: /conversation.*not found|not found.*conversation/i, message: 'This conversation is no longer available.' },
+  { pattern: /event.*not found|not found.*event|cancelled/i, message: 'This event is no longer available.' },
   { pattern: /not found|404/i, message: 'This item is no longer available.' },
   { pattern: /server error|500|internal/i, message: 'We\'re having a moment. Please try again in a bit.' },
 ];

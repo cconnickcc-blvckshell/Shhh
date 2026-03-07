@@ -248,8 +248,24 @@ export default function UserDetailScreen() {
             style={s.actionCircle}
             onPress={() => {
               if (!id) return;
-              Alert.alert('Block user', `Block ${profile.displayName}? You won't see each other.`, [
+              Alert.alert('Not interested?', `What would you like to do with ${profile.displayName}?`, [
                 { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Not interested',
+                  onPress: () => {
+                    Alert.alert(
+                      'Why? (optional)',
+                      'Help us improve — your answer is private.',
+                      [
+                        { text: 'Skip', style: 'cancel', onPress: () => { usersApi.pass(id); router.back(); } },
+                        { text: 'Not my type', onPress: () => { usersApi.pass(id, 'not_my_type'); router.back(); } },
+                        { text: 'Too far', onPress: () => { usersApi.pass(id, 'too_far'); router.back(); } },
+                        { text: 'Just browsing', onPress: () => { usersApi.pass(id, 'just_browsing'); router.back(); } },
+                        { text: 'Other', onPress: () => { usersApi.pass(id, 'other'); router.back(); } },
+                      ]
+                    );
+                  },
+                },
                 { text: 'Block', style: 'destructive', onPress: () => { usersApi.block(id); router.back(); } },
               ]);
             }}

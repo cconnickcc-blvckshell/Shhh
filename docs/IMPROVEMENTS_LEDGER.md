@@ -311,7 +311,7 @@
 | GC-7.1 | Anonymous question at venue | 4 | 4 | 2 | P2 | Not started |
 | GC-7.2 | Vibe check at door (staff marks attendee) | 3 | 3 | 3 | P3 | Not started |
 | GC-7.3 | Date mode (couple invite couple) | 4 | 4 | 3 | P2 | Not started |
-| GC-7.8 | "No" as first-class (pass with reason) | 5 | 3 | 2 | P2 | Not started |
+| GC-7.8 | "No" as first-class (pass with reason) | 5 | 3 | 2 | P2 | ✅ Done (Wave 9) |
 | GC-7.9 | Couple's joint profile in discovery | 4 | 4 | 3 | P2 | Not started |
 | GC-N.1 | Reveal L3 / vault-level reveal | 3 | 4 | 4 | P2 | Not started |
 | GC-N.2 | Vibes / soft reputation after event | 3 | 3 | 3 | P3 | Not started |
@@ -420,7 +420,7 @@
 |------|--------|--------|---------|--------|
 | 5 | 4 | 2 | P2 | Partial |
 
-**Notes:** Wave 5: `animation` constants in theme (modalDuration, fadeDuration, navDuration). Full application across modals pending.
+**Notes:** Wave 5: `animation` constants in theme. Wave 9: ConnectionWindowModal uses animationType="slide" for bottom sheet.
 
 ---
 
@@ -514,9 +514,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 4 | 5 | 3 | P1 | Not started |
+| 4 | 5 | 3 | P1 | Partial |
 
-**Notes:** Deletion/MongoDB gap; expiry UI; cancellation flow; block race.
+**Notes:** Wave 10: Event 404/cancelled shows Alert "Event unavailable" + Go back. Chat 404 shows "This conversation is no longer available" (mapApiError). Deletion/MongoDB gap; expiry UI; block race remain.
 
 ---
 
@@ -618,7 +618,7 @@
 - **A.9** Analytics instrumentation (conversion funnel, reply rates)
 - **B.6** Verification Tier 2 ID flow
 - **C.12** Polished onboarding friction
-- **C.15** Edge-case handling (user deleted mid-chat, event cancelled)
+- ~~**C.15** Edge-case handling~~ Partial (Wave 10: event 404, chat 404)
 - **B.8** JWT in httpOnly cookies (web)
 
 **Medium priority (P2):**
@@ -628,7 +628,7 @@
 - **B.5** Admin: 3D Globe, Marble Drop, Admin Control, Tier Funnel, Retention Cohorts
 - **C.7** Full animation application across modals
 - **B.6** Empty state illustrations, Accessibility (labels, contrast)
-- **GC-7.8** "No" as first-class (pass with reason)
+- ~~**GC-7.8** "No" as first-class (pass with reason)~~ ✅ Wave 9
 
 **Strategic / larger:**
 - Discovery engine (split contracts)

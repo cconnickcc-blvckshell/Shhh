@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { eventsApi } from '../../src/api/client';
+import { mapApiError } from '../../src/utils/errorMapper';
 import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 import { BannerImage } from '../../src/components/Backgrounds';
@@ -45,7 +46,10 @@ export default function EventDetailScreen() {
         setEvent(r.data);
         setAttending((r.data as any).user_going ?? false);
       })
-      .catch(() => router.back())
+      .catch((err: unknown) => {
+        const msg = mapApiError(err);
+        Alert.alert('Event unavailable', msg, [{ text: 'Go back', onPress: () => router.back() }]);
+      })
       .finally(() => setLoading(false));
   }, [id]);
 

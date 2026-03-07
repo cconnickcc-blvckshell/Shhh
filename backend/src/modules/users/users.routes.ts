@@ -31,6 +31,10 @@ const reportSchema = z.object({
   description: z.string().max(1000).optional(),
 });
 
+const passSchema = z.object({
+  reason: z.enum(['not_my_type', 'too_far', 'just_browsing', 'other']).optional(),
+});
+
 router.get('/me', authenticate, controller.getMe);
 router.put('/me', authenticate, validate(updateProfileSchema), controller.updateMe);
 
@@ -97,7 +101,7 @@ router.get('/:id/profile', authenticate, async (req, res, next) => {
 });
 
 router.post('/:id/like', authenticate, requireTier(1), controller.likeUser);
-router.post('/:id/pass', authenticate, controller.passUser);
+router.post('/:id/pass', authenticate, validate(passSchema), controller.passUser);
 router.post('/:id/block', authenticate, controller.blockUser);
 router.post('/:id/report', authenticate, validate(reportSchema), controller.reportUser);
 

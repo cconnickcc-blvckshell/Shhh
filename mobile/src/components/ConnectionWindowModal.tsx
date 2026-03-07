@@ -25,7 +25,7 @@ export function ConnectionWindowModal({ visible, onClose, cap, used, tierOptions
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="slide">
       <Pressable style={s.overlay} onPress={onClose}>
         <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={s.header}>

@@ -282,7 +282,7 @@ The backend has **24 route modules** wired in `app.ts`. Each module follows the 
 | GET | `/v1/users/me` | Yes | 0 | Get own profile (join users + user_profiles) |
 | PUT | `/v1/users/me` | Yes | 0 | Update profile fields |
 | POST | `/v1/users/:id/like` | Yes | 1 | Like a user. Returns `{matched: boolean}` |
-| POST | `/v1/users/:id/pass` | Yes | 0 | Pass on a user |
+| POST | `/v1/users/:id/pass` | Yes | 0 | Pass on a user. Optional body: `{ reason?: 'not_my_type' | 'too_far' | 'just_browsing' | 'other' }` |
 | POST | `/v1/users/:id/block` | Yes | 0 | Block a user (bidirectional filtering) |
 | POST | `/v1/users/:id/report` | Yes | 0 | Report a user with reason |
 | GET | `/v1/users/:userId/trust-score` | Yes | 0 | Get or recalculate trust score |
@@ -1430,8 +1430,8 @@ The mobile app uses **expo-router** (file-based routing). All screens are in `mo
 | `/whispers/index` | `app/whispers/index.tsx` | Whisper inbox/sent |
 | `/groups/index` | `app/groups/index.tsx` | Groups list |
 | `/groups/[id]` | `app/groups/[id].tsx` | Group detail + events |
-| `/content/guides` | `app/content/guides.tsx` | Community guides |
-| `/content/norms` | `app/content/norms.tsx` | Community norms |
+| `/content/guides` | `app/content/guides.tsx` | Community guides (Markdown via react-native-markdown-display) |
+| `/content/norms` | `app/content/norms.tsx` | Community norms (Markdown via react-native-markdown-display) |
 
 ### 6.2 Hooks
 
@@ -1441,18 +1441,19 @@ The mobile app uses **expo-router** (file-based routing). All screens are in `mo
 | `useLocation` | `src/hooks/useLocation.ts` | Expo location permissions, GPS tracking, sends location to API. Defaults to NYC (40.7128, -74.006) on web. |
 | `useScreenView` | `src/hooks/useScreenView.ts` | Fires screen_view on mount. Use in screen components. analytics.ts stub. |
 | `useOAuth` | `src/hooks/useOAuth.ts` | Apple sign-in flow (expo-apple-authentication). Google/Snap use expo-auth-session. |
-| `mapApiError` | `src/utils/errorMapper.ts` | Maps API error messages to user-facing copy (rate limit, tier, OTP, etc.). |
+| `mapApiError` | `src/utils/errorMapper.ts` | Maps API error messages to user-facing copy (rate limit, tier, OTP, network, timeout, 404, 500, etc.). |
 | `OfflineBanner` | `src/components/OfflineBanner.tsx` | NetInfo-based offline banner. Mounted in root _layout. |
 | `AuthOptions` | `src/components/AuthOptions.tsx` | Reusable auth options (phone, Apple, Google, Snap) with pros/cons. Used in Login/Register. |
-| `usePhotoUpload` | `src/hooks/usePhotoUpload.ts` | Image picker + multipart upload to `/v1/media/upload`. Supports camera and library. Self-destruct option. |
+| `usePhotoUpload` | `src/hooks/usePhotoUpload.ts` | Image picker + multipart upload to `/v1/media/upload`. Supports camera and library. Self-destruct option. Returns `progress` (0–100) for simulated upload feedback. |
 | `useDistressGesture` | `src/hooks/useDistressGesture.ts` | Accelerometer-based shake detection (5 shakes in 3s). Triggers panic API call with location. Vibration feedback. 30s cooldown. |
 | `useScreenshotDetection` | `src/hooks/useScreenshotDetection.ts` | Expo screen capture listener. Reports to `/v1/safety/screenshot`. Alerts user that other person was notified. |
 | `usePushNotifications` | `src/hooks/usePushNotifications.ts` | Requests notification permissions, registers Expo push token via `/v1/auth/push-token`. Re-registers on app resume (AppState). |
 | `useNotificationResponse` | `src/hooks/useNotificationResponse.ts` | Handles notification tap → deep link to chat or whispers. |
 | `useUnreadBadge` | `src/context/UnreadBadgeContext.tsx` | Unread message count for tab badge; calls `setBadgeCountAsync` for app icon badge. |
 | `useInAppToast` | `src/context/InAppToastContext.tsx` | Programmatic toast (e.g. success on save). `show({ title, body })` — no View button when no conversationId/whisperId. |
+| `expo-clipboard` | — | `Clipboard.setStringAsync()` for User ID copy on Me screen. |
 
-**useSocket** also returns `connected`, `reconnecting` for state transparency (Wave 2). Chat shows "Reconnecting…" banner when `reconnecting`.
+**useSocket** also returns `connected`, `reconnecting` for state transparency. Chat shows "Reconnecting…" banner when `reconnecting`. **Chat:** Optimistic message send; failed messages show "Tap to try again" with retry. **Discover:** Swipe right/left for like/pass; left-edge swipe to Messages. **User profile:** X icon → "Not interested" (pass with optional reason) or "Block". social proof bar ("X people nearby"); variable reward toast on refresh ("X new people nearby"). **Profile (Me):** User ID row with copy. **Edit Profile:** Card sections, bio char count (500), isDirty + unsaved-changes warning on back. **User profile:** Privacy cue badges (after_match, after_reveal). **Whispers:** "Anonymous" badge when sender not revealed. **Create venue:** "Use my location" button. **Create event / Event edit:** Native DateTimePicker (web: TextInput). **Photo upload:** Progress bar (edit profile, album add).
 
 ### 6.3 State Management (Zustand)
 
@@ -1497,9 +1498,9 @@ authApi.{register, login, refresh, logout, oauthApple, oauthGoogle, oauthSnap}
 usersApi.{getMe, updateMe, like, pass, block, report}
 discoverApi.{nearby, updateLocation}
 messagingApi.{getUnreadTotal, getConversations, createConversation, getMessages, sendMessage}
-eventsApi.{nearby, create, get, rsvp}
+eventsApi.{nearby, create, get, rsvp} — rsvp(id, status, idempotencyKey?)
 safetyApi.{getContacts, addContact, checkIn, panic}
-albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare}
+albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare} — share(albumId, opts, idempotencyKey?)
 ```
 
 **API base URL:** Hardcoded in `src/api/client.ts` (and in usePhotoUpload, useSocket, ProfilePhoto):
@@ -1534,6 +1535,8 @@ When `Platform.OS === 'web'` and viewport width ≥ 1024px (`useBreakpoint().sho
 - Heart: `#EC4899` (pink)
 
 **Spacing scale:** `xxs(2)`, `xs(4)`, `sm(8)`, `md(16)`, `lg(24)`, `xl(32)`, `xxl(48)`
+
+**Animation:** `animation.modalDuration(280)`, `animation.fadeDuration(200)`, `animation.navDuration(250)` — shared timing for modals, fades, nav transitions.
 
 **Font sizes:** `xxs(10)`, `xs(11)`, `sm(13)`, `md(15)`, `lg(17)`, `xl(22)`, `xxl(28)`, `hero(36)`
 
@@ -1909,7 +1912,7 @@ The `useScreenshotDetection` hook:
 - When a panic event occurs, the system records which contacts should be notified
 - **Implemented:** SMS (Twilio) and push (Expo) to emergency contacts when panic triggered; requires `emergency_contacts.phone` (migration 029)
 - **Workers:** Retry (3 attempts, exponential backoff), DLQ (`cleanup-dlq`) for exhausted jobs; `worker_job_failures_total` metric
-- **Idempotency:** `Idempotency-Key` header on POST /conversations, POST /billing/checkout
+- **Idempotency:** `Idempotency-Key` header on POST /conversations, POST /billing/checkout, POST /albums/:id/share, POST /events/:id/rsvp. Mobile client sends deterministic keys (e.g. `rsvp-{eventId}-going`, `share-{albumId}-{userId}`).
 - **Discovery rate limit:** 60 req/min per user (configurable)
 
 ### 11.7 Check-In System

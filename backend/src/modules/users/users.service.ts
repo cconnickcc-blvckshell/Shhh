@@ -166,12 +166,14 @@ export class UsersService {
     return { matched: match.rows.length > 0 };
   }
 
-  async passUser(fromUserId: string, toUserId: string) {
+  async passUser(fromUserId: string, toUserId: string, reason?: string) {
+    const validReasons = ['not_my_type', 'too_far', 'just_browsing', 'other'];
+    const passReason = reason && validReasons.includes(reason) ? reason : null;
     await query(
-      `INSERT INTO user_interactions (from_user_id, to_user_id, type)
-       VALUES ($1, $2, 'pass')
-       ON CONFLICT (from_user_id, to_user_id) DO UPDATE SET type = 'pass', created_at = NOW()`,
-      [fromUserId, toUserId]
+      `INSERT INTO user_interactions (from_user_id, to_user_id, type, pass_reason)
+       VALUES ($1, $2, 'pass', $3)
+       ON CONFLICT (from_user_id, to_user_id) DO UPDATE SET type = 'pass', pass_reason = $3, created_at = NOW()`,
+      [fromUserId, toUserId, passReason]
     );
   }
 }

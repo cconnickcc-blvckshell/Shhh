@@ -120,8 +120,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │   ├── view/[id].tsx         # View single story
 │   │   │   └── venue/[id].tsx        # View venue stories
 │   │   ├── content/
-│   │   │   ├── guides.tsx            # Community guides (GET /v1/content/guides)
-│   │   │   └── norms.tsx             # Community norms (GET /v1/content/norms)
+│   │   │   ├── guides.tsx            # Community guides (GET /v1/content/guides); Markdown rendering
+│   │   │   └── norms.tsx             # Community norms (GET /v1/content/norms); Markdown rendering
 │   │   ├── groups/
 │   │   │   ├── index.tsx             # Groups list (GET /v1/groups)
 │   │   │   └── [id].tsx              # Group detail + events (join/leave)
@@ -155,7 +155,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   ├── src/
 │   │   ├── api/client.ts             # Full API client (EXPO_PUBLIC_API_URL when set)
 │   │   ├── stores/auth.ts            # Zustand auth store
-│   │   ├── constants/theme.ts        # Design tokens + layout.contentMaxWidth
+│   │   ├── constants/theme.ts        # Design tokens, layout.contentMaxWidth, animation (modalDuration, fadeDuration, navDuration)
 │   │   ├── constants/breakpoints.ts  # Breakpoints + CONTENT_MAX_WIDTH
 │   │   ├── lib/tabRoutes.ts         # pathnameToTab, TAB_TO_ROUTE (URL derivation only)
 │   │   ├── utils/errorMapper.ts      # Maps API error messages to user-facing copy
@@ -194,7 +194,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │   ├── rateLimiter.ts        # Global + auth rate limits
 │   │   │   ├── metrics.ts            # Prometheus metrics
 │   │   │   ├── discoveryRateLimit.ts # Discovery-specific rate limit
-│   │   │   ├── idempotency.ts        # Idempotency-Key for POST
+│   │   │   ├── idempotency.ts        # Idempotency-Key for POST (conversations, checkout, albums-share, events-rsvp)
 │   │   │   ├── errorHandler.ts       # Centralized error handler
 │   │   │   └── validation.ts         # Zod schema validation
 │   │   ├── modules/
@@ -415,6 +415,10 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | expo-secure-store | Secure token storage |
 | expo-image-picker | Photo selection |
 | expo-location | Geolocation |
+| expo-clipboard | Copy to clipboard (e.g. User ID) |
+| react-native-markdown-display | Rich text in Guides, Norms |
+| react-native-gesture-handler | Swipe gestures (Discover like/pass, edge-swipe to Messages) |
+| react-native-reanimated | Animated gestures, transitions |
 
 ### Infrastructure (Docker Compose)
 
@@ -534,7 +538,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | DELETE | `/v1/media/albums/:id` | Yes | 0 | Delete album |
 | POST | `/v1/media/albums/:id/media` | Yes | 0 | Add media to album |
 | DELETE | `/v1/media/albums/:id/media/:mediaId` | Yes | 0 | Remove from album |
-| POST | `/v1/media/albums/:id/share` | Yes | 0 | Share album (userId or targetPersonaId or targetCoupleId; watermarkMode, notifyOnView) |
+| POST | `/v1/media/albums/:id/share` | Yes | 0 | Share album (userId or targetPersonaId or targetCoupleId; watermarkMode, notifyOnView). Idempotency-Key supported. |
 | DELETE | `/v1/media/albums/:id/share/:userId` | Yes | 0 | Revoke album share (by userId only; persona/couple revoke not supported) |
 
 ### Events
@@ -548,7 +552,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | GET | `/v1/events/:id` | Yes | 0 | Get event details (visibility-checked; 403 if gated. Venue location redacted when location_revealed_after_rsvp until RSVP.) |
 | GET | `/v1/events/:id/attendees` | Yes | 0 | Privacy-safe attendee list (persona + badges) |
 | GET | `/v1/events/:id/chat-rooms` | Yes | 0 | Chat rooms linked to event |
-| POST | `/v1/events/:id/rsvp` | Yes | 0 | RSVP to event |
+| POST | `/v1/events/:id/rsvp` | Yes | 0 | RSVP to event. Idempotency-Key supported. |
 | POST | `/v1/events/:id/checkin` | Yes | 0 | Check in at event |
 | PUT | `/v1/events/:id/door-code` | Yes | 0 | Set door code (host or venue staff; body: code, optional expiresAt) |
 | POST | `/v1/events/validate-door-code` | Yes | 0 | Validate code, grant RSVP + check-in (body: eventId, code); rate-limited |
@@ -997,7 +1001,7 @@ Deletion, retention, anonymization, and TTL behavior across stores:
 | **push tokens** | Postgres | Until unregister; deletion should revoke. |
 | **OTP codes** | Redis | 5 min TTL. |
 | **Redis eviction** | noeviction | Do not evict auth/OTP keys; returns error when full. See docker-compose. |
-| **Idempotency** | Redis | Idempotency-Key on POST conversations, checkout; 24h TTL. |
+| **Idempotency** | Redis | Idempotency-Key on POST conversations, checkout, POST /albums/:id/share, POST /events/:id/rsvp; 24h TTL. |
 | **Discovery rate limit** | Redis | Per-user 60/min (DISCOVERY_RATE_LIMIT_PER_MIN). |
 | **user PII** | Postgres | Deletion worker anonymizes (phone_hash, profile); sets `deleted_at`. |
 

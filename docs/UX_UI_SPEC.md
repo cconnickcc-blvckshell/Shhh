@@ -38,6 +38,7 @@
 - **Font sizes**: xxs(10) → hero(36).
 - **Border radii**: xs(4) → full(9999).
 - **Shadows**: `glow` (purple), `card`.
+- **Animation**: `animation.modalDuration(280)`, `animation.fadeDuration(200)`, `animation.navDuration(250)` — shared timing for modals, fades, nav transitions.
 
 ### 1.3 Imagery & Media
 
@@ -153,15 +154,15 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 
 | Field | Description |
 |-------|-------------|
-| **Intent** | Show nearby users in a grid; tap to profile, long-press to whisper. |
+| **Intent** | Show nearby users in a grid; tap to profile, long-press to whisper; swipe to like/pass. |
 | **Entry points** | Tab "Explore" (first tab); post-login default tab. |
-| **Exit paths** | Tap tile → `/user/[userId]`. Long-press → in-place whisper overlay; send → overlay closes. |
-| **Data dependencies (API)** | POST `/v1/discover/location` (lat, lng); GET `/v1/discover?lat=&lng=&radius=50`. POST `/v1/whispers` (toUserId, message) for whisper. |
+| **Exit paths** | Tap tile → `/user/[userId]`. Long-press → in-place whisper overlay; send → overlay closes. Swipe right (native) → Messages tab. |
+| **Data dependencies (API)** | POST `/v1/discover/location` (lat, lng); GET `/v1/discover?lat=&lng=&radius=50`. POST `/v1/whispers` (toUserId, message) for whisper. POST `/v1/users/:id/like`, `/v1/users/:id/pass` on swipe. |
 | **Store state** | None. Local: users[], refreshing, whisperTarget, whisperText. |
-| **Layout** | Full-screen FlatList, 2 or 3 columns (by width), 1.5px gap; pull-to-refresh. Whisper overlay: bottom bar with input, send, close. ListEmpty: compass icon, "No one nearby", "Pull down to refresh". |
-| **Components** | **ProfilePhoto** (photosJson, fill, size=tileW). Inline: presence bar, host badge, shield badge, intent badge, presence dot, distance/gender. |
-| **Interactions** | Tap tile → user profile. Long-press (400ms) → vibration, open whisper bar; type, send or close. Pull to refresh. |
-| **States** | **Loading**: spinner/loading state when fetching. **Empty**: ListEmptyComponent. **Error**: error UI with retry. **Offline**: not implemented. |
+| **Layout** | Social proof bar ("X people nearby right now") when users.length > 0. Full-screen FlatList, 2 or 3 columns (by width), 1.5px gap; pull-to-refresh. Whisper overlay: bottom bar with input, send, close. ListEmpty: compass icon, "No one nearby", "Pull down to refresh", CTA "Start something → Create an event". |
+| **Components** | **DiscoverTile** (ProfilePhoto, presence bar, host badge, shield badge, intent badge, presence dot, distance/gender). Swipe gestures (Gesture.Pan) for like/pass. Left-edge strip for swipe-right-to-Messages. |
+| **Interactions** | Tap tile → user profile. Long-press (400ms) → vibration, open whisper bar; type, send or close. **Swipe right** on tile → like (optimistic); **swipe left** → pass. **Swipe right** from left edge → Messages tab. Pull to refresh → variable reward toast ("X new people nearby") when count increases. |
+| **States** | **Loading**: spinner/loading state when fetching. **Empty**: ListEmptyComponent with CTA. **Error**: error UI with retry. **Offline**: not implemented. |
 | **Edge cases** | Location from **useLocation()** (web fallback to NYC 40.7128, -74.006). Discovery cap (30/50) from API; UI does not show "cap reached". |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Tiles not labeled by name/role; long-press not announced. |
@@ -194,12 +195,12 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Intent** | List nearby events; RSVP (heart); tap venue to venue detail. |
 | **Entry points** | Tab "Events". |
 | **Exit paths** | Tap card (if venue_id) → `/venue/[venue_id]`. Tap heart → toggle RSVP. |
-| **Data dependencies (API)** | GET `/v1/events/nearby?lat=&lng=`. POST `/v1/events/:id/rsvp` (status: 'going'). |
-| **Store state** | None. Local: events[], attending (Set<id>), refreshing. |
-| **Layout** | FlatList of cards: banner (sparkles), date box (day, month), title, time, attendee count, venue name, description, heart button. ListEmpty: flame icon, "No events nearby". |
+| **Data dependencies (API)** | GET `/v1/events/nearby?lat=&lng=`, GET `/v1/tonight/feed`. POST `/v1/events/:id/rsvp` (status: 'going'; Idempotency-Key). |
+| **Store state** | None. Local: events[], attending (Set<id>), refreshing, tonightFeed. |
+| **Layout** | "TONIGHT" section header with badge ("X going tonight" from attendee counts). FlatList of cards: banner (sparkles), date box (day, month), title, time, attendee count, venue name, description, heart button. ListEmpty: flame icon, "No events nearby", CTA "Start something → Create an event". |
 | **Components** | Inline only. |
-| **Interactions** | Tap card → venue if venue_id else no nav. Tap heart → rsvp('going') or remove from attending (optimistic). Pull to refresh. |
-| **States** | **Loading**: loading state when fetching. **Empty**: ListEmptyComponent. **Error**: error UI. |
+| **Interactions** | Tap card → venue if venue_id else no nav. Tap heart → rsvp('going') or remove from attending (optimistic; idempotency key for retries). Pull to refresh. |
+| **States** | **Loading**: loading state when fetching. **Empty**: ListEmptyComponent with CTA. **Error**: error UI. |
 | **Edge cases** | Location from useLocation (web fallback NYC). Un-RSVP: local state; backend may support DELETE or "not_going" — check API. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Card not labeled by event name + date. |
@@ -214,10 +215,10 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Entry points** | Tab "Me". |
 | **Exit paths** | Your Status → `/profile/status`. Edit Profile → `/profile/edit`. My Albums → `/album`. Couple → `/couple`. Verification → `/verify`. Emergency Contacts → no route (onPress empty). Whispers → `/whispers`. Premium → `/subscription`. Privacy & Data → no route. Panic Alert → confirm then safetyApi.panic. Log Out → logout(). |
 | **Data dependencies (API)** | Profile from store (loaded via GET `/v1/users/me`). Panic: POST `/v1/safety/panic`. |
-| **Store state** | useAuthStore: profile, logout. |
-| **Layout** | ScrollView: hero (ProfilePhoto, name, bio), stat pills (verification, experience, host), kinks tags, menu card (rows with icon, label, optional badge, chevron), Panic button (red), Log out. |
-| **Components** | **ProfilePhoto**. Inline: StatPill, MenuItem (icon, label, onPress, badge, accent). |
-| **Interactions** | Tap menu items; tap Panic → Alert then API; tap Log out. |
+| **Store state** | useAuthStore: profile, userId, logout. |
+| **Layout** | ScrollView: hero (ProfilePhoto, name, bio), **User ID row** (label, truncated ID, copy icon; tap copies to clipboard), stat pills (verification, experience, host), kinks tags, menu card (rows with icon, label, optional badge, chevron), Panic button (red), Log out. |
+| **Components** | **ProfilePhoto**. Inline: StatPill, MenuItem (icon, label, onPress, badge, accent). User ID row uses expo-clipboard. |
+| **Interactions** | Tap menu items; tap User ID → copy to clipboard, Alert "Copied"; tap Panic → Alert then API; tap Log out. |
 | **States** | **Loading**: profile load spinner; loadProfile() when profile missing. **Empty**: name fallback "User". **Error**: error UI. |
 | **Edge cases** | Emergency Contacts → `/profile/emergency`; Privacy & Data → `/profile/privacy` (screens exist). |
 | **Analytics events** | NOT IMPLEMENTED. |
@@ -234,10 +235,10 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Exit paths** | Header back → previous screen. |
 | **Data dependencies (API)** | GET `/v1/conversations/:id/messages`. POST `/v1/conversations/:id/messages` (content, contentType, ttlSeconds). |
 | **Store state** | useAuthStore.userId for mine/theirs. Local: msgs[], input, selfDestruct, listRef. |
-| **Layout** | KeyboardAvoidingView: inverted FlatList (messages), input bar: timer (self-destruct toggle), camera (no handler), TextInput, send. Header: "Chat" (Stack config). |
-| **Components** | Inline bubbles (mine/theirs), self-destruct label, time. |
-| **Interactions** | Type and send; toggle timer for self-destruct (30s); camera button NOT IMPLEMENTED — no action. |
-| **States** | **Loading**: loading state. **Empty**: no messages. **Error**: error UI. **Offline**: not implemented. |
+| **Layout** | "Reconnecting…" banner when useSocket.reconnecting. KeyboardAvoidingView: inverted FlatList (messages), input bar: timer (self-destruct toggle), camera (no handler), TextInput, send. Header: "Chat" (Stack config). |
+| **Components** | Inline bubbles (mine/theirs), self-destruct label, time. **Optimistic send:** temp message with "Sending…" until API response. **Failed messages:** "Tap to try again" with retry icon; bubble border highlight. |
+| **Interactions** | Type and send (optimistic UI); tap failed message to retry; toggle timer for self-destruct (30s); camera button NOT IMPLEMENTED — no action. |
+| **States** | **Loading**: loading state. **Empty**: no messages. **Error**: error UI. **Offline**: not implemented. **Reconnecting**: banner at top. **Failed message**: tap to retry. |
 | **Edge cases** | **WebSocket:** useSocket joinConversation, onNewMessage, leaveConversation wired; real-time messages and typing supported. useScreenshotDetection reports screenshots. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Messages not announced as sender + content; input has no label. |
@@ -253,11 +254,11 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Exit paths** | Back → previous. Block → usersApi.block then router.back(). View Profile (whisper) → same screen. |
 | **Data dependencies (API)** | GET `/v1/users/:id/profile`. POST `/v1/users/:id/like`. POST `/v1/conversations` (create). POST `/v1/whispers`. POST `/v1/users/:id/block`. POST `/v1/users/:id/report`. |
 | **Store state** | useAuthStore.userId. Local: profile, whisperText, showWhisper, liked. |
-| **Layout** | ScrollView: hero (ProfilePhoto fill, back, presence badge), name/age/shield, meta (gender, showAsRole, showAsRelationship), intents chips, bio, interests, stats (experience, references, rating, host), trust row, action buttons (block, whisper, like, message), whisper box (if open), report link, "Member since". |
-| **Components** | **ProfilePhoto** (photosJson, fill). Inline: presence badge, intent chips, stats, action circles, whisper input. |
-| **Interactions** | Back, set presence (no UI), like (vibration, match alert), message (create conv → chat), whisper (toggle box, send), block (then back), report. |
+| **Layout** | ScrollView: hero (ProfilePhoto fill, back, presence badge), **privacy cue badge** ("Only visible to matches" when profileVisibilityTier=after_match; "Visible after reveal" when after_reveal), name/age/shield, meta (gender, showAsRole, showAsRelationship), intents chips, bio, interests, stats (experience, references, rating, host), trust row, action buttons (block, whisper, like, message), whisper box (if open), report link, "Member since". |
+| **Components** | **ProfilePhoto** (photosJson, fill). Inline: presence badge, privacy cue badge, intent chips, stats, action circles, whisper input. **Optimistic like:** heart fills immediately; reverts on API error. |
+| **Interactions** | Back, set presence (no UI), like (optimistic UI, vibration, match alert on success), message (create conv → chat), whisper (toggle box, send), block (then back), report. |
 | **States** | **Loading**: hourglass placeholder while !profile. **Error**: error UI with retry (no silent router.back()). **Empty**: N/A. |
-| **Edge cases** | Like requires tier 1; API may reject — error in catch not always shown. GET `/v1/users/:id/profile` returns public/private by profile_visibility_tier (backend); UI does not show "reveal to see more". |
+| **Edge cases** | Like requires tier 1; API may reject — error in catch not always shown. GET `/v1/users/:id/profile` returns public/private by profile_visibility_tier (backend); UI shows privacy cue badge. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Large action buttons; report is low emphasis; no live region for match. |
 
@@ -269,13 +270,13 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 |-------|-------------|
 | **Intent** | Edit display name, bio, gender, sexuality, experience, interests, isHost, photos. |
 | **Entry points** | Profile tab → Edit Profile. |
-| **Exit paths** | Back (close) without save. Save → usersApi.updateMe, loadProfile, router.back(). |
+| **Exit paths** | Back (close): if isDirty → Alert "Unsaved changes" / Discard. Save → usersApi.updateMe, loadProfile, router.back(), in-app toast "Saved". |
 | **Data dependencies (API)** | GET via store (profile). PUT `/v1/users/me` (displayName, bio, gender, sexuality, experienceLevel, isHost, kinks, photosJson). POST (upload) via usePhotoUpload → `/v1/media/upload`. |
-| **Store state** | useAuthStore: profile, loadProfile. Local: form state, photos[], saving. usePhotoUpload: pickAndUpload, uploading. |
-| **Layout** | ScrollView: header (close, "Edit Profile", Save), photo grid (6 slots: 1 main large, 5 small), form labels + inputs/chips (display name, bio, gender chips, sexuality, experience chips, interests), "Available to Host" switch. |
-| **Components** | **ProfilePhoto** (storagePath for single photo in slot). Inline: chips for gender/exp. |
-| **Interactions** | Add photo (slot 0–5): pickAndUpload; remove photo (tap on filled slot). Chips select one. Save validates and PUT. |
-| **States** | **Loading**: Save shows "..." when saving. **Uploading**: slot shows ActivityIndicator. **Error**: Alert on save failure. |
+| **Store state** | useAuthStore: profile, loadProfile. Local: form state, photos[], saving. usePhotoUpload: pickAndUpload, uploading, progress. |
+| **Layout** | ScrollView: header (close with onBackPress, "Edit Profile", Save disabled when !isDirty or saving). **Card** sections for About, Discovery & Privacy, Hosting. Photo grid (6 slots): **progress bar** when uploading (0–100%). Bio: char count (500 max). |
+| **Components** | **ProfilePhoto** (storagePath for single photo in slot). **Card** (layout). Inline: chips for gender/exp. |
+| **Interactions** | Add photo (slot 0–5): pickAndUpload; progress bar during upload. Remove photo (tap on filled slot). Chips select one. Save validates and PUT. Back: unsaved changes → confirm discard. |
+| **States** | **Loading**: Save shows "..." when saving. **Uploading**: slot shows progress bar. **Error**: Alert on save failure. **Saved**: in-app toast. |
 | **Edge cases** | Photo verification uses placeholder URL in verify screen; edit does not handle verification-specific photos. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Photo slots not labeled; switch needs label. |
@@ -421,13 +422,13 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 |-------|-------------|
 | **Intent** | List inbox/sent whispers; reply (anon or reveal), ignore; view profile after reveal. |
 | **Entry points** | Profile → Whispers. |
-| **Exit paths** | Back. Reply → POST respond, refresh. Ignore → POST ignore, refresh. View Profile → `/user/[from_user_id]`. |
+| **Exit paths** | Back. Reply → POST respond, refresh. Ignore → POST ignore, refresh. View Profile → `/user/[from_user_id]`. ListEmpty CTA → Go to Discover. |
 | **Data dependencies (API)** | GET `/v1/whispers/inbox`, GET `/v1/whispers/sent`. POST `/v1/whispers/:id/respond` (response, reveal). POST `/v1/whispers/:id/ignore`. |
 | **Store state** | None. Local: tab, whispers[], responseText, respondingTo. |
-| **Layout** | Header, tabs (Inbox | Sent), FlatList: card (anon/from name, distance, time, message, response if any, Reply/Ignore or reply box with Reply Anon / Reply & Reveal). ListEmpty per tab. |
-| **Components** | Inline. |
+| **Layout** | Header, tabs (Inbox | Sent), FlatList: card (**"Anonymous" badge** when inbox and !revealed), from/to name, distance, time, message, response if any, Reply/Ignore or reply box with Reply Anon / Reply & Reveal. ListEmpty: icon, title, subtitle, "Go to Discover" CTA. |
+| **Components** | Inline. Anonymous badge for unrevealed senders in inbox. |
 | **Interactions** | Tab switch; Reply → expand input; Reply Anon / Reply & Reveal → POST; Ignore → POST; View Profile when revealed. |
-| **States** | **Empty**: "No whispers yet" / "No sent whispers". **Error**: Alert on respond/ignore. |
+| **States** | **Empty**: "No whispers yet" / "No sent whispers" with CTA. **Error**: Alert on respond/ignore. |
 | **Edge cases** | Expired whispers: status from API; UI shows all. |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Cards and actions need labels. |

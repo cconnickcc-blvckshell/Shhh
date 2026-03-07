@@ -87,9 +87,15 @@ async function refreshAccessToken(): Promise<string> {
   }
 }
 
+/** Base URL for media (Supabase Storage or backend /uploads). Set EXPO_PUBLIC_MEDIA_URL when using Supabase. */
+const MEDIA_BASE = typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_MEDIA_URL
+  ? (process.env.EXPO_PUBLIC_MEDIA_URL as string).replace(/\/$/, '')
+  : null;
+
 export function getMediaUrl(storagePath: string): string {
-  const path = storagePath?.startsWith('/') ? storagePath : `/${storagePath}`;
-  return `${API_BASE}/uploads${path}`;
+  const p = storagePath?.startsWith('/') ? storagePath : `/${storagePath}`;
+  if (MEDIA_BASE) return `${MEDIA_BASE}${p}`;
+  return `${API_BASE}/uploads${p}`;
 }
 
 /**
@@ -105,7 +111,8 @@ export function getThumbnailUrl(storagePath: string | null | undefined): string 
   const [, category, filename] = match;
   const stem = filename.replace(/\.[^.]+$/, '');
   if (!stem) return null;
-  return `${API_BASE}/uploads/${category}/thumbs/thumb_${stem}.jpg`;
+  const base = MEDIA_BASE || `${API_BASE}/uploads`;
+  return `${base}/${category}/thumbs/thumb_${stem}.jpg`;
 }
 
 export interface ApiError extends Error {
@@ -197,7 +204,8 @@ export const usersApi = {
   getMe: () => api<{ data: any }>('/v1/users/me'),
   updateMe: (data: any) => api<{ data: any }>('/v1/users/me', { method: 'PUT', body: JSON.stringify(data) }),
   like: (id: string) => api<{ data: { matched: boolean } }>(`/v1/users/${id}/like`, { method: 'POST' }),
-  pass: (id: string) => api(`/v1/users/${id}/pass`, { method: 'POST' }),
+  pass: (id: string, reason?: 'not_my_type' | 'too_far' | 'just_browsing' | 'other') =>
+    api(`/v1/users/${id}/pass`, { method: 'POST', body: JSON.stringify(reason ? { reason } : {}) }),
   block: (id: string) => api(`/v1/users/${id}/block`, { method: 'POST' }),
   report: (id: string, reason: string) => api(`/v1/users/${id}/report`, { method: 'POST', body: JSON.stringify({ reason }) }),
   /** Check if current user can see target user's unblurred photos. Single source for blur decision. */

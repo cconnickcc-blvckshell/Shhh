@@ -37,7 +37,8 @@ export class UsersController {
 
   async passUser(req: Request, res: Response, next: NextFunction) {
     try {
-      await usersService.passUser(req.user!.userId, req.params.id as string);
+      const reason = (req.body as { reason?: string }).reason;
+      await usersService.passUser(req.user!.userId, req.params.id as string, reason);
       res.status(204).send();
     } catch (err) {
       next(err);
