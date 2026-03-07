@@ -1,10 +1,10 @@
 # Shhh — Documentation Index
 
-Use this index to keep scope when working on the codebase. **Docs are aligned with the current program** (March 2026). **Only 10 master documents** live here; everything else is in `archive/`.
+Use this index to keep scope when working on the codebase. **Docs are aligned with the current program** (March 2026). **11 master documents** live here; everything else is in `archive/`.
 
 ---
 
-## 10 Master Documents
+## 11 Master Documents
 
 | # | Document | Covers |
 |---|----------|--------|
@@ -14,10 +14,11 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 | 4 | **UX_UI_SPEC.md** | Per-screen UX/UI (mobile + admin) |
 | 5 | **AUDIT_AND_STATUS.md** | Index to audit reports (in archive), implementation status |
 | 6 | **ROADMAP.md** | Me section, admin dashboard, game-changers |
-| 7 | **GLOSSARY.md** | Domain terms |
-| 8 | **WEBSOCKET_EVENT_CATALOG.md** | Real-time events |
-| 9 | **FEATURE_FLAGS.md** | Ads kill switch, cadence |
-| 10 | **policies/POLICY_DOCUMENTATION_INDEX.md** | Policy index |
+| 7 | **IMPROVEMENTS_LEDGER.md** | Planned implementations, ideas, enhancements — feasibility, impact, effort |
+| 8 | **GLOSSARY.md** | Domain terms |
+| 9 | **WEBSOCKET_EVENT_CATALOG.md** | Real-time events |
+| 10 | **FEATURE_FLAGS.md** | Ads kill switch, cadence |
+| 11 | **policies/POLICY_DOCUMENTATION_INDEX.md** | Policy index |
 
 ---
 
@@ -30,6 +31,7 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 | Screen layout, admin pages | UX_UI_SPEC |
 | Audit reports, checklists | AUDIT_AND_STATUS (points to archive) |
 | Planned work | ROADMAP |
+| Ideas, improvements, scoring | IMPROVEMENTS_LEDGER |
 | Domain terms | GLOSSARY |
 | WebSocket events | WEBSOCKET_EVENT_CATALOG |
 | Feature toggles | FEATURE_FLAGS |
