@@ -100,6 +100,7 @@ export const adminApi = {
     const q = params.toString();
     return api<{ data: any[] }>(`/v1/admin/moderation${q ? `?${q}` : ''}`);
   },
+  getResolvedModeration: () => api<{ data: any[] }>('/v1/admin/moderation/resolved'),
   resolveModeration: (id: string, status: 'approved' | 'rejected') => api(`/v1/admin/moderation/${id}/resolve`, { method: 'POST', body: JSON.stringify({ status }) }),
 
   // Safety

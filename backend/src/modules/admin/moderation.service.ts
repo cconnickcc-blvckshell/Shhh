@@ -2,24 +2,34 @@ import { query } from '../../config/database';
 
 export class ModerationService {
   async getQueue(type?: string, status: string = 'pending', limit: number = 50) {
-    const params: unknown[] = [status, limit];
+    const statuses = status.includes(',') ? status.split(',').map((s) => s.trim()) : [status];
+    const statusPlaceholders = statuses.map((_, i) => `$${i + 1}`).join(', ');
+    const params: unknown[] = [...statuses];
     let typeFilter = '';
     if (type) {
-      typeFilter = 'AND mq.type = $3';
+      typeFilter = `AND mq.type = $${params.length + 1}`;
       params.push(type);
     }
+    params.push(limit);
+    const limitIdx = params.length;
 
     const result = await query(
-      `SELECT mq.*, p.display_name as target_user_name
+      `SELECT mq.*, p.display_name as target_user_name, v2.name as venue_name
        FROM moderation_queue mq
        LEFT JOIN verifications v ON mq.target_type = 'verification' AND mq.target_id = v.id
        LEFT JOIN user_profiles p ON v.user_id = p.user_id
-       WHERE mq.status = $1 ${typeFilter}
-       ORDER BY mq.priority DESC, mq.created_at ASC
-       LIMIT $2`,
+       LEFT JOIN venues v2 ON mq.target_type = 'venue' AND mq.target_id = v2.id
+       WHERE mq.status IN (${statusPlaceholders}) ${typeFilter}
+       ORDER BY ${statuses.some((s) => s === 'approved' || s === 'rejected') ? 'mq.resolved_at DESC NULLS LAST, mq.created_at DESC' : 'mq.created_at ASC'}
+       LIMIT $${limitIdx}`,
       params
     );
     return result.rows;
+  }
+
+  /** Resolved moderation items (approved or rejected) for display in Resolved column. */
+  async getResolvedModeration(limit: number = 50) {
+    return this.getQueue(undefined, 'approved,rejected', limit);
   }
 
   async getStats() {
@@ -94,6 +104,43 @@ export class ModerationService {
   }
 
   async resolveModerationItem(id: string, status: 'approved' | 'rejected', adminId?: string) {
+    const item = await query(
+      `SELECT type, target_id, target_type FROM moderation_queue WHERE id = $1 AND status = 'pending'`,
+      [id]
+    );
+    if (item.rows.length === 0) {
+      throw Object.assign(new Error('Moderation item not found or already resolved'), { statusCode: 404 });
+    }
+
+    const { type, target_id: targetId, target_type: targetType } = item.rows[0];
+
+    if (type === 'venue_verification' && targetType === 'venue') {
+      const venue = await query('SELECT verified_owner_id FROM venues WHERE id = $1', [targetId]);
+      const ownerId = venue.rows[0]?.verified_owner_id;
+      if (status === 'approved') {
+        await query(
+          `UPDATE venues SET verified_safe_at = NOW(), verified_safe_metadata = COALESCE(verified_safe_metadata, '{}'::jsonb) || $2::jsonb WHERE id = $1`,
+          [targetId, JSON.stringify({ admin_approved: true, admin_id: adminId || null })]
+        );
+        if (ownerId) {
+          await query(
+            `INSERT INTO audit_logs (user_id, action, gdpr_category, metadata_json)
+             VALUES ($1, 'admin.venue_approved', 'moderation', $2)`,
+            [ownerId, JSON.stringify({ venue_id: targetId, admin_id: adminId })]
+          );
+        }
+      } else {
+        await query(`UPDATE venues SET is_active = false WHERE id = $1`, [targetId]);
+        if (ownerId) {
+          await query(
+            `INSERT INTO audit_logs (user_id, action, gdpr_category, metadata_json)
+             VALUES ($1, 'admin.venue_rejected', 'moderation', $2)`,
+            [ownerId, JSON.stringify({ venue_id: targetId, admin_id: adminId })]
+          );
+        }
+      }
+    }
+
     await query(
       `UPDATE moderation_queue SET status = $1, resolved_at = NOW(), assigned_to = $2 WHERE id = $3`,
       [status, adminId || null, id]

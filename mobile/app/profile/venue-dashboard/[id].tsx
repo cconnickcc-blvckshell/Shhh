@@ -128,6 +128,10 @@ export default function VenueDashboardScreen() {
             <Ionicons name="people-outline" size={22} color={colors.primaryLight} />
             <Text style={dashStyles.actionLabel}>Staff</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={dashStyles.actionBtn} onPress={() => router.push({ pathname: '/profile/create-event', params: { venueId: id } })}>
+            <Ionicons name="calendar-outline" size={22} color={colors.primaryLight} />
+            <Text style={dashStyles.actionLabel}>Create event</Text>
+          </TouchableOpacity>
         </View>
       </View>
 

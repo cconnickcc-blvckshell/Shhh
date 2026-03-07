@@ -15,7 +15,14 @@ export class AdminController {
 
   async getModerationQueue(req: Request, res: Response, next: NextFunction) {
     try {
-      const items = await modSvc.getQueue(req.query.type as string, req.query.status as string || 'pending');
+      const items = await modSvc.getQueue(req.query.type as string, (req.query.status as string) || 'pending');
+      res.json({ data: items, count: items.length });
+    } catch (err) { next(err); }
+  }
+
+  async getResolvedModeration(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const items = await modSvc.getResolvedModeration(50);
       res.json({ data: items, count: items.length });
     } catch (err) { next(err); }
   }

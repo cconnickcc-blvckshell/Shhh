@@ -50,7 +50,8 @@ const INTENT_ICONS: Record<string, { icon: string; label: string }> = {
   couples_only: { icon: 'people-circle', label: 'Couples' },
 };
 
-const RADIUS_OPTIONS = [5, 25, 50] as const;
+const RADIUS_OPTIONS = [5, 25, 50, 100] as const;
+const RADIUS_ALL = 100;
 type SortMode = 'nearest' | 'active';
 
 const FALLBACK_LAT = 40.7128;
@@ -175,7 +176,7 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [whisperTarget, setWhisperTarget] = useState<string | null>(null);
   const [whisperText, setWhisperText] = useState('');
-  const [radiusKm, setRadiusKm] = useState<number>(50);
+  const [radiusKm, setRadiusKm] = useState<number>(RADIUS_ALL);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('nearest');
   const { width } = useWindowDimensions();
@@ -312,9 +313,9 @@ export default function DiscoverScreen() {
       {/* Consolidated filter bar */}
       <View style={s.filterBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterScroll}>
-          <TouchableOpacity style={[s.radiusChip, s.radiusChipActive]} onPress={() => setRadiusKm(radiusKm === 5 ? 25 : radiusKm === 25 ? 50 : 5)} activeOpacity={0.8}>
+          <TouchableOpacity style={[s.radiusChip, s.radiusChipActive]} onPress={() => setRadiusKm(radiusKm === 5 ? 25 : radiusKm === 25 ? 50 : radiusKm === 50 ? RADIUS_ALL : 5)} activeOpacity={0.8}>
             <Ionicons name="locate-outline" size={13} color="#B35CFF" />
-            <Text style={s.radiusChipTextActive}>{radiusKm}{' km'}</Text>
+            <Text style={s.radiusChipTextActive}>{radiusKm === RADIUS_ALL ? 'All' : `${radiusKm} km`}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[s.radiusChip, sortMode === 'nearest' && s.radiusChipActive]} onPress={() => setSortMode('nearest')} activeOpacity={0.8}>
             <Ionicons name="navigate-outline" size={13} color={sortMode === 'nearest' ? '#B35CFF' : 'rgba(255,255,255,0.35)'} />

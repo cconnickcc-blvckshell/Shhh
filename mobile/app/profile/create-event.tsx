@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { eventsApi, venuesApi } from '../../src/api/client';
 import { useLocation } from '../../src/hooks/useLocation';
@@ -35,6 +35,7 @@ const EVENT_TYPES = [
 ];
 
 export default function CreateEventScreen() {
+  const { venueId: paramVenueId } = useLocalSearchParams<{ venueId?: string }>();
   const location = useLocation();
   const lat = location.loading ? FALLBACK_LAT : location.latitude;
   const lng = location.loading ? FALLBACK_LNG : location.longitude;
@@ -43,7 +44,7 @@ export default function CreateEventScreen() {
   const [description, setDescription] = useState('');
   const [startsAt, setStartsAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
-  const [venueId, setVenueId] = useState<string | null>(null);
+  const [venueId, setVenueId] = useState<string | null>(paramVenueId || null);
   const [seriesId, setSeriesId] = useState('');
   const [type, setType] = useState('party');
   const [capacity, setCapacity] = useState('');
@@ -55,6 +56,10 @@ export default function CreateEventScreen() {
   const [saving, setSaving] = useState(false);
   const [venues, setVenues] = useState<any[]>([]);
   const [venuesLoading, setVenuesLoading] = useState(false);
+
+  useEffect(() => {
+    if (paramVenueId) setVenueId(paramVenueId);
+  }, [paramVenueId]);
 
   useEffect(() => {
     setVenuesLoading(true);

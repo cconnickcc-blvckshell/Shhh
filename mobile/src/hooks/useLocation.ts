@@ -44,8 +44,22 @@ export function useLocation() {
     setState(prev => ({ ...prev, loading: true }));
     try {
       if (Platform.OS === 'web') {
+        const nav = typeof navigator !== 'undefined' ? navigator : null;
+        const geo = nav?.geolocation;
+        if (geo) {
+          try {
+            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+              geo.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+            });
+            const { latitude, longitude } = pos.coords;
+            setState(prev => ({ ...prev, latitude, longitude, loading: false, error: null, permissionGranted: true }));
+            await discoverApi.updateLocation(latitude, longitude);
+            return;
+          } catch {
+            // Permission denied or unavailable — do NOT send NYC to backend
+          }
+        }
         setState(prev => ({ ...prev, loading: false }));
-        await discoverApi.updateLocation(DEFAULT_LAT, DEFAULT_LNG);
         return;
       }
 
@@ -58,7 +72,7 @@ export function useLocation() {
       await discoverApi.updateLocation(latitude, longitude);
     } catch (err: any) {
       setState(prev => ({ ...prev, loading: false, error: err.message }));
-      await discoverApi.updateLocation(DEFAULT_LAT, DEFAULT_LNG);
+      // Do NOT send NYC fallback — would overwrite real coords in DB
     }
   }, []);
 

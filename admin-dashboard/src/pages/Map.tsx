@@ -13,6 +13,18 @@ const CARTODB_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyr
 
 type ViewMode = 'users' | 'heat' | 'both';
 
+const POLL_INTERVAL_MS = 30000;
+
+function getMarkerColor(p: { presenceState?: string; lastSeen: string }): string {
+  const isOnline = p.presenceState && p.presenceState !== 'invisible' && p.presenceState !== 'unknown';
+  if (isOnline) return theme.colors.primary;
+  const age = Date.now() - new Date(p.lastSeen).getTime();
+  const day = 86400000;
+  if (age < 7 * day) return theme.colors.info;
+  if (age < 30 * day) return theme.colors.warning;
+  return theme.colors.textDim;
+}
+
 export default function Map() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -39,6 +51,10 @@ export default function Map() {
   };
 
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const id = setInterval(load, POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, []);
 
   // Init map (runs when we have data or when viewMode changes)
   useEffect(() => {
@@ -75,16 +91,15 @@ export default function Map() {
     const markers = L.layerGroup().addTo(map);
     markersRef.current = markers;
 
-    // Neon marker icon
-    const createIcon = () =>
+    const createIcon = (color: string) =>
       L.divIcon({
         className: 'map-user-marker',
         html: `<div style="
           width: 10px; height: 10px;
-          background: ${theme.colors.primary};
-          border: 2px solid ${theme.colors.primaryGlow};
+          background: ${color};
+          border: 2px solid ${color === theme.colors.primary ? theme.colors.primaryGlow : 'rgba(255,255,255,0.3)'};
           border-radius: 50%;
-          box-shadow: 0 0 12px ${theme.colors.primaryGlow};
+          box-shadow: 0 0 8px ${color};
         "></div>`,
         iconSize: [10, 10],
         iconAnchor: [5, 5],
@@ -92,7 +107,8 @@ export default function Map() {
 
     if (viewMode === 'users' || viewMode === 'both') {
       geo.forEach((p) => {
-        const m = L.marker([p.lat, p.lng], { icon: createIcon() })
+        const color = getMarkerColor(p);
+        const m = L.marker([p.lat, p.lng], { icon: createIcon(color) })
           .on('click', () => setSelectedUser({ userId: p.userId, lastSeen: p.lastSeen }))
           .addTo(markers);
         m.bindTooltip(p.userId.slice(0, 8), {
@@ -151,9 +167,15 @@ export default function Map() {
         }}>
           Command Map
         </h2>
-        <div style={{ display: 'flex', gap: theme.space[2], alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: theme.space[2], alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.sm }}>
-            {geo.length} users · {cities.length} hotspots
+            {geo.length} users · {cities.length} hotspots · Live (30s)
+          </span>
+          <span style={{ display: 'flex', gap: theme.space[3], fontSize: 10, color: theme.colors.textDim }}>
+            <span><span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 3, background: theme.colors.primary, marginRight: 4 }} />Online</span>
+            <span><span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 3, background: theme.colors.info, marginRight: 4 }} />&lt;7d</span>
+            <span><span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 3, background: theme.colors.warning, marginRight: 4 }} />7–30d</span>
+            <span><span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 3, background: theme.colors.textDim, marginRight: 4 }} />&gt;30d</span>
           </span>
           <GlassButton variant={viewMode === 'users' ? 'primary' : 'secondary'} onClick={() => setViewMode('users')} style={{ padding: `${theme.space[1]} ${theme.space[2]}`, fontSize: theme.fontSize.xs }}>
             Dots

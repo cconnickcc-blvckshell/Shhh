@@ -23,7 +23,9 @@ export class DiscoveryController {
           ? config.geo.discoveryCapFree
           : config.geo.discoveryCapPremium;
 
-      const radiusKm = radius ? parseFloat(radius as string) : 50;
+      const radiusVal = radius as string | undefined;
+      const useMaxRadius = !radiusVal || radiusVal === 'all' || radiusVal === '';
+      const radiusKm = useMaxRadius ? config.geo.maxDiscoveryRadiusKm : parseFloat(radiusVal);
       const effectiveRadiusKm = Math.min(radiusKm, config.geo.maxDiscoveryRadiusKm);
 
       let primaryIntent = queryIntent as string | undefined;

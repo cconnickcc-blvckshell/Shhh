@@ -44,6 +44,14 @@ describe('Admin API', () => {
     expect(res.body.data).toBeInstanceOf(Array);
   });
 
+  it('GET /v1/admin/moderation/resolved returns resolved items', async () => {
+    const res = await request
+      .get('/v1/admin/moderation/resolved')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeInstanceOf(Array);
+  });
+
   it('GET /v1/admin/users/:userId returns user detail', async () => {
     const res = await request
       .get(`/v1/admin/users/${userId}`)

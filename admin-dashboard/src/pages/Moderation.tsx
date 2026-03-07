@@ -24,6 +24,7 @@ interface ModItem {
   priority: number;
   status: string;
   target_user_name?: string;
+  venue_name?: string;
   created_at: string;
 }
 
@@ -32,6 +33,7 @@ type ColumnId = 'pending' | 'resolved' | 'dismissed' | 'queue';
 export default function Moderation() {
   const [reports, setReports] = useState<Record<string, Report[]>>({ pending: [], resolved: [], dismissed: [] });
   const [queue, setQueue] = useState<ModItem[]>([]);
+  const [resolvedQueue, setResolvedQueue] = useState<ModItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dragged, setDragged] = useState<{ type: 'report'; id: string } | { type: 'mod'; id: string } | null>(null);
@@ -45,14 +47,16 @@ export default function Moderation() {
       adminApi.getReports('resolved'),
       adminApi.getReports('dismissed'),
       adminApi.getQueue(undefined, 'pending'),
+      adminApi.getResolvedModeration(),
     ])
-      .then(([p, r, d, q]) => {
+      .then(([p, r, d, q, resolved]) => {
         setReports({
           pending: (p as any).data || [],
           resolved: (r as any).data || [],
           dismissed: (d as any).data || [],
         });
         setQueue((q as any).data || []);
+        setResolvedQueue((resolved as any).data || []);
       })
       .catch(() => setError('Failed to load moderation data.'))
       .finally(() => setLoading(false));
@@ -192,7 +196,7 @@ export default function Moderation() {
             {queue.map((m) => (
               <GlassCard key={m.id} style={{ padding: theme.space[3], marginBottom: 0 }}>
                 <div style={{ fontSize: theme.fontSize.xs, color: theme.colors.textMuted }}>{m.type} · {m.target_type}</div>
-                <div style={{ fontFamily: theme.font.mono, fontSize: theme.fontSize.sm, color: theme.colors.text, marginTop: theme.space[1] }}>{m.target_user_name || m.target_id?.slice(0, 8)}</div>
+                <div style={{ fontFamily: theme.font.mono, fontSize: theme.fontSize.sm, color: theme.colors.text, marginTop: theme.space[1] }}>{m.venue_name || m.target_user_name || m.target_id?.slice(0, 8)}</div>
                 <div style={{ display: 'flex', gap: theme.space[2], marginTop: theme.space[2] }}>
                   <GlassButton variant="success" onClick={() => resolveMod(m.id, 'approved')} style={{ padding: `${theme.space[1]} ${theme.space[2]}`, fontSize: 10 }}>Approve</GlassButton>
                   <GlassButton variant="danger" onClick={() => resolveMod(m.id, 'rejected')} style={{ padding: `${theme.space[1]} ${theme.space[2]}`, fontSize: 10 }}>Reject</GlassButton>
@@ -200,6 +204,38 @@ export default function Moderation() {
               </GlassCard>
             ))}
             {queue.length === 0 && (
+              <div style={{ color: theme.colors.textDim, fontSize: theme.fontSize.sm, textAlign: 'center', padding: theme.space[4] }}>Empty</div>
+            )}
+          </div>
+        </div>
+
+        {/* Resolved Moderation column */}
+        <div style={{
+          minWidth: 320,
+          flex: '0 0 320px',
+          background: theme.glass.bg,
+          border: theme.glass.border,
+          borderRadius: theme.radius.lg,
+          padding: theme.space[4],
+        }}>
+          <div style={{
+            fontFamily: theme.font.display,
+            fontSize: theme.fontSize.sm,
+            fontWeight: theme.fontWeight.semibold,
+            color: theme.colors.success,
+            marginBottom: theme.space[3],
+          }}>
+            Resolved Mod ({resolvedQueue.length})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: theme.space[2] }}>
+            {resolvedQueue.map((m) => (
+              <GlassCard key={m.id} style={{ padding: theme.space[3], marginBottom: 0 }}>
+                <div style={{ fontSize: theme.fontSize.xs, color: theme.colors.textMuted }}>{m.type} · {m.target_type}</div>
+                <div style={{ fontFamily: theme.font.mono, fontSize: theme.fontSize.sm, color: theme.colors.text, marginTop: theme.space[1] }}>{m.venue_name || m.target_user_name || m.target_id?.slice(0, 8)}</div>
+                <div style={{ fontSize: 10, marginTop: theme.space[1], color: m.status === 'approved' ? theme.colors.success : theme.colors.danger }}>{m.status}</div>
+              </GlassCard>
+            ))}
+            {resolvedQueue.length === 0 && (
               <div style={{ color: theme.colors.textDim, fontSize: theme.fontSize.sm, textAlign: 'center', padding: theme.space[4] }}>Empty</div>
             )}
           </div>

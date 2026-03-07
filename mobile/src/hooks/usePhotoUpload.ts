@@ -6,6 +6,8 @@ import { getAuthToken, API_BASE, getMediaUrl } from '../api/client';
 interface UploadResult {
   id: string;
   url: string;
+  /** Storage path for photosJson (e.g. /photos/abc.jpg). Use this when saving to profile. */
+  storagePath: string | null;
   thumbnailUrl: string | null;
   mimeType: string;
   sizeBytes: number;
@@ -105,7 +107,11 @@ export function usePhotoUpload() {
       const json = await res.json();
       const data = json.data;
       const storagePath = data?.url || data?.storage_path;
-      return { ...data, url: storagePath ? getMediaUrl(storagePath) : data?.url };
+      return {
+        ...data,
+        url: storagePath ? getMediaUrl(storagePath) : data?.url,
+        storagePath: storagePath || null,
+      };
     } catch (err: any) {
       Alert.alert('Upload Failed', err.message);
       return null;

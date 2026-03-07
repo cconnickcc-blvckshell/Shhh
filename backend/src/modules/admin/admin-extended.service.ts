@@ -222,7 +222,7 @@ export class AdminExtendedService {
   }
 
   // ==================== MAP / GEO ====================
-  /** Live user locations for command center map. Returns lat, lng, userId, lastSeen. */
+  /** Live user locations for command center map. Returns lat, lng, userId, lastSeen, presenceState. */
   async getPresenceGeo() {
     const result = await query(`
       SELECT
@@ -232,6 +232,7 @@ export class AdminExtendedService {
         l.updated_at as "lastSeen",
         p.state as "presenceState"
       FROM locations l
+      JOIN users u ON l.user_id = u.id AND u.deleted_at IS NULL
       LEFT JOIN presence p ON l.user_id = p.user_id AND p.expires_at > NOW()
       WHERE (l.expires_at IS NULL OR l.expires_at > NOW())
       ORDER BY l.updated_at DESC
