@@ -6,20 +6,49 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { colors } from '../src/constants/theme';
 import { AuthGuard } from '../src/components/AuthGuard';
 import { OfflineBanner } from '../src/components/OfflineBanner';
+import { UnreadBadgeProvider } from '../src/context/UnreadBadgeContext';
+import { InAppToastProvider } from '../src/context/InAppToastContext';
+import { useNotificationResponse } from '../src/hooks/useNotificationResponse';
 import { setOnUnauthorized } from '../src/api/client';
 import { useAuthStore } from '../src/stores/auth';
 
 const queryClient = new QueryClient();
 
+function NotificationHandlers() {
+  useNotificationResponse();
+  return null;
+}
+
+function setupForegroundNotificationHandler() {
+  if (typeof navigator !== 'undefined' && /web/i.test(navigator.userAgent)) return;
+  import('expo-notifications').then((N) => {
+    N.default.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: false,
+        shouldPlaySound: false,
+        shouldSetBadge: true,
+        shouldShowBanner: false,
+        shouldShowList: false,
+      }),
+    });
+  }).catch(() => {});
+}
+
 export default function RootLayout() {
   useEffect(() => {
     setOnUnauthorized(() => useAuthStore.getState().clearSession());
+  }, []);
+  useEffect(() => {
+    setupForegroundNotificationHandler();
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style="light" />
       <AuthGuard>
+      <UnreadBadgeProvider>
+      <InAppToastProvider>
+      <NotificationHandlers />
       <View style={{ flex: 1 }}>
         <OfflineBanner />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
@@ -46,11 +75,14 @@ export default function RootLayout() {
         <Stack.Screen name="user/[id]" />
         <Stack.Screen name="event/[id]" />
         <Stack.Screen name="profile/status" />
+        <Stack.Screen name="profile/notifications" />
         <Stack.Screen name="venue/[id]" />
         <Stack.Screen name="whispers/index" />
         <Stack.Screen name="subscription/index" />
       </Stack>
       </View>
+      </InAppToastProvider>
+      </UnreadBadgeProvider>
       </AuthGuard>
     </QueryClientProvider>
   );

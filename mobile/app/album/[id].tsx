@@ -1,20 +1,28 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, TextInput, useWindowDimensions, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, TextInput, useWindowDimensions, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { albumsApi, getMediaUrl } from '../../src/api/client';
+import { useAuthStore } from '../../src/stores/auth';
+import { usePhotoUpload } from '../../src/hooks/usePhotoUpload';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
 
 export default function AlbumDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const userId = useAuthStore((s) => s.userId);
   const [album, setAlbum] = useState<any>(null);
   const [shareUserId, setShareUserId] = useState('');
   const [showShare, setShowShare] = useState(false);
   const [watermarkMode, setWatermarkMode] = useState<'off' | 'subtle' | 'invisible'>('subtle');
   const [notifyOnView, setNotifyOnView] = useState(true);
   const { width } = useWindowDimensions();
+  const { pickAndUpload, uploading } = usePhotoUpload();
   const cols = 3;
   const tileSize = (width - spacing.md * 2 - 4 * (cols - 1)) / cols;
+  const isOwner = album && userId && album.owner_id === userId;
 
   const load = async () => {
     if (!id) return;
@@ -43,20 +51,52 @@ export default function AlbumDetailScreen() {
     load();
   };
 
-  if (!album) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
+  const addPhoto = async () => {
+    if (!id || !isOwner) return;
+    const result = await pickAndUpload('albums');
+    if (result?.id) {
+      try {
+        await albumsApi.addMedia(id, result.id);
+        load();
+      } catch (err: any) {
+        Alert.alert('Error', err.message || 'Could not add photo');
+      }
+    }
+  };
+
+  if (!album) {
+    return (
+      <PremiumDarkBackground style={styles.wrapper}>
+        <PageShell>
+          <View style={styles.loadWrap}>
+            <ActivityIndicator color={colors.primaryLight} size="large" />
+            <Text style={styles.loading}>Loading...</Text>
+          </View>
+        </PageShell>
+      </PremiumDarkBackground>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={colors.text} /></TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.title}>{album.name}</Text>
-          <Text style={styles.subtitle}>{album.media?.length || 0} photos{album.is_private ? ' · Private' : ''}</Text>
+    <PremiumDarkBackground style={styles.wrapper}>
+      <PageShell>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={colors.text} /></TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.title}>{album.name}</Text>
+            <Text style={styles.subtitle}>{album.media?.length || 0} photos{album.is_private ? ' · Private' : ''}</Text>
+          </View>
+          <View style={styles.headerActions}>
+            {isOwner && (
+              <TouchableOpacity onPress={addPhoto} disabled={uploading} style={styles.addPhotoBtn}>
+                {uploading ? <ActivityIndicator size="small" color={colors.primaryLight} /> : <Ionicons name="add-circle" size={26} color={colors.primary} />}
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => setShowShare(!showShare)}>
+              <Ionicons name="share-outline" size={22} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
-        <TouchableOpacity onPress={() => setShowShare(!showShare)}>
-          <Ionicons name="share-outline" size={22} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
 
       {showShare && (
         <View style={styles.shareBox}>
@@ -119,18 +159,27 @@ export default function AlbumDetailScreen() {
           <View style={styles.empty}>
             <Ionicons name="camera-outline" size={48} color={colors.textMuted} />
             <Text style={styles.emptyText}>No photos in this album</Text>
+            {isOwner && (
+              <TouchableOpacity style={styles.emptyAddBtn} onPress={addPhoto} disabled={uploading}>
+                {uploading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.emptyAddBtnText}>Add photo</Text>}
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
-    </View>
+      </PageShell>
+    </PremiumDarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  loading: { color: colors.textMuted, textAlign: 'center', marginTop: 40 },
+  wrapper: { flex: 1 },
+  loadWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  loading: { color: colors.textMuted, textAlign: 'center', marginTop: spacing.md },
   header: { flexDirection: 'row', alignItems: 'center', padding: spacing.lg, gap: spacing.md },
   headerCenter: { flex: 1 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  addPhotoBtn: { padding: spacing.xs },
   title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
   subtitle: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
   shareBox: { backgroundColor: colors.card, margin: spacing.md, padding: spacing.md, borderRadius: borderRadius.lg },
@@ -158,4 +207,6 @@ const styles = StyleSheet.create({
   photoImage: { borderRadius: borderRadius.sm },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { color: colors.textMuted, fontSize: fontSize.md, marginTop: spacing.md },
+  emptyAddBtn: { marginTop: spacing.lg, paddingVertical: 14, paddingHorizontal: spacing.xl, backgroundColor: colors.primary, borderRadius: borderRadius.lg },
+  emptyAddBtnText: { color: '#fff', fontWeight: '700', fontSize: fontSize.sm },
 });

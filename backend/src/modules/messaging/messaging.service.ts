@@ -5,9 +5,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { emitNewMessage, emitToUser } from '../../websocket';
 import { InitiationCapService } from './initiation-cap.service';
 import { InitiationCapReachedError } from '../../utils/errors';
+import { PushService } from '../auth/push.service';
 
 const IDEMPOTENCY_TTL = 300; // 5 min
 const initiationCapService = new InitiationCapService();
+const pushService = new PushService();
 
 export class MessagingService {
   async createConversation(
@@ -53,6 +55,16 @@ export class MessagingService {
     }
 
     return { id: convId, existing: false };
+  }
+
+  async getUnreadTotal(userId: string): Promise<number> {
+    const r = await query(
+      `SELECT COALESCE(SUM(unread_count), 0)::int as total
+       FROM conversation_participants
+       WHERE user_id = $1 AND left_at IS NULL AND unread_count > 0`,
+      [userId]
+    );
+    return r.rows[0]?.total ?? 0;
   }
 
   async getConversations(userId: string) {
@@ -212,13 +224,38 @@ export class MessagingService {
       `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2 AND left_at IS NULL`,
       [conversationId, senderId]
     );
+
+    let senderName = 'Someone';
+    try {
+      const nameRow = await query(
+        `SELECT display_name FROM user_profiles WHERE user_id = $1`,
+        [senderId]
+      );
+      if (nameRow.rows[0]?.display_name) senderName = nameRow.rows[0].display_name;
+    } catch {
+      // ignore
+    }
+
+    const preview = content.substring(0, 50) + (content.length > 50 ? '…' : '');
+
     for (const p of participants.rows) {
       emitToUser(p.user_id, 'notification', {
         type: 'new_message',
         conversationId,
         senderId,
-        preview: content.substring(0, 50),
+        preview,
       });
+
+      pushService.shouldPushMessages(p.user_id).then((ok) => {
+        if (ok) {
+          pushService.sendPush(
+            p.user_id,
+            'New message',
+            `${senderName}: ${preview}`,
+            { type: 'new_message', conversationId, senderId }
+          );
+        }
+      }).catch(() => {});
     }
 
     return message;

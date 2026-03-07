@@ -114,26 +114,22 @@ export default function ProfileScreen() {
         <MenuItem icon="radio-outline" label="Your Status" onPress={() => router.push('/profile/status')} badge="Live" accent />
         <View style={styles.div} />
         <MenuItem icon="create-outline" label="Edit Profile" onPress={() => router.push('/profile/edit')} />
+        <View style={styles.div} />
+        <MenuItem icon="notifications-outline" label="Notifications" onPress={() => router.push('/profile/notifications')} />
         {profile?.isHost && (
           <>
             <View style={styles.div} />
             <MenuItem icon="home" label="Hosting" onPress={() => router.push('/profile/hosting')} accent />
           </>
         )}
-        {(profile?.verificationTier ?? 0) >= 2 && (
-          <>
-            <View style={styles.div} />
-            <MenuItem icon="business" label="Venues" onPress={() => router.push('/profile/venues')} accent />
-          </>
-        )}
+        <View style={styles.div} />
+        <MenuItem icon="business-outline" label="Venues" onPress={() => router.push('/profile/venues')} accent={(profile?.verificationTier ?? 0) >= 2} />
         <View style={styles.div} />
         <MenuItem icon="images-outline" label="My Albums" onPress={() => router.push('/album')} />
         <View style={styles.div} />
         <MenuItem icon="heart-outline" label="Couple" onPress={() => router.push('/couple')} />
         <View style={styles.div} />
         <MenuItem icon="shield-checkmark-outline" label="Verification" onPress={() => router.push('/verify')} />
-        <View style={styles.div} />
-        <MenuItem icon="business-outline" label="My Venues" onPress={() => router.push('/profile/venues')} />
         <View style={styles.div} />
         <MenuItem icon="call-outline" label="Emergency Contacts" onPress={() => router.push('/profile/emergency')} />
         <View style={styles.div} />

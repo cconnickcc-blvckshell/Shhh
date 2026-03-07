@@ -4,6 +4,15 @@ import { MessagingService } from './messaging.service';
 const messagingService = new MessagingService();
 
 export class MessagingController {
+  async getUnreadTotal(req: Request, res: Response, next: NextFunction) {
+    try {
+      const total = await messagingService.getUnreadTotal(req.user!.userId);
+      res.json({ total });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getConversations(req: Request, res: Response, next: NextFunction) {
     try {
       const conversations = await messagingService.getConversations(req.user!.userId);

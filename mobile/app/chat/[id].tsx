@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef, useMemo, useLayoutEffect, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useNavigation, router } from 'expo-router';
+import { useLocalSearchParams, useNavigation, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { messagingApi, usersApi } from '../../src/api/client';
 import { useAuthStore } from '../../src/stores/auth';
 import { useSocket } from '../../src/hooks/useSocket';
 import { useScreenshotDetection } from '../../src/hooks/useScreenshotDetection';
+import { useUnreadBadge } from '../../src/context/UnreadBadgeContext';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 import { mapApiError } from '../../src/utils/errorMapper';
 
@@ -16,6 +17,13 @@ export default function ChatScreen() {
   const navigation = useNavigation();
   const userId = useAuthStore(s => s.userId);
   const socket = useSocket();
+  const { refetch: refetchBadge } = useUnreadBadge();
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => { refetchBadge(); };
+    }, [refetchBadge])
+  );
   useScreenshotDetection(convId as string | undefined);
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);

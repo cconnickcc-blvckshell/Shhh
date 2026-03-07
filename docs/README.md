@@ -54,6 +54,10 @@ Use this index to keep scope when working on the codebase. **Docs are aligned wi
 | **OPS_RUNBOOK.md** | Incident response, debugging, health checks, rollback. | When on-call or troubleshooting. |
 | **DEPLOYMENT_GUIDE.md** | Terraform, ECS, migrations, CI/CD, staging vs prod. | When deploying or changing infra. |
 | **TESTING_GUIDE.md** | How to run backend tests, load tests; what's covered. | When adding tests or debugging CI. |
+| **PUSH_NOTIFICATIONS.md** | Push setup, testing, preferences, deep linking, foreground toast. | When working on notifications or debugging push. |
+| **ME_SECTION_IMPROVEMENTS.md** | Me section improvement list: layout, design system, functional gaps, status. | When upgrading Me sub-pages. |
+| **SUPABASE_PHOTO_BUCKETS.md** | Supabase Storage bucket planning for photos, albums, stories. | When migrating to Supabase Storage. |
+| **ME_SECTION_SPRINT_REPORT.md** | Me section sprint accomplishment report (March 2026). | Reference for what was done in the Me upgrade sprint. |
 | **WEBSOCKET_EVENT_CATALOG.md** | All WebSocket events (client↔server); rooms, payloads. | When integrating real-time or debugging. |
 | **DATA_FLOWS.md** | Sequence diagrams: auth, discovery, messaging, presence, distress. | When onboarding or debugging flows. |
 | **FEATURE_FLAGS.md** | Ads kill switch, cadence rules; how to toggle. | When toggling features or responding to incidents. |

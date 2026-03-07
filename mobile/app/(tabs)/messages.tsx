@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { messagingApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
@@ -8,6 +8,7 @@ import { PageShell, ContentColumn } from '../../src/components/layout';
 import { SafeState } from '../../src/components/ui';
 import { mapApiError } from '../../src/utils/errorMapper';
 import { useScreenView } from '../../src/hooks/useScreenView';
+import { useUnreadBadge } from '../../src/context/UnreadBadgeContext';
 
 interface Conversation {
   id: string;
@@ -34,23 +35,31 @@ function timeAgo(d: string | null | undefined): string {
 
 export default function MessagesScreen() {
   useScreenView('messages');
+  const { refetch: refetchBadge } = useUnreadBadge();
   const [convos, setConvos] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchBadge();
+    }, [refetchBadge])
+  );
 
   const load = useCallback(async () => {
     setLoadError(null);
     try {
       const r = await messagingApi.getConversations();
       setConvos(r.data);
+      refetchBadge();
     } catch (err: any) {
       setLoadError(mapApiError(err));
       setConvos([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refetchBadge]);
   useEffect(() => { load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); setRefreshing(false); };
 

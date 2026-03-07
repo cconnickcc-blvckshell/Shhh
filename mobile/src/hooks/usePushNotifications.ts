@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, AppStateStatus, Platform } from 'react-native';
 import { api } from '../api/client';
 import { useAuthStore } from '../stores/auth';
 
@@ -42,6 +42,31 @@ export function usePushNotifications() {
     };
 
     register();
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' || !isAuthenticated) return;
+
+    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (next === 'active') {
+        registered.current = false;
+        const register = async () => {
+          try {
+            const Notifications = await import('expo-notifications').catch(() => null);
+            if (!Notifications) return;
+            const { status } = await Notifications.getPermissionsAsync();
+            if (status !== 'granted') return;
+            const { data } = await Notifications.getExpoPushTokenAsync();
+            await api('/v1/auth/push-token', {
+              method: 'POST',
+              body: JSON.stringify({ token: data, platform: Platform.OS }),
+            });
+          } catch {}
+        };
+        register();
+      }
+    });
+    return () => sub.remove();
   }, [isAuthenticated]);
 
   return { expoPushToken };

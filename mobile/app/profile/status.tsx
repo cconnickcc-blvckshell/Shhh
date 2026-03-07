@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../src/api/client';
-import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
+import { colors, spacing, fontSize } from '../../src/constants/theme';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell, Card, SectionLabel } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
+import { SafeState } from '../../src/components/ui';
 
 const PRESENCE_STATES = [
   { key: 'invisible', label: 'Invisible', icon: 'eye-off', desc: 'Hidden', color: 'rgba(255,255,255,0.25)' },
@@ -62,107 +66,111 @@ export default function StatusScreen() {
 
   if (loading) {
     return (
-      <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={colors.primaryLight} />
-        <Text style={s.loadText}>Loading your status...</Text>
-      </View>
+      <PremiumDarkBackground style={s.wrapper}>
+        <PageShell>
+          <SafeState variant="loading" message="Loading your status..." />
+        </PageShell>
+      </PremiumDarkBackground>
     );
   }
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={s.content}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
-        <Text style={s.title}>Your Status</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <PremiumDarkBackground style={s.wrapper}>
+      <PageShell>
+        <SubPageHeader title="Your Status" subtitle="Control how others see you" />
+        <ScrollView style={s.scroll} contentContainerStyle={s.content} bounces={false}>
+          <View style={s.currentBox}>
+            <View style={[s.currentDot, { backgroundColor: PRESENCE_STATES.find(p => p.key === currentPresence)?.color || colors.textMuted }]} />
+            <Text style={s.currentLabel}>
+              {PRESENCE_STATES.find(p => p.key === currentPresence)?.label || 'Invisible'}
+            </Text>
+          </View>
 
-      {/* Current state indicator */}
-      <View style={s.currentBox}>
-        <View style={[s.currentDot, { backgroundColor: PRESENCE_STATES.find(p => p.key === currentPresence)?.color || colors.textMuted }]} />
-        <Text style={s.currentLabel}>
-          {PRESENCE_STATES.find(p => p.key === currentPresence)?.label || 'Invisible'}
-        </Text>
-      </View>
+          <Card style={s.card}>
+            <SectionLabel>PRESENCE</SectionLabel>
+            <View style={s.presenceGrid}>
+              {PRESENCE_STATES.map(p => {
+                const active = currentPresence === p.key;
+                return (
+                  <TouchableOpacity
+                    key={p.key}
+                    style={[s.presenceCard, active && { borderColor: p.color, backgroundColor: p.color + '12' }]}
+                    onPress={() => setPresence(p.key)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[s.presenceIconWrap, { backgroundColor: active ? p.color + '25' : 'rgba(255,255,255,0.04)' }]}>
+                      <Ionicons name={p.icon as any} size={20} color={active ? p.color : 'rgba(255,255,255,0.3)'} />
+                    </View>
+                    <Text style={[s.presenceLabel, active && { color: p.color }]}>{p.label}</Text>
+                    <Text style={s.presenceDesc}>{p.desc}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </Card>
 
-      {/* Presence grid */}
-      <Text style={s.sectionLabel}>PRESENCE</Text>
-      <View style={s.presenceGrid}>
-        {PRESENCE_STATES.map(p => {
-          const active = currentPresence === p.key;
-          return (
-            <TouchableOpacity
-              key={p.key}
-              style={[s.presenceCard, active && { borderColor: p.color, backgroundColor: p.color + '12' }]}
-              onPress={() => setPresence(p.key)}
-              activeOpacity={0.7}
-            >
-              <View style={[s.presenceIconWrap, { backgroundColor: active ? p.color + '25' : 'rgba(255,255,255,0.04)' }]}>
-                <Ionicons name={p.icon as any} size={20} color={active ? p.color : 'rgba(255,255,255,0.3)'} />
-              </View>
-              <Text style={[s.presenceLabel, active && { color: p.color }]}>{p.label}</Text>
-              <Text style={s.presenceDesc}>{p.desc}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+          <Card style={s.card}>
+            <SectionLabel>SIGNALS</SectionLabel>
+            <Text style={s.sectionHint}>Others can see these. Auto-expire in 8 hours.</Text>
+            <View style={s.intentWrap}>
+              {INTENT_FLAGS.map(f => {
+                const active = activeIntents.includes(f.key);
+                return (
+                  <TouchableOpacity
+                    key={f.key}
+                    style={[s.intentChip, active && s.intentActive]}
+                    onPress={() => toggleIntent(f.key)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name={f.icon as any} size={13} color={active ? colors.primaryLight : 'rgba(255,255,255,0.35)'} />
+                    <Text style={[s.intentText, active && s.intentTextActive]}>{f.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </Card>
 
-      {/* Intent signals */}
-      <Text style={s.sectionLabel}>SIGNALS</Text>
-      <Text style={s.sectionHint}>Others can see these. Auto-expire in 8 hours.</Text>
-      <View style={s.intentWrap}>
-        {INTENT_FLAGS.map(f => {
-          const active = activeIntents.includes(f.key);
-          return (
-            <TouchableOpacity
-              key={f.key}
-              style={[s.intentChip, active && s.intentActive]}
-              onPress={() => toggleIntent(f.key)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name={f.icon as any} size={13} color={active ? colors.primaryLight : 'rgba(255,255,255,0.35)'} />
-              <Text style={[s.intentText, active && s.intentTextActive]}>{f.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      <View style={{ height: 40 }} />
-    </ScrollView>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </PageShell>
+    </PremiumDarkBackground>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  content: { paddingHorizontal: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, paddingBottom: 8 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
-  title: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  wrapper: { flex: 1 },
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   currentBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 20 },
   currentDot: { width: 12, height: 12, borderRadius: 6 },
-  currentLabel: { color: '#fff', fontSize: 22, fontWeight: '800' },
-  sectionLabel: { color: 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginTop: 24, marginBottom: 12 },
-  sectionHint: { color: 'rgba(255,255,255,0.25)', fontSize: 12, marginTop: -8, marginBottom: 12 },
-  presenceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  currentLabel: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
+  card: { marginBottom: spacing.lg },
+  sectionHint: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: -4, marginBottom: spacing.sm },
+  presenceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   presenceCard: {
-    width: '48.5%', backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 14, padding: 16,
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.06)',
+    width: '48%',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 14,
+    padding: spacing.md,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   presenceIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  presenceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '700' },
-  presenceDesc: { color: 'rgba(255,255,255,0.25)', fontSize: 11, marginTop: 2 },
-  intentWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  presenceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: fontSize.sm, fontWeight: '700' },
+  presenceDesc: { color: 'rgba(255,255,255,0.25)', fontSize: fontSize.xxs, marginTop: 2 },
+  intentWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   intentChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: 'rgba(255,255,255,0.04)',
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   intentActive: { backgroundColor: 'rgba(147,51,234,0.15)', borderColor: 'rgba(147,51,234,0.4)' },
-  intentText: { color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: '600' },
+  intentText: { color: 'rgba(255,255,255,0.4)', fontSize: fontSize.sm, fontWeight: '600' },
   intentTextActive: { color: colors.primaryLight },
-  loadText: { color: colors.textMuted, fontSize: 14, marginTop: spacing.md },
 });

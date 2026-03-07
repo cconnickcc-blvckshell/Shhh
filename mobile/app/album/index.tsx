@@ -6,6 +6,10 @@ import { albumsApi } from '../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { mapApiError } from '../../src/utils/errorMapper';
+import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
+import { SafeState } from '../../src/components/ui';
 
 export default function AlbumsScreen() {
   const [myAlbums, setMyAlbums] = useState<any[]>([]);
@@ -63,53 +67,35 @@ export default function AlbumsScreen() {
 
   if (loading && myAlbums.length === 0 && sharedAlbums.length === 0) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Albums</Text>
-          <View style={{ width: 28 }} />
-        </View>
-        <View style={styles.centerLoad}>
-          <ActivityIndicator size="large" color={colors.primaryLight} />
-          <Text style={styles.loadText}>Loading albums...</Text>
-        </View>
-      </View>
+      <PremiumDarkBackground style={styles.wrapper}>
+        <PageShell>
+          <SafeState variant="loading" message="Loading albums..." />
+        </PageShell>
+      </PremiumDarkBackground>
     );
   }
   if (loadError && myAlbums.length === 0 && sharedAlbums.length === 0) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Albums</Text>
-          <View style={{ width: 28 }} />
-        </View>
-        <View style={styles.errorBox}>
-          <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
-          <Text style={styles.errorText}>{loadError}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => { setLoading(true); load(); }}>
-            <Text style={styles.retryBtnText}>Try again</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <PremiumDarkBackground style={styles.wrapper}>
+        <PageShell>
+          <SubPageHeader title="Albums" />
+          <SafeState variant="error" message={loadError} onRetry={() => { setLoading(true); load(); }} />
+        </PageShell>
+      </PremiumDarkBackground>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Albums</Text>
-        <TouchableOpacity onPress={() => setShowCreate(true)}>
-          <Ionicons name="add-circle" size={28} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+    <PremiumDarkBackground style={styles.wrapper}>
+      <PageShell>
+        <SubPageHeader
+          title="Albums"
+          rightAction={
+            <TouchableOpacity onPress={() => setShowCreate(true)}>
+              <Ionicons name="add-circle" size={28} color={colors.primary} />
+            </TouchableOpacity>
+          }
+        />
 
       <View style={styles.tabs}>
         <TouchableOpacity style={[styles.tab, tab === 'mine' && styles.tabActive]} onPress={() => setTab('mine')}>
@@ -147,15 +133,13 @@ export default function AlbumsScreen() {
           </View>
         }
       />
-    </View>
+      </PageShell>
+    </PremiumDarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.lg },
-  backBtn: { padding: spacing.xs },
-  title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
+  wrapper: { flex: 1 },
   tabs: { flexDirection: 'row', marginHorizontal: spacing.lg, backgroundColor: colors.surfaceElevated, borderRadius: borderRadius.md, padding: 3, marginBottom: spacing.md },
   tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: borderRadius.sm },
   tabActive: { backgroundColor: colors.primary },

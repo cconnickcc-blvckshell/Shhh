@@ -9,6 +9,8 @@ import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { AppShell } from '../../src/components/AppShell';
 import { WebSidebar } from '../../src/components/WebSidebar';
 import { pathnameToTab, TAB_TO_ROUTE, type DesktopTabId } from '../../src/lib/tabRoutes';
+import { useUnreadBadge } from '../../src/context/UnreadBadgeContext';
+import { usePushNotifications } from '../../src/hooks/usePushNotifications';
 
 const TAB_OPTIONS = {
   sceneStyle: { backgroundColor: colors.background, flex: 1 },
@@ -33,10 +35,13 @@ const TAB_OPTIONS = {
   tabBarShowLabel: false,
 };
 
-export default function TabLayout() {
+function TabLayoutInner() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const pathname = usePathname();
   const { showSidebar } = useBreakpoint();
+  const { unreadCount } = useUnreadBadge();
+
+  usePushNotifications();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -85,6 +90,7 @@ export default function TabLayout() {
           title: 'Chat',
           tabBarAccessibilityLabel: 'Chat',
           tabBarTestID: 'tab-chat',
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? s.activeWrap : s.inactiveWrap}>
               <Ionicons name={focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} size={21} color={color} />
@@ -138,6 +144,10 @@ export default function TabLayout() {
       {tabs}
     </PremiumDarkBackground>
   );
+}
+
+export default function TabLayout() {
+  return <TabLayoutInner />;
 }
 
 const s = StyleSheet.create({

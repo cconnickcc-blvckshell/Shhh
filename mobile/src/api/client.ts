@@ -221,6 +221,7 @@ export const discoverApi = {
 };
 
 export const messagingApi = {
+  getUnreadTotal: () => api<{ total: number }>('/v1/conversations/unread-total'),
   getConversations: () => api<{ data: any[] }>('/v1/conversations'),
   createConversation: (participantIds: string[], filterContext?: Record<string, unknown>) =>
     api<{ data: { id: string } }>('/v1/conversations', {
@@ -367,6 +368,9 @@ export const albumsApi = {
   getAlbum: (id: string) => api<{ data: any }>(`/v1/media/albums/${id}`),
   create: (name: string, description?: string, isPrivate?: boolean) =>
     api<{ data: any }>('/v1/media/albums', { method: 'POST', body: JSON.stringify({ name, description, isPrivate }) }),
+  addMedia: (albumId: string, mediaId: string) =>
+    api(`/v1/media/albums/${albumId}/media`, { method: 'POST', body: JSON.stringify({ mediaId }) }),
+  deleteAlbum: (albumId: string) => api(`/v1/media/albums/${albumId}`, { method: 'DELETE' }),
   share: (albumId: string, opts: { userId: string; expiresInHours?: number; watermarkMode?: 'off' | 'subtle' | 'invisible'; notifyOnView?: boolean }) =>
     api(`/v1/media/albums/${albumId}/share`, { method: 'POST', body: JSON.stringify(opts) }),
   revokeShare: (albumId: string, userId: string) =>

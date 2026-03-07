@@ -1,5 +1,6 @@
 import { query } from '../../config/database';
 import { emitToUser } from '../../websocket';
+import { PushService } from '../auth/push.service';
 
 const WHISPER_TTL_HOURS = 4;
 const MAX_PENDING_WHISPERS = 3;
@@ -85,6 +86,19 @@ export class WhisperService {
       distance: distance ? `${distance}m away` : 'nearby',
       expiresAt: expiresAt.toISOString(),
     });
+
+    const pushSvc = new PushService();
+    pushSvc.shouldPushWhispers(toUserId).then((ok) => {
+      if (ok) {
+        const preview = message.length > 40 ? message.substring(0, 40) + '…' : message;
+        pushSvc.sendPush(
+          toUserId,
+          'New whisper',
+          preview,
+          { type: 'whisper', whisperId: result.rows[0].id }
+        );
+      }
+    }).catch(() => {});
 
     return { whisperId: result.rows[0].id, expiresAt: expiresAt.toISOString() };
   }

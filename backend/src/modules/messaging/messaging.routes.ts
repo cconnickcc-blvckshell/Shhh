@@ -27,6 +27,7 @@ const retentionSchema = z.object({
   defaultMessageTtlSeconds: z.number().positive().optional(),
 });
 
+router.get('/unread-total', authenticate, requireTier(0), controller.getUnreadTotal);
 router.get('/', authenticate, requireTier(0), controller.getConversations);
 router.post('/', authenticate, requireTier(1), idempotencyMiddleware('conversations'), validate(createConversationSchema), controller.createConversation);
 router.put('/:id/retention', authenticate, validate(retentionSchema), controller.setRetention);

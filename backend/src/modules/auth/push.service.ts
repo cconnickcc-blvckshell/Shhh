@@ -29,12 +29,38 @@ export class PushService {
 
   /** Whether user has neutral (stealth) notifications — no explicit content in title/body. */
   async getStealthPreference(userId: string): Promise<boolean> {
+    const prefs = await this.getNotificationPrefs(userId);
+    return !!prefs.neutral_notifications;
+  }
+
+  /** Notification preferences from preferences_json. Defaults: push on. */
+  async getNotificationPrefs(userId: string): Promise<{
+    push_messages?: boolean;
+    push_whispers?: boolean;
+    neutral_notifications?: boolean;
+  }> {
     const r = await query(
       `SELECT preferences_json FROM user_profiles WHERE user_id = $1`,
       [userId]
     );
-    const prefs = r.rows[0]?.preferences_json as Record<string, unknown> | undefined;
-    return !!(prefs && prefs.neutral_notifications === true);
+    const prefs = (r.rows[0]?.preferences_json as Record<string, unknown> | undefined) || {};
+    return {
+      push_messages: prefs.push_messages !== false,
+      push_whispers: prefs.push_whispers !== false,
+      neutral_notifications: prefs.neutral_notifications === true,
+    };
+  }
+
+  /** Whether to send push for new messages. */
+  async shouldPushMessages(userId: string): Promise<boolean> {
+    const prefs = await this.getNotificationPrefs(userId);
+    return !!prefs.push_messages;
+  }
+
+  /** Whether to send push for whispers. */
+  async shouldPushWhispers(userId: string): Promise<boolean> {
+    const prefs = await this.getNotificationPrefs(userId);
+    return !!prefs.push_whispers;
   }
 
   async sendPush(userId: string, title: string, body: string, data?: Record<string, string>) {
