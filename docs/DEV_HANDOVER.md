@@ -1,7 +1,7 @@
 # Shhh — Developer Handover Document
 
 > **Version**: 0.6.0 | **Last updated**: March 2026 | **Status**: Active development  
-> **Implementation status:** **docs/E2E_CAPABILITY_AUDIT_REPORT.md** (what's done vs partial vs missing), **docs/MASTER_IMPLEMENTATION_CHECKLIST.md** (single checklist; 51/72 done), **docs/FRONTEND_GAP_LIST.md** (gap-by-gap status), **docs/FRONTEND_REFACTOR_STRATEGY.md** (web authority, layout spine, SafeState, blur), **docs/SOFT_LAUNCH_WEB_PLAN.md** (web soft launch). Update the relevant §4.x and schema/API tables when adding or changing modules.
+> **Implementation status:** **docs/AUDIT_AND_STATUS.md** (index), **docs/E2E_CAPABILITY_AUDIT_REPORT.md**, **docs/MASTER_IMPLEMENTATION_CHECKLIST.md**, **docs/ROADMAP.md** (planned work). Update the relevant §4.x and schema/API tables when adding or changing modules.
 
 ---
 
@@ -59,7 +59,7 @@ Shhh is a **privacy-native, proximity-driven social platform for adults**. It co
 | Surface | Technology | Purpose |
 |---------|-----------|---------|
 | Mobile app | React Native + Expo 55 | Primary user-facing client |
-| Admin dashboard | React + Vite SPA | Moderation, reports, audit logs, Map, Kanban, Revenue sparkline, status bar, keyboard shortcuts |
+| Admin dashboard | React + Vite SPA | Dashboard, Users, Revenue, Venues, Ads, Events, Reports, Moderation (Kanban), Safety, Audit Log, Settings, Map. StatusBar (live KPIs), keyboard shortcuts (R, 1–9, M, D). See **docs/UX_UI_SPEC.md** §4. |
 | Backend API | Express + TypeScript | REST API + WebSocket server |
 
 ---
@@ -240,6 +240,8 @@ The backend has **24 route modules** wired in `app.ts`. Each module follows the 
 |--------|------|------|------|-------------|
 | POST | `/v1/auth/register` | No | — | Register with phone + displayName (requires `sessionToken` in prod). Returns `{userId, accessToken, refreshToken}` |
 | POST | `/v1/auth/login` | No | — | Login with phone (requires `sessionToken` in prod). Returns tokens. |
+| POST | `/v1/auth/email/register` | No | — | Register with email + password + displayName. Returns `{userId, accessToken, refreshToken}` |
+| POST | `/v1/auth/email/login` | No | — | Login with email + password. Returns tokens. |
 | POST | `/v1/auth/oauth/apple` | No | — | Sign in with Apple. Body: `{idToken, displayName?}`. Returns tokens. |
 | POST | `/v1/auth/oauth/google` | No | — | Sign in with Google. Body: `{idToken, displayName?}`. Returns tokens. |
 | POST | `/v1/auth/oauth/snap` | No | — | Sign in with Snapchat. Body: `{authCode, displayName?}`. Returns tokens. |
@@ -884,6 +886,7 @@ See [Section 11: Safety & Trust](#11-safety--trust) for full details.
 |--------|------|------|------|-------------|
 | GET | `/v1/admin/stats` | Yes | moderator | Dashboard statistics |
 | GET | `/v1/admin/moderation` | Yes | moderator | Moderation queue |
+| GET | `/v1/admin/moderation/resolved` | Yes | moderator | Resolved moderation items (approved/rejected) |
 | GET | `/v1/admin/reports` | Yes | moderator | Report list |
 | POST | `/v1/admin/reports/:id/resolve` | Yes | moderator | Resolve report |
 | GET | `/v1/admin/users/:userId` | Yes | moderator | User detail view |
@@ -1403,6 +1406,7 @@ The mobile app uses **expo-router** (file-based routing). All screens are in `mo
 | `/chat/[id]` | `app/chat/[id].tsx` | Chat (WebSocket join/onNewMessage/leave, error UI, screenshot detection) |
 | `/user/[id]` | `app/user/[id].tsx` | User profile view (error UI with retry) |
 | `/venue/[id]` | `app/venue/[id].tsx` | Venue detail |
+| `/venue/review/[id]` | `app/venue/review/[id].tsx` | Venue review submission |
 | `/event/[id]` | `app/event/[id].tsx` | Event detail |
 | `/album/index` | `app/album/index.tsx` | Album list (loading/error UI) |
 | `/album/[id]` | `app/album/[id].tsx` | Album detail |
@@ -2352,7 +2356,8 @@ The mobile app's API client uses `window.localStorage` for token persistence on 
 | `NODE_ENV` | `development` | No | Environment mode (`development`, `test`, `production`) |
 | `LOG_LEVEL` | `debug` | No | Pino log level (`debug`, `info`, `warn`, `error`) |
 | `RATE_LIMIT_WINDOW_MS` | `900000` (15 min) | No | Rate limit window in milliseconds |
-| `RATE_LIMIT_MAX_REQUESTS` | `100` | No | Max requests per window |
+| `RATE_LIMIT_MAX_REQUESTS` | `2000` (prod) | No | Max requests per window (global). Use 5000+ for admin-heavy usage. |
+| `AUTH_RATE_LIMIT_MAX` | `30` (prod) | No | Max auth attempts per 15 min per IP |
 | `DEFAULT_LOCATION_FUZZ_METERS` | `300` | No | Location randomization radius in meters |
 | `MAX_DISCOVERY_RADIUS_KM` | `100` | No | Maximum discovery search radius |
 | `TWILIO_ACCOUNT_SID` | — | Prod only | Twilio account SID for SMS OTP |
@@ -2371,6 +2376,57 @@ The mobile app's API client uses `window.localStorage` for token persistence on 
 | `CORS_ORIGINS` | — | Prod | Comma-separated allowed origins (e.g. `https://app.shhh.app,https://shhh.app`) |
 | `DATABASE_SSL` | `false` | Supabase | Set `true` for Supabase/remote Postgres |
 | `DATABASE_POOL_SIZE` | `20` | No | PostgreSQL connection pool size |
+| `DATABASE_MIGRATION_URL` | — | Optional | Direct Postgres URL (port 5432) when pooler blocks DDL. Use Supabase direct URL for migrations. |
+| `OTP_DEV_BYPASS` | — | **Never prod** | If set, backend exits on startup. Dev-only bypass for OTP. |
+| `METRICS_SECRET` | — | Prod | Bearer token to protect `/metrics` endpoint |
+| `EXPO_PUBLIC_API_URL` | — | Prod web/native | Override API base for production (mobile + web). WebSocket URL derived from this. |
+
+### 18.1 APP_URL
+
+Used in `backend/src/modules/billing/subscription.service.ts` for Stripe checkout success/cancel redirect URLs.
+
+| Context | Value |
+|---------|-------|
+| Mobile app | `shhh://` — custom URL scheme for deep links |
+| Web app | `https://your-app.vercel.app/` — full URL so Stripe redirects to your web app |
+
+### 18.2 Database — What You Need
+
+**The app uses PostgreSQL only via `DATABASE_URL`.** There is no `SUPABASE_URL` in the codebase.
+
+| Variable | Required | Where to get it |
+|----------|----------|-----------------|
+| **DATABASE_URL** | Yes | Supabase Dashboard → Settings → Database → **Connection string (URI)** — use **pooler** (port 6543) |
+| **DATABASE_MIGRATION_URL** | Optional | Same place — use **direct** connection (port 5432) when pooler blocks DDL |
+| **DATABASE_SSL** | Yes (cloud) | Set to `true` when using Supabase |
+
+**You do NOT need:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+
+### 18.3 Photos / Media — Buckets
+
+**No buckets required.** The app stores uploads on the **local filesystem** (`backend/uploads/`). On Render, the filesystem is ephemeral — uploads are lost on redeploy. For production persistence (albums, shared photos), add S3/Supabase Storage later. See **docs/SUPABASE_PHOTO_BUCKETS.md**.
+
+### 18.4 Twilio — Trial Limitations
+
+Trial accounts can **only send SMS to phone numbers verified** in the Twilio Console. Send to unverified numbers fails with error 21608. **Fix:** Verify each user's number in Twilio Console, or upgrade to a paid account. Trial accounts must use the trial/sandbox phone number as `TWILIO_PHONE_NUMBER`.
+
+### 18.5 Do NOT Set in Production
+
+| Variable | Reason |
+|----------|--------|
+| **OTP_DEV_BYPASS** | Backend exits on startup if set |
+
+### 18.6 Quick Checklist for Render
+
+- [ ] `DATABASE_URL` = Supabase pooler URL (port 6543)
+- [ ] `DATABASE_SSL` = `true`
+- [ ] `REDIS_URL` = Upstash or Redis Cloud
+- [ ] `MONGODB_URL` = Atlas URL (include `?authSource=admin`)
+- [ ] `JWT_SECRET`, `JWT_REFRESH_SECRET`, `PHONE_HASH_PEPPER` = generated
+- [ ] `CORS_ORIGINS` = your frontend URLs (comma-separated)
+- [ ] `NODE_ENV` = `production`
+- [ ] `APP_URL` = `shhh://` (mobile) or your web app URL (web)
+- [ ] No `OTP_DEV_BYPASS` in production
 
 ---
 

@@ -118,7 +118,7 @@
 | **Auth bursts** | 100+ req/min during launch window | Rate limiter exists; must be deterministic (see §Auth Rate Limits) | Per-IP, per-device, per-phone limits; launch-week config tuning |
 | **Real-time spikes** | WebSocket joins, presence updates | Socket.io; Redis presence | Load-test WebSocket join storm |
 | **Moderation load** | Reports, blocks, panic | Admin dashboard; manual review | Ensure 1–2 humans on standby during Phase 2 |
-| **Database** | Postgres + Redis + Mongo under load | Supabase/Upstash/Atlas target stack | Migrate to cloud DBs before Phase 0; see [GET_ONLINE.md](./GET_ONLINE.md) |
+| **Database** | Postgres + Redis + Mongo under load | Supabase/Upstash/Atlas target stack | Migrate to cloud DBs before Phase 0; see [OPS_GUIDE.md](./OPS_GUIDE.md) |
 
 ### Observability Minimum
 
@@ -851,4 +851,4 @@ Creators receive the Do/Don't sheet before contract. No improvisation.
 - [E2E_CAPABILITY_AUDIT_REPORT.md](./E2E_CAPABILITY_AUDIT_REPORT.md) — What exists today
 - [PRODUCTION_READINESS_GRADE_REPORT.md](./PRODUCTION_READINESS_GRADE_REPORT.md) — Technical grades
 - [CONSOLIDATED_CTO_REVIEW.md](./CONSOLIDATED_CTO_REVIEW.md) — P0/P1 gates
-- [GET_ONLINE.md](./GET_ONLINE.md) — Deployment steps
+- [OPS_GUIDE.md](./OPS_GUIDE.md) — Deployment steps

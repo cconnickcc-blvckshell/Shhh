@@ -61,7 +61,7 @@
 
 ### 2.3 Admin Dashboard
 
-- **Routes**: `/login` (standalone), then under Layout: `/`, `/users`, `/revenue`, `/venues`, `/ads`, `/events`, `/reports`, `/safety`, `/audit`, `/settings`.
+- **Routes**: `/login` (standalone), then under Layout: `/`, `/users`, `/revenue`, `/venues`, `/ads`, `/events`, `/reports`, `/moderation`, `/safety`, `/audit`, `/settings`, `/map`.
 
 ---
 
@@ -436,27 +436,171 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 
 ## 4. Admin Dashboard Screens
 
-Admin is React + Vite, react-router-dom; routes under Layout: `/`, `/users`, `/revenue`, `/venues`, `/ads`, `/events`, `/reports`, `/safety`, `/audit`, `/settings`. Login at `/login`.
+Admin is React + Vite, react-router-dom. **Routes** under Layout: `/`, `/users`, `/revenue`, `/venues`, `/ads`, `/events`, `/reports`, `/moderation`, `/safety`, `/audit`, `/settings`, `/map`. Login at `/login` (standalone).
 
-| Screen | Intent | Entry | Exit | API (representative) | Notes |
-|--------|--------|-------|------|----------------------|--------|
-| **Login** | Admin auth | /login | Success → / | POST auth (admin) | Not in DEV_HANDOVER backend table; admin may use same JWT with role. |
-| **Dashboard** | Stats overview | / | Nav to all sections | GET /v1/admin/stats | — |
-| **Users** | List/search users | /users | User detail (if any) | GET /v1/admin/users? | GET /v1/admin/users/:userId for detail. |
-| **Revenue** | Billing/subscription metrics | /revenue | — | Billing/subscription APIs | — |
-| **Venues** | Venue list and management | /venues | Venue detail (if any) | GET /v1/venues, dashboard APIs | — |
-| **Ads** | Ad placements and performance | /ads | — | GET/POST /v1/ads* | Ad module routes. |
-| **Events** | Event list and moderation | /events | — | GET /v1/events, admin | — |
-| **Reports** | Report queue and resolve | /reports | Resolve | GET /v1/admin/reports, POST resolve | — |
-| **Safety** | Safety signals, check-ins, panic | /safety | — | GET safety/contacts, checkins, etc. | — |
-| **AuditLog** | Audit trail | /audit | — | GET /v1/admin/audit-logs | — |
-| **Settings** | App/config settings | /settings | — | — | — |
+### 4.1 Layout, Auth, and Global Features
 
-**Admin layout**: `admin-dashboard/src/components/Layout.tsx` — sidebar nav (Dashboard, Users, Revenue, Venues, Ads, Events, Reports, Safety, Audit Log, Settings), Outlet for content. Auth gate: `getToken()`; if missing, redirect to `/login`.
+**Layout** (`admin-dashboard/src/components/Layout.tsx`): Sidebar nav (Dashboard, Users, Revenue, Venues, Ads, Events, Reports, Moderation, Safety, Audit Log, Settings, Map). Hamburger menu for mobile. Auth gate: `getToken()` from `sessionStorage`; if missing, redirect to `/login`.
 
-**Admin API**: Dashboard uses `adminApi.getOverview()` then fallback `adminApi.getStats()`; `adminApi.getHealth()` for version/modules. Other pages use domain APIs (e.g. GET /v1/admin/stats, /v1/admin/reports, /v1/admin/users, etc.) — see DEV_HANDOVER §4.22.
+**StatusBar** (`components/StatusBar.tsx`): Top bar with live KPIs — Online, Panic, Distress, Reports, Mod. Links: Panic/Distress → `/safety`, Reports → `/reports`, Mod → `/moderation`. "Updated X ago", Refresh button. **Manual refresh only** (no auto-polling). Uses `useCommandCenter()`.
 
-**NOT IMPLEMENTED** (to be filled by scanning admin-dashboard src): Full per-screen template (Intent, Entry, Exit, Data, Store, Layout, Components, Interactions, States, Edge cases, Analytics, Accessibility) for each admin page. Recommend a second pass over `admin-dashboard/src/pages/*` and `admin-dashboard/src/components/*` using the same template as §3.
+**CommandCenterContext** (`context/CommandCenterContext.tsx`): Provides `status` (onlineNow, panicAlerts, venueDistressAlerts, pendingReports, pendingMod, lastUpdated), `refresh()`, `isLive`. Fetches `GET /v1/admin/overview`. On `command-center-refresh` event, pages (e.g. Dashboard) reload.
+
+**Keyboard shortcuts** (from CommandCenterContext):
+| Key | Action |
+|-----|--------|
+| R | Refresh; dispatch `command-center-refresh` |
+| 1 | Dashboard (/) |
+| 2 | Users |
+| 3 | Revenue |
+| 4 | Venues |
+| 5 | Ads |
+| 6 | Events |
+| 7 | Reports |
+| 8 | Safety |
+| 9 | Audit |
+| 0 | Settings |
+| M | Map |
+| D | Dashboard (/) |
+
+**API client** (`api/client.ts`): `VITE_API_URL` or `http://localhost:3000`. Token in `sessionStorage` key `admin_token`. All requests add `Authorization: Bearer`.
+
+### 4.2 Login
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | Admin/moderator auth. Phone + OTP, or email + password, or dev bypass. |
+| **Entry** | Unauthenticated; redirect from Layout. |
+| **Exit** | Success → `/`. Access denied (non-admin) → clear token, show error. |
+| **API** | `sendCode(phone)`, `verify(phone, code)`, `login(phone, sessionToken)`, `loginEmail(email, password)`, `bypassLogin()`. |
+| **Modes** | **Phone**: Send code → verify → login. Dev: `devCode` shown when Twilio not configured. **Email**: `loginEmail` (min 8 chars password). **Bypass**: When `VITE_ALLOW_BYPASS=true`, "Skip login (dev bypass)" calls `POST /v1/auth/admin-bypass` (requires `OTP_DEV_BYPASS` on backend). |
+| **Components** | GlassInput, GlassButton, theme. |
+| **States** | Loading, error (access denied, network). |
+
+### 4.3 Dashboard (/)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | Command center overview — KPIs, health. |
+| **API** | `getOverview()` → fallback `getStats()`, `getHealth()`. |
+| **Layout** | Grid of GlassCards: Online Now, Total Users, New (24h), MRR, Paying Users, Ad Revenue, Panic Alerts, Venue Distress, Pending Reports, Pending Mod, Active Events, Active Venues, Whispers (24h). Sparklines for Online, Total, Panic, Reports. Health card: version, modules. |
+| **Refresh** | Listens for `command-center-refresh`. |
+| **States** | SkeletonCards, AdminError. |
+
+### 4.4 Users (/users)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | List, search, filter users; toggle active, set role. |
+| **API** | `listUsers(page, filter)`, `searchUsers(q, page)`, `toggleUserActive(id, active)`, `setUserRole(id, role)`, `setUserTier`, `banUser`. |
+| **Layout** | Search form, filter chips (active, banned, verified, hosts, admins), table: display_name, email, role, tier, is_active, actions. Toggle active, role dropdown. |
+| **States** | SkeletonTable, AdminError, success toast. |
+
+### 4.5 Revenue (/revenue)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | MRR, ad revenue, paying users, impressions, taps. |
+| **API** | `getRevenue()`, `getRevenueHistory(30)`. |
+| **Layout** | Cards: MRR (sparkline), Ad Revenue, Paying Users, Total Impressions, Total Ad Taps, Ad Placements. Bar chart: 30-day revenue history. |
+| **States** | SkeletonCards, AdminError. |
+
+### 4.6 Venues (/venues)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | List venues; view claimed/unclaimed, tier. |
+| **API** | `listVenues()` → `GET /v1/admin/venues/list`. |
+| **Layout** | Grid of GlassCards: name, tagline, type, price_range, Badge (Claimed/Unclaimed, venue_tier). |
+| **States** | SkeletonCards, AdminError. |
+
+### 4.7 Ads (/ads)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | List ad placements; toggle active. |
+| **API** | `listAds()`, `toggleAd(id, active)`. |
+| **Layout** | Table: Venue, Surface, Headline, Impressions, Taps, CTR, Spent, Status, Actions (toggle). |
+| **States** | SkeletonTable, AdminError. |
+
+### 4.8 Events (/events)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | List events; phase badges. |
+| **API** | `listEvents()` → `GET /v1/admin/events/list`. |
+| **Layout** | Grid of GlassCards: title, venue, phase (discovery, upcoming, live, winding_down, post, archived), date. Badge by phase color. |
+| **States** | SkeletonCards, AdminError. |
+
+### 4.9 Reports (/reports)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | Report queue; filter by status; resolve/dismiss. |
+| **API** | `getReports(status)`, `resolveReport(id, status)`. Status: pending, reviewing, resolved, dismissed. |
+| **Layout** | Filter chips, list of report cards (reporter, reported, reason, description). Resolve / Dismiss buttons. |
+| **States** | SkeletonCards, AdminError. |
+
+### 4.10 Moderation (/moderation)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | Kanban: Pending Reports, Resolved, Dismissed; Mod Queue (pending); Resolved Mod. Drag reports to resolve/dismiss; approve/reject mod items. |
+| **API** | `getReports('pending'|'resolved'|'dismissed')`, `getQueue(undefined, 'pending')`, `getResolvedModeration()`, `resolveReport(id, status)`, `resolveModeration(id, 'approved'|'rejected')`. |
+| **Layout** | Horizontal columns: Pending Reports (red), Resolved (green), Dismissed (grey), Mod Queue (pending items), Resolved Mod. Drag-and-drop for reports. Mod items: Approve / Reject. |
+| **States** | SkeletonCards, AdminError. |
+
+### 4.11 Safety (/safety)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | Panic alerts (24h), venue distress (24h), missed check-ins. |
+| **API** | `getSafetyAlerts()` → `GET /v1/admin/safety/alerts`. |
+| **Layout** | Sections: Panic Alerts, Venue Distress, Missed Check-ins. GlassCards per alert (display_name, venue, timestamp). Empty state: "No panic alerts ✓". |
+| **States** | SkeletonCards, AdminError. |
+
+### 4.12 Audit Log (/audit)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | Audit trail of admin actions. |
+| **API** | `getAuditLogs(100)` → `GET /v1/admin/audit-logs?limit=100`. |
+| **Layout** | Table: Time, User, Action, Category. Badge for GDPR category. |
+| **States** | SkeletonTable, AdminError. |
+
+### 4.13 Settings (/settings)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | Ad controls: global kill switch, density multiplier. |
+| **API** | `getAdSettings()`, `updateAdSetting('global', value)`. |
+| **Layout** | Ad Controls card: Global Ad Switch (KILL ADS / ENABLE ADS), density multiplier, status. |
+| **States** | SkeletonCards, AdminError. |
+
+### 4.14 Map (/map)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | Military command map — user locations, city heatmap, hot/dead cities. |
+| **API** | `getPresenceGeo()`, `getStatsCities()`. |
+| **Layout** | Leaflet map (CartoDB Dark Matter). View modes: users, heat, both. User markers: color by presence (online=purple, <7d=blue, 7–30d=orange, >30d=grey). Heat layer from city aggregates. Click marker → user card (userId, lastSeen). Legend: Online, <7d, 7–30d, >30d. Refresh button. |
+| **States** | AdminError, loading. |
+
+### 4.15 Admin Design System
+
+**Theme** (`admin-dashboard/src/theme.ts`): Neon purple + black, glassmorphism. Colors: primary `#A855F7`, primaryGlow, primaryMuted, primaryBorder; accent, accentCyan, accentPink; bgBase, bgElevated, bgSurface, bgCard; text, textSecondary, textMuted, textDim; success, warning, danger, info (+ Muted variants). Font: Space Grotesk (display), DM Sans (body), JetBrains Mono. Glass: `rgba(15,10,28,0.65)`, blur 20px, purple border.
+
+**Components** (`admin-dashboard/src/components/`):
+| Component | Purpose |
+|-----------|---------|
+| GlassCard | Card with glass bg, optional accent color, hover glow |
+| GlassButton | Primary, secondary, danger, success variants |
+| GlassInput | Label, value, onChange, placeholder, type (text/password/email) |
+| Badge | variant: success, warning, danger, primary, neutral |
+| Sparkline | SVG sparkline; data, width, height, color, strokeWidth |
+| AdminSkeleton | SkeletonCards(count), SkeletonTable(rows) |
+| AdminPageState | AdminError(message, onRetry) |
+| StatusBar | Live KPIs, refresh, keyboard hint |
 
 ---
 

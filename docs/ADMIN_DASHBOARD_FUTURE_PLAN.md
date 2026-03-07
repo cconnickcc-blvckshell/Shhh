@@ -1,7 +1,8 @@
 # Admin Dashboard — Future Enhancement Plan
 
 **Status:** Living document — some items implemented, others planned  
-**Last updated:** 2026-03-06
+**Last updated:** March 2026  
+**Current spec:** See **docs/UX_UI_SPEC.md** §4 for full admin dashboard documentation (all pages, StatusBar, shortcuts, design system).
 
 ---
 
