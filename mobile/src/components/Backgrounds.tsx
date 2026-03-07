@@ -12,17 +12,15 @@ const images = {
 
 export { images as backgroundImages };
 
-/** Premium dark gradient — aligned with coming soon: bg0→bg1 + plum/gold atmosphere. */
+/** Premium dark gradient — clean, minimal. No loud blobs; subtle edge tint only. */
 export function PremiumDarkBackground({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   return (
     <LinearGradient
-      colors={['#06040A', '#0B0712', '#08050E', '#06040A']}
-      locations={[0, 0.25, 0.6, 1]}
+      colors={['#050508', '#08060C', '#06040A', '#050508']}
+      locations={[0, 0.3, 0.7, 1]}
       style={[styles.full, style]}
     >
-      <View style={styles.plumGlowTop} pointerEvents="none" />
-      <View style={styles.plumGlowRight} pointerEvents="none" />
-      <View style={styles.goldGlowBottom} pointerEvents="none" />
+      <View style={styles.subtleGlow} pointerEvents="none" />
       {children}
     </LinearGradient>
   );
@@ -112,32 +110,15 @@ const styles = StyleSheet.create({
     borderRadius: 180,
     backgroundColor: 'rgba(124,43,255,0.12)',
   },
-  plumGlowTop: {
+  subtleGlow: {
     position: 'absolute',
-    top: '-10%',
-    left: '-5%',
-    width: '60%',
-    height: '50%',
-    borderRadius: 9999,
-    backgroundColor: 'rgba(124,43,255,0.22)',
-  },
-  plumGlowRight: {
-    position: 'absolute',
-    top: '15%',
-    right: '-15%',
-    width: '55%',
-    height: '45%',
-    borderRadius: 9999,
-    backgroundColor: 'rgba(179,92,255,0.16)',
-  },
-  goldGlowBottom: {
-    position: 'absolute',
-    bottom: '-15%',
-    left: '20%',
-    width: '70%',
-    height: '50%',
-    borderRadius: 9999,
-    backgroundColor: 'rgba(212,175,55,0.12)',
+    top: 0,
+    left: '50%',
+    marginLeft: -200,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(124,43,255,0.04)',
   },
   galaxyOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,4,10,0.35)' },
   bubbleScreenOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,4,10,0.45)' },

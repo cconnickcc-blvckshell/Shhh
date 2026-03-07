@@ -29,10 +29,10 @@ export function Card({ children, noPadding, style, minHeight = CARD_MIN_HEIGHT }
 const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
-    borderRadius: 16,
-    backgroundColor: 'rgba(11,7,18,0.8)',
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(124,43,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
   },
   noPadding: {

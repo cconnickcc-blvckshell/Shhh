@@ -8,6 +8,7 @@ import { usePhotoUpload } from '../../src/hooks/usePhotoUpload';
 import { ProfilePhoto } from '../../src/components/ProfilePhoto';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
 import { PageShell } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
 import { colors, spacing, layout } from '../../src/constants/theme';
 
 const GENDERS = ['man', 'woman', 'couple', 'trans_man', 'trans_woman', 'non_binary', 'other'];
@@ -35,6 +36,8 @@ const PROFILE_VISIBILITY = [
 /** Match discover tile aspect: tileH = tileW * 1.45 */
 const PHOTO_ASPECT = 1 / 1.45;
 const GAP = 6;
+/** Cap grid width so photos stay proportionate on desktop */
+const MAX_GRID_WIDTH = 360;
 
 export default function EditProfileScreen() {
   const { profile, loadProfile } = useAuthStore();
@@ -106,32 +109,32 @@ export default function EditProfileScreen() {
   };
 
   const contentWidth = Math.min(width, layout.contentMaxWidth);
-  const gridWidth = contentWidth - 2 * spacing.lg;
-  const rawSlotW = (gridWidth - 2 * GAP) / 3;
-  const smallSlotW = rawSlotW;
-  const smallSlotH = smallSlotW / PHOTO_ASPECT;
-  const mainSlotW = rawSlotW * 2 + GAP;
-  const mainSlotH = mainSlotW / PHOTO_ASPECT;
+  const rawGridWidth = contentWidth - 2 * spacing.lg;
+  const gridWidth = Math.min(rawGridWidth, MAX_GRID_WIDTH);
+  const cellW = (gridWidth - 2 * GAP) / 3;
+  const cellH = cellW / PHOTO_ASPECT;
+  const smallSlotW = cellW;
+  const smallSlotH = cellH;
+  const mainSlotW = cellW * 2 + GAP;
+  const mainSlotH = cellH * 2 + GAP;
 
   return (
     <PremiumDarkBackground style={s.wrapper}>
       <PageShell style={s.pageShell}>
-        <ScrollView style={s.container} contentContainerStyle={s.scrollContent} bounces={false}>
-          {/* Header */}
-          <View style={s.header}>
-            <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-              <Ionicons name="close" size={22} color="#fff" />
-            </TouchableOpacity>
-            <Text style={s.headerTitle} accessibilityRole="header">Edit Profile</Text>
+        <SubPageHeader
+          title="Edit Profile"
+          backIcon="close"
+          rightAction={
             <TouchableOpacity onPress={save} disabled={saving} style={s.saveBtn}>
               <Text style={[s.saveText, saving && { opacity: 0.4 }]}>{saving ? '...' : 'Save'}</Text>
             </TouchableOpacity>
-          </View>
-
-          {/* Photo grid — tile styling aligned with discover */}
+          }
+        />
+        <ScrollView style={s.container} contentContainerStyle={s.scrollContent} bounces={false}>
+          {/* Photo grid — proportionate 3-col layout: main 2x2, small 1x1 */}
           <View style={s.photoSection}>
             <Text style={s.sectionLabel}>PHOTOS</Text>
-            <View style={s.photoGrid}>
+            <View style={[s.photoGrid, { width: gridWidth }]}>
               {[0, 1, 2, 3, 4, 5].map(i => {
                 const hasPhoto = photos[i];
                 const isMain = i === 0;
@@ -276,10 +279,7 @@ const s = StyleSheet.create({
   pageShell: { flex: 1, backgroundColor: 'transparent' },
   container: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: { paddingBottom: 24 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 16, paddingBottom: 8 },
-  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  saveBtn: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 9, borderRadius: 20 },
+  saveBtn: { backgroundColor: colors.primary, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20 },
   saveText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 
   sectionLabel: { color: 'rgba(179,92,255,0.5)', fontSize: 11, fontWeight: '800', letterSpacing: 2, marginBottom: 12 },
@@ -291,11 +291,11 @@ const s = StyleSheet.create({
   photoSlot: {
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(124,43,255,0.08)',
-    borderRadius: 16,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  photoMain: { borderColor: 'rgba(179,92,255,0.3)', borderWidth: 2 },
+  photoMain: { borderColor: 'rgba(179,92,255,0.25)', borderWidth: 1 },
   photoRemoveBtn: { position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center' },
   photoEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
   photoLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: '700' },
@@ -304,10 +304,10 @@ const s = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     padding: spacing.lg,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(124,43,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
 
   input: { backgroundColor: 'rgba(255,255,255,0.04)', color: '#fff', padding: 16, borderRadius: 14, fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
