@@ -52,8 +52,6 @@ export function CommandCenterProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refresh();
-    const interval = setInterval(refresh, 60000);
-    return () => clearInterval(interval);
   }, [refresh]);
 
   useEffect(() => {

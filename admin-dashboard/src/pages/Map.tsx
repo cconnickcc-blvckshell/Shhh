@@ -13,8 +13,6 @@ const CARTODB_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyr
 
 type ViewMode = 'users' | 'heat' | 'both';
 
-const POLL_INTERVAL_MS = 30000;
-
 function getMarkerColor(p: { presenceState?: string; lastSeen: string }): string {
   const isOnline = p.presenceState && p.presenceState !== 'invisible' && p.presenceState !== 'unknown';
   if (isOnline) return theme.colors.primary;
@@ -51,10 +49,6 @@ export default function Map() {
   };
 
   useEffect(() => { load(); }, []);
-  useEffect(() => {
-    const id = setInterval(load, POLL_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, []);
 
   // Init map (runs when we have data or when viewMode changes)
   useEffect(() => {
@@ -169,7 +163,7 @@ export default function Map() {
         </h2>
         <div style={{ display: 'flex', gap: theme.space[2], alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ color: theme.colors.textMuted, fontSize: theme.fontSize.sm }}>
-            {geo.length} users · {cities.length} hotspots · Live (30s)
+            {geo.length} users · {cities.length} hotspots
           </span>
           <span style={{ display: 'flex', gap: theme.space[3], fontSize: 10, color: theme.colors.textDim }}>
             <span><span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 3, background: theme.colors.primary, marginRight: 4 }} />Online</span>
