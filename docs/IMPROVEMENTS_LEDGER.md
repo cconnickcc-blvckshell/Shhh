@@ -499,15 +499,45 @@
 
 ---
 
-### C.16 Psychological Trick (TBD)
+### C.16 Variable Reward Reinforcement (Ethical)
 
-**Idea:** *"One psychological trick that nearly every successful social app uses—something surprisingly simple that dramatically increases engagement—and it would fit your platform extremely well."* — GPT (details pending).
+**Idea:** Variable reward reinforcement (operant conditioning) — when rewards appear unpredictably, humans check more often. Casinos, slot machines, social media feeds use this. The ethical version: design so the *real world* produces unpredictable value, not fake notifications or manipulative timers.
+
+**Why Shhh fits:** Real life is already variable — people appear nearby, events start, someone enters a venue, a whisper arrives. The platform doesn't need to fake it.
+
+**Core loop:** User opens app → checks discovery → sometimes nothing / sometimes new people / sometimes whisper / sometimes event. That unpredictability is the hook.
+
+**Three variable reward surfaces:**
+
+| Surface | Mechanism | Design tweak |
+|---------|-----------|--------------|
+| Nearby Discovery | Grid is the "slot machine" | Small visual pulse when new users enter radius; "3 new people nearby" |
+| Tonight Feed | Events inherently unpredictable | FOMO energy; nothing vs huge party |
+| Whispers | Pure variable reward — who, what, interesting? | Mystery creates engagement |
+
+**Key implementation:** Pull-to-refresh on discovery. Same backend query, but the gesture creates the psychological loop ("maybe someone new appeared"). Used by Instagram, Reddit, Twitter.
+
+**Social proof layer:** "12 people nearby right now"; "5 people going tonight"; "3 people liked you." Reduces uncertainty; humans move toward activity.
+
+**Ethical guardrail:** Real events, real people, real proximity — not fake notifications, artificial scarcity, or manipulative timers.
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| TBD | TBD | TBD | TBD | Awaiting GPT details |
+| 5 | 5 | 2 | P1 | Partial (discovery exists; pulse/refresh/social proof missing) |
 
-**Notes:** Likely candidates: variable reward (pull-to-refresh), social proof, reciprocity, FOMO, scarcity. To be reviewed when GPT provides specifics.
+**Notes:** Pull-to-refresh discovery; "X new people nearby" pulse; social proof badges ("12 nearby", "5 going tonight"). No gamification — just surface real-world unpredictability.
+
+---
+
+### C.17 Swipe Actions (Mobile)
+
+**Idea:** More swipe gestures for addictive UX — e.g. swipe from right opens messages; swipe between discovery/events; swipe to like/pass. Reduces taps, feels fluid.
+
+| Feas | Impact | Effort | Urgency | Status |
+|------|--------|--------|---------|--------|
+| 4 | 4 | 3 | P2 | Not started |
+
+**Notes:** Swipe-right → messages; swipe on discovery cards (like/pass); gesture-based navigation. React Native gesture handlers; test on iOS/Android.
 
 ---
 
@@ -531,8 +561,10 @@
 | 6 | C.9 Privacy cues | 5 | 5 | P1 |
 | 7 | C.12 Onboarding friction | 5 | 4 | P1 |
 | 8 | C.15 Edge-case handling | 5 | 4 | P1 |
-| 9 | C.6 Empty states | 4 | 5 | P2 |
-| 10 | C.7 Animation language | 4 | 5 | P2 |
+| 9 | C.16 Variable reward (pull-to-refresh, pulse, social proof) | 5 | 5 | P1 |
+| 10 | C.6 Empty states | 4 | 5 | P2 |
+| 11 | C.7 Animation language | 4 | 5 | P2 |
+| 12 | C.17 Swipe actions (mobile) | 4 | 4 | P2 |
 
 ---
 
