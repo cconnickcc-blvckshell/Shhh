@@ -64,7 +64,9 @@
 | Effort | 2 | Small; add middleware to 3–5 routes |
 | Urgency | P1 | Before scale |
 | Dependencies | idempotency.ts middleware |
-| Status | Partial (messages, checkout done) |
+| Status | Partial |
+
+**Notes:** Wave 3: Added idempotency to albums-share, events-rsvp. Messages, checkout, conversations already done. Client should send `Idempotency-Key` header (16–128 chars) for retries.
 
 ---
 
@@ -199,7 +201,9 @@
 | Effort | 2 | 1–2 weeks; wire existing metrics |
 | Urgency | P0 | Before production |
 | Dependencies | metrics.ts, OPS_GUIDE alerting |
-| Status | Partial (metrics exist; dashboards not wired) |
+| Status | Partial |
+
+**Notes:** Wave 3: OPS_GUIDE §6 expanded with Prometheus scrape config, Grafana guidance. Metrics exist; dashboards/Alertmanager deployment-specific.
 
 ---
 

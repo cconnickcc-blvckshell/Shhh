@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { MediaController } from './media.controller';
 import { validate } from '../../middleware/validation';
 import { authenticate } from '../../middleware/auth';
+import { idempotencyMiddleware } from '../../middleware/idempotency';
 
 const router = Router();
 const ctrl = new MediaController();
@@ -79,7 +80,7 @@ router.get('/albums/:id', authenticate, ctrl.getAlbum);
 router.delete('/albums/:id', authenticate, ctrl.deleteAlbum);
 router.post('/albums/:id/media', authenticate, validate(z.object({ mediaId: z.string().uuid() })), ctrl.addToAlbum);
 router.delete('/albums/:id/media/:mediaId', authenticate, ctrl.removeFromAlbum);
-router.post('/albums/:id/share', authenticate, validate(shareAlbumSchema), ctrl.shareAlbum);
+router.post('/albums/:id/share', authenticate, idempotencyMiddleware('albums-share'), validate(shareAlbumSchema), ctrl.shareAlbum);
 router.delete('/albums/:id/share/:userId', authenticate, ctrl.revokeShare);
 
 export default router;

@@ -37,7 +37,9 @@ export default function AlbumDetailScreen() {
   const handleShare = async () => {
     if (!shareUserId.trim() || !id) return;
     try {
-      await albumsApi.share(id, { userId: shareUserId.trim(), expiresInHours: 24, watermarkMode, notifyOnView });
+      const targetUserId = shareUserId.trim();
+      const key = `share-${id}-${targetUserId}`;
+      await albumsApi.share(id, { userId: targetUserId, expiresInHours: 24, watermarkMode, notifyOnView }, key);
       setShareUserId('');
       setShowShare(false);
       Alert.alert('Shared', 'Album shared for 24 hours');

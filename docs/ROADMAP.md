@@ -93,6 +93,6 @@ Prioritized backlog of high-impact ideas. Key themes:
 | Me section | Layout, design system, most sub-pages, bio char count, unsaved warning, success toast | Edit Profile Card sections, location picker, date pickers, Tier 2 ID |
 | Admin dashboard | Map, Kanban, sparkline, status bar, shortcuts, design | 3D globe, marble drop, Admin Control |
 | Game-changers | — | Tonight feed, venue themes, discovery cap, etc. |
-| Polish (IMPROVEMENTS_LEDGER) | Wave 1+2: Optimistic UI, empty states, social proof, Me polish; failure resilience (tap to retry), reconnect banner, micro-copy | Wave 3: Idempotency, observability |
+| Polish (IMPROVEMENTS_LEDGER) | Wave 1–3: Optimistic UI, empty states, social proof, Me polish; failure resilience, reconnect banner, micro-copy; idempotency (albums-share, events-rsvp); OPS_GUIDE observability | Wave 4: Location picker, date/time pickers |
 
 **Related docs:** `docs/IMPROVEMENTS_LEDGER.md` (full ledger with feasibility/impact/effort), `docs/archive/MASTER_IMPLEMENTATION_CHECKLIST.md`, `docs/archive/E2E_CAPABILITY_AUDIT_REPORT.md`, `docs/archive/CSUITE_MASTER_AUDIT_REPORT.md`

@@ -252,8 +252,12 @@ export const eventsApi = {
   create: (data: any) => api<{ data: any }>('/v1/events', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => api<{ data: any }>(`/v1/events/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   get: (id: string) => api<{ data: any }>(`/v1/events/${id}`),
-  rsvp: (id: string, status: string) =>
-    api<{ data: any }>(`/v1/events/${id}/rsvp`, { method: 'POST', body: JSON.stringify({ status }) }),
+  rsvp: (id: string, status: string, idempotencyKey?: string) =>
+    api<{ data: any }>(`/v1/events/${id}/rsvp`, {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    } as RequestInit),
   setDoorCode: (id: string, code: string, expiresAt?: string) =>
     api<{ data: any }>(`/v1/events/${id}/door-code`, { method: 'PUT', body: JSON.stringify({ code, expiresAt }) }),
 };
@@ -371,8 +375,12 @@ export const albumsApi = {
   addMedia: (albumId: string, mediaId: string) =>
     api(`/v1/media/albums/${albumId}/media`, { method: 'POST', body: JSON.stringify({ mediaId }) }),
   deleteAlbum: (albumId: string) => api(`/v1/media/albums/${albumId}`, { method: 'DELETE' }),
-  share: (albumId: string, opts: { userId: string; expiresInHours?: number; watermarkMode?: 'off' | 'subtle' | 'invisible'; notifyOnView?: boolean }) =>
-    api(`/v1/media/albums/${albumId}/share`, { method: 'POST', body: JSON.stringify(opts) }),
+  share: (albumId: string, opts: { userId: string; expiresInHours?: number; watermarkMode?: 'off' | 'subtle' | 'invisible'; notifyOnView?: boolean }, idempotencyKey?: string) =>
+    api(`/v1/media/albums/${albumId}/share`, {
+      method: 'POST',
+      body: JSON.stringify(opts),
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    } as RequestInit),
   revokeShare: (albumId: string, userId: string) =>
     api(`/v1/media/albums/${albumId}/share/${userId}`, { method: 'DELETE' }),
 };

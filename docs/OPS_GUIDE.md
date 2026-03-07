@@ -178,10 +178,23 @@ See `docs/DEPLOYMENT_GUIDE.md` (archived) for full details.
 
 ---
 
-## 6. Alerting
+## 6. Alerting & Observability
 
 **Endpoint:** `GET /metrics` (Prometheus scrape). Protect with `METRICS_SECRET` Bearer token.
 
-**Metrics:** `http_requests_total`, `http_request_duration_seconds`, `worker_job_failures_total`
+**Metrics:** `http_requests_total`, `http_request_duration_seconds`, `worker_job_failures_total`, `ws_connections_current`, `worker_queue_depth`, `dlq_depth`
 
-**Alert rules:** High 5xx rate (>5%), p99 latency >5s, worker job failures. Configure Alertmanager or PagerDuty. See `docs/ALERTING.md` (archived) for YAML examples.
+**Prometheus scrape config (example):**
+```yaml
+scrape_configs:
+  - job_name: 'shhh-api'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['api.example.com:3000']
+    scheme: https
+    bearer_token: "${METRICS_SECRET}"
+```
+
+**Grafana:** Import Prometheus as data source; create dashboards for request rate, latency (p50/p95/p99), 5xx rate, WebSocket connections, worker queue depth.
+
+**Alert rules:** High 5xx rate (>5%), p99 latency >5s, worker job failures. Configure Alertmanager or PagerDuty. See `docs/archive/ALERTING.md` for YAML examples.

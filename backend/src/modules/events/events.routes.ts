@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { EventsController } from './events.controller';
 import { validate } from '../../middleware/validation';
 import { authenticate, requireTier } from '../../middleware/auth';
+import { idempotencyMiddleware } from '../../middleware/idempotency';
 
 const router = Router();
 const controller = new EventsController();
@@ -84,7 +85,7 @@ router.post('/validate-door-code', authenticate, doorCodeValidateLimiter, valida
 router.get('/:id', authenticate, controller.getOne);
 router.get('/:id/attendees', authenticate, controller.getAttendees);
 router.get('/:id/chat-rooms', authenticate, controller.getChatRooms);
-router.post('/:id/rsvp', authenticate, validate(rsvpSchema), controller.rsvp);
+router.post('/:id/rsvp', authenticate, idempotencyMiddleware('events-rsvp'), validate(rsvpSchema), controller.rsvp);
 router.post('/:id/checkin', authenticate, controller.checkIn);
 router.put('/:id/door-code', authenticate, validate(setDoorCodeSchema), controller.setDoorCode);
 

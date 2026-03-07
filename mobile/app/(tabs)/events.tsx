@@ -78,7 +78,8 @@ export default function EventsScreen() {
     if (attending.has(eventId)) {
       setAttending(prev => { const next = new Set(prev); next.delete(eventId); return next; });
     } else {
-      await eventsApi.rsvp(eventId, 'going');
+      const key = `rsvp-${eventId}-going`;
+      await eventsApi.rsvp(eventId, 'going', key);
       setAttending(prev => new Set(prev).add(eventId));
       Vibration.vibrate([0, 40, 20, 40]);
     }
