@@ -6,6 +6,9 @@ import { groupsApi } from '../../src/api/client';
 import { colors, spacing, fontSize } from '../../src/constants/theme';
 import { mapApiError } from '../../src/utils/errorMapper';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
+import { SafeState } from '../../src/components/ui';
 
 export default function GroupsScreen() {
   const [groups, setGroups] = useState<any[]>([]);
@@ -31,31 +34,21 @@ export default function GroupsScreen() {
   if (loading && groups.length === 0) {
     return (
       <PremiumDarkBackground style={s.container}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={s.title}>Groups</Text>
-        </View>
-        <ActivityIndicator color={colors.primaryLight} style={{ marginTop: 48 }} />
+        <PageShell>
+          <SubPageHeader title="Groups" />
+          <SafeState variant="loading" message="Loading groups..." />
+        </PageShell>
       </PremiumDarkBackground>
     );
   }
 
   return (
     <PremiumDarkBackground style={s.container}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={s.title}>Groups</Text>
-      </View>
-      {loadError && groups.length === 0 ? (
-        <View style={s.errorWrap}>
-          <Text style={s.errorText}>{loadError}</Text>
-          <TouchableOpacity style={s.retryBtn} onPress={load}><Text style={s.retryText}>Retry</Text></TouchableOpacity>
-        </View>
-      ) : (
+      <PageShell>
+        <SubPageHeader title="Groups" subtitle="Join groups to see events and connect" />
+        {loadError && groups.length === 0 ? (
+          <SafeState variant="error" message={loadError} onRetry={load} />
+        ) : (
         <FlatList
           data={groups}
           keyExtractor={(i) => i.id}
@@ -80,26 +73,20 @@ export default function GroupsScreen() {
             </View>
           }
         />
-      )}
+        )}
+      </PageShell>
     </PremiumDarkBackground>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.md },
-  backBtn: { marginRight: spacing.md },
-  title: { color: colors.text, fontSize: 24, fontWeight: '800' },
   list: { padding: spacing.lg, paddingBottom: 48 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
   cardIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginRight: spacing.md },
   cardContent: { flex: 1 },
   cardTitle: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
   cardDesc: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: 4 },
-  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  errorText: { color: colors.text, textAlign: 'center', marginBottom: 16 },
-  retryBtn: { backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
-  retryText: { color: '#fff', fontWeight: '700' },
   empty: { alignItems: 'center', paddingTop: 80 },
   emptyText: { color: colors.textMuted, fontSize: fontSize.lg, marginTop: 16 },
   emptySub: { color: colors.textSecondary, fontSize: fontSize.sm, marginTop: 8 },

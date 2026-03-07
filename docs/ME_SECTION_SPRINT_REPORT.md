@@ -48,11 +48,45 @@ This sprint implemented the foundation for elevating the Me section to match the
 
 ---
 
+---
+
+## Sprint 2 (March 2026)
+
+### Pages Upgraded
+
+| Page | Changes |
+|------|---------|
+| **profile/hosting** | PageShell, PremiumDarkBackground, SubPageHeader (Create event), SafeState, Card for events; Edit button → event-edit |
+| **profile/venues** | PageShell, PremiumDarkBackground, SubPageHeader (Create venue), SafeState, Card for venues |
+| **verify** | PageShell, PremiumDarkBackground, SubPageHeader, SafeState, Card for progress/tiers |
+| **couple** | PageShell, PremiumDarkBackground, SubPageHeader, SafeState |
+| **whispers** | PageShell, PremiumDarkBackground, SubPageHeader |
+| **subscription** | PageShell, PremiumDarkBackground, SubPageHeader; friendly "Coming soon" when Stripe not configured |
+
+---
+
+## Sprint 3 (March 2026)
+
+### Pages Upgraded
+
+| Page | Changes |
+|------|---------|
+| **profile/create-venue** | PageShell, SubPageHeader |
+| **profile/create-event** | PageShell, SubPageHeader |
+| **profile/event-edit/[id]** | PageShell, SubPageHeader |
+| **profile/venue-dashboard/[id]** | PremiumDarkBackground, PageShell, SubPageHeader |
+| **profile/venue-edit/[id]** | PageShell, SubPageHeader |
+| **groups/index** | PageShell, PremiumDarkBackground, SubPageHeader, SafeState |
+| **groups/[id]** | PageShell, PremiumDarkBackground, SubPageHeader |
+| **content/guides** | PageShell, PremiumDarkBackground, SubPageHeader |
+| **content/norms** | PageShell, PremiumDarkBackground, SubPageHeader |
+
+---
+
 ## Remaining Work (from ME_SECTION_IMPROVEMENTS.md)
 
 - **Phase 2–3:** Edit Profile Card usage, character count, unsaved warning, User ID display
-- **Phase 4:** Create venue location picker, Create/Edit event date pickers, Verification Tier 2, Subscription fallback
-- **Phase 5:** Upgrade remaining pages (hosting, venues, venue-dashboard, create-venue, venue-edit, create-event, event-edit, couple, verify, whispers, groups, subscription, guides, norms)
+- **Phase 4:** Create venue location picker, Create/Edit event date pickers, Verification Tier 2
 - **Phase 6:** Supabase bucket implementation (not just planning)
 - **Phase 7:** Empty states, success toasts, Markdown in Guides, accessibility
 

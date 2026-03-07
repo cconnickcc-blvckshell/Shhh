@@ -149,7 +149,8 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │       ├── venue-edit/[id].tsx
 │   │       ├── venue-add-special/[id].tsx
 │   │       ├── venue-staff/[id].tsx
-│   │       └── venue-invite-staff/[id].tsx
+│   │       ├── venue-invite-staff/[id].tsx
+│   │       └── notifications.tsx      # Push notification preferences (Me → Notifications)
 │   ├── src/
 │   │   ├── api/client.ts             # Full API client (EXPO_PUBLIC_API_URL when set)
 │   │   ├── stores/auth.ts            # Zustand auth store
@@ -164,7 +165,12 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   ├── hooks/useCanSeeUnblurred.ts # GET /v1/photos/check/:userId; single blur authority
 │   │   ├── hooks/useOAuth.ts        # Apple sign-in flow (expo-apple-authentication)
 │   │   ├── hooks/useScreenView.ts   # Fires screen_view on mount (analytics stub)
-│   │   ├── components/layout/       # PageShell, ContentColumn, Card (layout spine)
+│   │   ├── components/layout/       # PageShell, ContentColumn, Card, SectionLabel (layout spine)
+│   │   ├── components/SubPageHeader.tsx # Back, title, subtitle, right action (Me sub-pages)
+│   │   ├── context/UnreadBadgeContext.tsx # Unread message count, tab badge, setBadgeCountAsync
+│   │   ├── context/InAppToastContext.tsx  # Foreground toast for new messages (WebSocket)
+│   │   ├── hooks/useNotificationResponse.ts # Deep link from notification tap → chat/whispers
+│   │   ├── hooks/usePushNotifications.ts   # Expo push token, foreground handler, token refresh on resume
 │   │   ├── components/ui/SafeState.tsx # loading, empty, error, offline screen states
 │   │   ├── components/OfflineBanner.tsx # NetInfo-based offline banner (mounted in root layout)
 │   │   ├── components/VenueAdCard.tsx   # Ad placement card (impression/tap/dismiss)
@@ -493,6 +499,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ### Messaging
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
+| GET | `/v1/conversations/unread-total` | Yes | 0 | Total unread message count (tab badge, app icon badge) |
 | GET | `/v1/conversations` | Yes | 0 | List conversations (includes consentState when applicable: requiresMutualConsent, grantedByMe, grantedCount) |
 | POST | `/v1/conversations` | Yes | 1 | Create conversation |
 | GET | `/v1/conversations/:id/messages` | Yes | 0 | Get messages |

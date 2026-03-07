@@ -59,18 +59,18 @@ Master list of improvements for the Me (Profile) section. Status: ✅ Done | ⬜
 |------|-----------|-------------|---------------|-----------|
 | profile/hosting | ✅ | ✅ | ✅ | ✅ |
 | profile/venues | ✅ | ✅ | ✅ | ✅ |
-| profile/create-venue | ⬜ | ✅ | ⬜ | ⬜ |
-| profile/venue-dashboard/[id] | ⬜ | ⬜ | ⬜ | ⬜ |
-| profile/venue-edit/[id] | ⬜ | ✅ | ⬜ | ⬜ |
-| profile/create-event | ⬜ | ✅ | ⬜ | ⬜ |
-| profile/event-edit/[id] | ⬜ | ✅ | ⬜ | ⬜ |
+| profile/create-venue | ✅ | ✅ | ✅ | ⬜ |
+| profile/venue-dashboard/[id] | ✅ | ✅ | ✅ | ✅ |
+| profile/venue-edit/[id] | ✅ | ✅ | ✅ | ⬜ |
+| profile/create-event | ✅ | ✅ | ✅ | ⬜ |
+| profile/event-edit/[id] | ✅ | ✅ | ✅ | ⬜ |
 | couple | ✅ | ✅ | ✅ | ✅ |
 | verify | ✅ | ✅ | ✅ | ✅ |
 | whispers | ✅ | ✅ | ✅ | ⬜ |
-| groups | ⬜ | ✅ | ⬜ | ⬜ |
+| groups | ✅ | ✅ | ✅ | ✅ |
 | subscription | ✅ | ✅ | ✅ | ⬜ |
-| content/guides | ⬜ | ⬜ | ⬜ | ⬜ |
-| content/norms | ⬜ | ⬜ | ⬜ | ⬜ |
+| content/guides | ✅ | ✅ | ✅ | ✅ |
+| content/norms | ✅ | ✅ | ✅ | ✅ |
 
 ---
 

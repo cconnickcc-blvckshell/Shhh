@@ -5,6 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { venuesApi } from '../../../src/api/client';
 import { colors, spacing, fontSize, borderRadius } from '../../../src/constants/theme';
 import { PremiumDarkBackground } from '../../../src/components/Backgrounds';
+import { PageShell } from '../../../src/components/layout';
+import { SubPageHeader } from '../../../src/components/SubPageHeader';
+import { SafeState } from '../../../src/components/ui';
 
 export default function VenueEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -59,32 +62,30 @@ export default function VenueEditScreen() {
 
   if (!id) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.error}>Missing venue</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}><Text style={styles.backBtnText}>Back</Text></TouchableOpacity>
-      </View>
+      <PremiumDarkBackground style={styles.container}>
+        <PageShell>
+          <SafeState variant="error" message="Missing venue" onRetry={() => router.back()} />
+        </PageShell>
+      </PremiumDarkBackground>
     );
   }
 
   if (loading && !venue) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
+      <PremiumDarkBackground style={styles.container}>
+        <PageShell>
+          <SafeState variant="loading" message="Loading venue..." />
+        </PageShell>
+      </PremiumDarkBackground>
     );
   }
 
   return (
     <PremiumDarkBackground style={styles.container}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Edit venue</Text>
-        <View style={{ width: 40 }} />
-      </View>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <PageShell>
+          <SubPageHeader title="Edit venue" />
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.formCard}>
           <Text style={styles.label}>Name *</Text>
           <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Venue name" placeholderTextColor={colors.textMuted} />
@@ -101,6 +102,7 @@ export default function VenueEditScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+        </PageShell>
     </KeyboardAvoidingView>
     </PremiumDarkBackground>
   );
@@ -108,10 +110,6 @@ export default function VenueEditScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  centered: { justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.md },
-  backBtn: { padding: spacing.sm },
-  title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800', flex: 1 },
   scroll: { flex: 1 },
   content: { paddingHorizontal: spacing.lg, paddingBottom: 40 },
   formCard: { backgroundColor: colors.surface, borderRadius: 16, padding: spacing.lg, borderWidth: 1, borderColor: 'rgba(147,51,234,0.2)' },
@@ -121,6 +119,4 @@ const styles = StyleSheet.create({
   saveBtn: { backgroundColor: colors.primary, paddingVertical: 14, borderRadius: borderRadius.lg, alignItems: 'center' },
   saveDisabled: { opacity: 0.7 },
   saveBtnText: { color: '#fff', fontSize: fontSize.md, fontWeight: '700' },
-  error: { color: colors.textMuted, padding: 24, textAlign: 'center' },
-  backBtnText: { color: colors.primaryLight, fontWeight: '600' },
 });

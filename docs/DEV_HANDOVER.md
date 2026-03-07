@@ -1419,10 +1419,15 @@ The mobile app uses **expo-router** (file-based routing). All screens are in `mo
 | `/profile/venue-add-special/[id]` | `app/profile/venue-add-special/[id].tsx` | Add special |
 | `/profile/venue-staff/[id]` | `app/profile/venue-staff/[id].tsx` | Venue staff |
 | `/profile/venue-invite-staff/[id]` | `app/profile/venue-invite-staff/[id].tsx` | Invite staff |
+| `/profile/notifications` | `app/profile/notifications.tsx` | Push notification preferences (messages, whispers, stealth) |
 | `/couple/index` | `app/couple/index.tsx` | Couple management |
 | `/verify/index` | `app/verify/index.tsx` | Verification submission |
 | `/subscription/index` | `app/subscription/index.tsx` | Subscription / Stripe (Linking.openURL for checkout, refetch on focus) |
 | `/whispers/index` | `app/whispers/index.tsx` | Whisper inbox/sent |
+| `/groups/index` | `app/groups/index.tsx` | Groups list |
+| `/groups/[id]` | `app/groups/[id].tsx` | Group detail + events |
+| `/content/guides` | `app/content/guides.tsx` | Community guides |
+| `/content/norms` | `app/content/norms.tsx` | Community norms |
 
 ### 6.2 Hooks
 
@@ -1438,7 +1443,9 @@ The mobile app uses **expo-router** (file-based routing). All screens are in `mo
 | `usePhotoUpload` | `src/hooks/usePhotoUpload.ts` | Image picker + multipart upload to `/v1/media/upload`. Supports camera and library. Self-destruct option. |
 | `useDistressGesture` | `src/hooks/useDistressGesture.ts` | Accelerometer-based shake detection (5 shakes in 3s). Triggers panic API call with location. Vibration feedback. 30s cooldown. |
 | `useScreenshotDetection` | `src/hooks/useScreenshotDetection.ts` | Expo screen capture listener. Reports to `/v1/safety/screenshot`. Alerts user that other person was notified. |
-| `usePushNotifications` | `src/hooks/usePushNotifications.ts` | Requests notification permissions, registers Expo push token via `/v1/auth/push-token`. |
+| `usePushNotifications` | `src/hooks/usePushNotifications.ts` | Requests notification permissions, registers Expo push token via `/v1/auth/push-token`. Re-registers on app resume (AppState). |
+| `useNotificationResponse` | `src/hooks/useNotificationResponse.ts` | Handles notification tap → deep link to chat or whispers. |
+| `useUnreadBadge` | `src/context/UnreadBadgeContext.tsx` | Unread message count for tab badge; calls `setBadgeCountAsync` for app icon badge. |
 
 ### 6.3 State Management (Zustand)
 
@@ -1482,7 +1489,7 @@ api<T>(path, options)        // Generic fetch wrapper with auth header injection
 authApi.{register, login, refresh, logout, oauthApple, oauthGoogle, oauthSnap}
 usersApi.{getMe, updateMe, like, pass, block, report}
 discoverApi.{nearby, updateLocation}
-messagingApi.{getConversations, createConversation, getMessages, sendMessage}
+messagingApi.{getUnreadTotal, getConversations, createConversation, getMessages, sendMessage}
 eventsApi.{nearby, create, get, rsvp}
 safetyApi.{getContacts, addContact, checkIn, panic}
 albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare}
@@ -1497,7 +1504,7 @@ albumsApi.{getMyAlbums, getShared, getAlbum, create, share, revokeShare}
 
 ### 6.5 Web layout (soft launch)
 
-**Navigation authority:** URL is the single source of truth; `<Tabs>` always mounted and uses `detachInactiveScreens` so only the active scene is attached; sidebar triggers `router.replace`; active tab derived from pathname via `src/lib/tabRoutes.ts`. **Layout spine:** Tab screens root with `PageShell`; optional `ContentColumn`/`Card` (`src/components/layout/`). **Screen states:** `SafeState` (loading, empty, error, offline). See **docs/FRONTEND_REFACTOR_STRATEGY.md**.
+**Navigation authority:** URL is the single source of truth; `<Tabs>` always mounted and uses `detachInactiveScreens` so only the active scene is attached; sidebar triggers `router.replace`; active tab derived from pathname via `src/lib/tabRoutes.ts`. **Layout spine:** Tab screens root with `PageShell`; optional `ContentColumn`/`Card` (`src/components/layout/`). **Me sub-pages:** Use `SubPageHeader` (back, title, right action), `PremiumDarkBackground`, `PageShell`, `SafeState`. See **docs/ME_SECTION_IMPROVEMENTS.md**. **Screen states:** `SafeState` (loading, empty, error, offline). See **docs/FRONTEND_REFACTOR_STRATEGY.md**.
 
 When `Platform.OS === 'web'` and viewport width ≥ 1024px (`useBreakpoint().showSidebar`):
 
@@ -2013,6 +2020,14 @@ FROM locations l1, locations l2
 WHERE l1.user_id = $sender AND l2.user_id = $receiver
 ```
 This distance is rounded to the nearest meter and sent as "245m away" or "nearby" if unavailable.
+
+---
+
+## 13.5 Push Notifications
+
+**Backend:** `push.service.ts` registers Expo push tokens, sends notifications via Expo Push API. Preferences stored in `user_profiles.preferences_json` (`push_messages`, `push_whispers`, `neutral_notifications`). Messaging and Whisper services call `PushService.sendPush()` when new content arrives.
+
+**Mobile:** `usePushNotifications` registers token on auth; `UnreadBadgeContext` fetches `GET /v1/conversations/unread-total` and sets app icon badge; `useNotificationResponse` deep-links from notification tap → chat or whispers; `InAppToastContext` shows foreground toast for new messages when not in that conversation. See **docs/PUSH_NOTIFICATIONS.md**.
 
 ---
 

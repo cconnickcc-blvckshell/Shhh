@@ -6,6 +6,8 @@ import { eventsApi, venuesApi } from '../../src/api/client';
 import { useLocation } from '../../src/hooks/useLocation';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
 import { mapApiError } from '../../src/utils/errorMapper';
 
 const FALLBACK_LAT = 40.7128;
@@ -131,15 +133,9 @@ export default function CreateEventScreen() {
 
   return (
     <PremiumDarkBackground style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Create event</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <PageShell>
+        <SubPageHeader title="Create event" />
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.formCard}>
           <Text style={styles.label}>Title</Text>
           <TextInput
@@ -303,15 +299,13 @@ export default function CreateEventScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </PageShell>
     </PremiumDarkBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.md },
-  backBtn: { padding: spacing.sm },
-  title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
   scroll: { flex: 1 },
   scrollContent: { padding: spacing.lg, paddingBottom: 48 },
   formCard: { backgroundColor: colors.surface, borderRadius: 16, padding: spacing.lg, borderWidth: 1, borderColor: 'rgba(147,51,234,0.2)' },

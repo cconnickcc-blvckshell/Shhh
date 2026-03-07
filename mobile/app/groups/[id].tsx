@@ -6,6 +6,9 @@ import { groupsApi } from '../../src/api/client';
 import { colors, spacing, fontSize } from '../../src/constants/theme';
 import { mapApiError } from '../../src/utils/errorMapper';
 import { PremiumDarkBackground } from '../../src/components/Backgrounds';
+import { PageShell } from '../../src/components/layout';
+import { SubPageHeader } from '../../src/components/SubPageHeader';
+import { SafeState } from '../../src/components/ui';
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,25 +53,19 @@ export default function GroupDetailScreen() {
   if (loading || !group) {
     return (
       <PremiumDarkBackground style={s.container}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-        <ActivityIndicator color={colors.primaryLight} style={{ marginTop: 48 }} />
+        <PageShell>
+          <SubPageHeader title="Group" />
+          <SafeState variant="loading" message="Loading group..." />
+        </PageShell>
       </PremiumDarkBackground>
     );
   }
 
   return (
     <PremiumDarkBackground style={s.container}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={s.title}>{group.name}</Text>
-      </View>
-      <ScrollView style={s.scroll} contentContainerStyle={s.content}>
+      <PageShell>
+        <SubPageHeader title={group.name} subtitle={group.description || undefined} />
+        <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         {group.description && <Text style={s.desc}>{group.description}</Text>}
         <TouchableOpacity style={s.joinBtn} onPress={group.is_member ? handleLeave : handleJoin}>
           <Text style={s.joinBtnText}>{group.is_member ? 'Leave' : 'Join'}</Text>
@@ -85,15 +82,13 @@ export default function GroupDetailScreen() {
           ))
         )}
       </ScrollView>
+      </PageShell>
     </PremiumDarkBackground>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.md },
-  backBtn: { marginRight: spacing.md },
-  title: { color: colors.text, fontSize: 24, fontWeight: '800' },
   scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: 48 },
   desc: { color: colors.textSecondary, fontSize: fontSize.md, marginBottom: spacing.lg },

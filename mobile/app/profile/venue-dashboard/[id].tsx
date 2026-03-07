@@ -5,6 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { venuesApi } from '../../../src/api/client';
 import { useSocket } from '../../../src/hooks/useSocket';
 import { colors, spacing, fontSize, borderRadius } from '../../../src/constants/theme';
+import { PremiumDarkBackground } from '../../../src/components/Backgrounds';
+import { PageShell } from '../../../src/components/layout';
+import { SubPageHeader } from '../../../src/components/SubPageHeader';
+import { SafeState } from '../../../src/components/ui';
 
 function StatBlock({ label, value, icon }: { label: string; value: number | string; icon: string }) {
   return (
@@ -61,32 +65,31 @@ export default function VenueDashboardScreen() {
 
   if (!id) {
     return (
-      <View style={dashStyles.container}>
-        <Text style={dashStyles.error}>Missing venue</Text>
-        <TouchableOpacity onPress={() => router.back()} style={dashStyles.backBtn}>
-          <Text style={dashStyles.backBtnText}>Back</Text>
-        </TouchableOpacity>
-      </View>
+      <PremiumDarkBackground style={{ flex: 1 }}>
+        <PageShell>
+          <SafeState variant="error" message="Missing venue" onRetry={() => router.back()} />
+        </PageShell>
+      </PremiumDarkBackground>
     );
   }
 
   if (loading && !data) {
     return (
-      <View style={dashStyles.center}>
-        <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={dashStyles.loadingText}>Loading dashboard…</Text>
-      </View>
+      <PremiumDarkBackground style={{ flex: 1 }}>
+        <PageShell>
+          <SafeState variant="loading" message="Loading dashboard…" />
+        </PageShell>
+      </PremiumDarkBackground>
     );
   }
 
   if (!data) {
     return (
-      <View style={dashStyles.container}>
-        <Text style={dashStyles.error}>Could not load dashboard. You may need to be owner or staff.</Text>
-        <TouchableOpacity onPress={() => router.back()} style={dashStyles.backBtn}>
-          <Text style={dashStyles.backBtnText}>Back</Text>
-        </TouchableOpacity>
-      </View>
+      <PremiumDarkBackground style={{ flex: 1 }}>
+        <PageShell>
+          <SafeState variant="error" message="Could not load dashboard. You may need to be owner or staff." onRetry={() => router.back()} />
+        </PageShell>
+      </PremiumDarkBackground>
     );
   }
 
@@ -99,19 +102,14 @@ export default function VenueDashboardScreen() {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <ScrollView
-      style={dashStyles.container}
-      contentContainerStyle={dashStyles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-    >
-      <View style={dashStyles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={dashStyles.headerBack}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={dashStyles.headerTitle} numberOfLines={1}>{venue?.name || 'Venue Dashboard'}</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
+    <PremiumDarkBackground style={{ flex: 1 }}>
+      <PageShell>
+        <SubPageHeader title={venue?.name || 'Venue Dashboard'} subtitle="Manage your venue" />
+        <ScrollView
+          style={dashStyles.scroll}
+          contentContainerStyle={dashStyles.content}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        >
       {/* Actions — work inside the dashboard */}
       <View style={dashStyles.actionsSection}>
         <Text style={dashStyles.sectionTitle}>Manage</Text>
@@ -219,20 +217,16 @@ export default function VenueDashboardScreen() {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+      </PageShell>
+    </PremiumDarkBackground>
   );
 }
 
 const dashStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  scroll: { flex: 1 },
   content: { paddingBottom: 24 },
   loadingText: { color: colors.textMuted, marginTop: 12 },
   error: { color: colors.textMuted, padding: 24, textAlign: 'center' },
-  backBtn: { marginHorizontal: 24, marginTop: 16, padding: 14, backgroundColor: colors.surface, borderRadius: borderRadius.lg, alignItems: 'center' },
-  backBtnText: { color: colors.primaryLight, fontWeight: '600' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: 50, paddingBottom: spacing.sm },
-  headerBack: { padding: spacing.sm },
-  headerTitle: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800', flex: 1 },
   actionsSection: { paddingHorizontal: spacing.lg, marginBottom: spacing.lg },
   sectionTitle: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '700', marginBottom: spacing.sm, textTransform: 'uppercase' },
   actionsRow: { flexDirection: 'row', gap: spacing.sm },
