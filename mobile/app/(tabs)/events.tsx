@@ -218,7 +218,7 @@ export default function EventsScreen() {
         ListEmptyComponent={
           <View style={s.emptyWrap}>
             <SafeState variant="empty" title="No events nearby" message="Pull down to refresh" icon="flame-outline" />
-            <TouchableOpacity style={s.emptyCta} onPress={() => router.push('/profile/create-event')} activeOpacity={0.8}>
+            <TouchableOpacity style={s.emptyCta} onPress={() => router.push('/profile/create-event')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Create an event">
               <Text style={s.emptyCtaText}>Start something → Create an event</Text>
             </TouchableOpacity>
           </View>

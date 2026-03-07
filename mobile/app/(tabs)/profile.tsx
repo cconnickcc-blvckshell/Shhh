@@ -27,7 +27,7 @@ const spStyles = StyleSheet.create({
 
 function MenuItem({ icon, label, onPress, badge, accent }: { icon: string; label: string; onPress: () => void; badge?: string; accent?: boolean }) {
   return (
-    <TouchableOpacity style={mStyles.row} onPress={onPress} activeOpacity={0.6}>
+    <TouchableOpacity style={mStyles.row} onPress={onPress} activeOpacity={0.6} accessibilityRole="button" accessibilityLabel={label}>
       <View style={[mStyles.iconBox, accent && { backgroundColor: colors.primarySoft }]}>
         <Ionicons name={icon as any} size={17} color={accent ? colors.primaryLight : 'rgba(255,255,255,0.5)'} />
       </View>
@@ -98,7 +98,7 @@ export default function ProfileScreen() {
 
         {/* User ID + Copy */}
         {userId && (
-          <TouchableOpacity style={styles.userIdRow} onPress={() => Clipboard.setStringAsync(userId).then(() => Alert.alert('Copied', 'User ID copied to clipboard'))} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.userIdRow} onPress={() => Clipboard.setStringAsync(userId).then(() => Alert.alert('Copied', 'User ID copied to clipboard'))} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copy user ID">
             <Text style={styles.userIdLabel}>User ID</Text>
             <Text style={styles.userIdValue} numberOfLines={1}>{userId}</Text>
             <Ionicons name="copy-outline" size={16} color="rgba(255,255,255,0.4)" />
@@ -162,7 +162,7 @@ export default function ProfileScreen() {
         <Text style={styles.panicText}>Panic Alert</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Log out">
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
 

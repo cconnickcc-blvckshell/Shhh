@@ -132,7 +132,7 @@ export default function AlbumsScreen() {
             <Text style={styles.emptyText}>{tab === 'mine' ? 'No albums yet' : 'No shared albums'}</Text>
             <Text style={styles.emptySub}>{tab === 'mine' ? 'Create your first album to share photos' : 'Albums shared with you will appear here'}</Text>
             {tab === 'mine' && (
-              <TouchableOpacity style={styles.emptyCta} onPress={() => setShowCreate(true)} activeOpacity={0.8}>
+              <TouchableOpacity style={styles.emptyCta} onPress={() => setShowCreate(true)} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Create album">
                 <Text style={styles.emptyCtaText}>Create album</Text>
               </TouchableOpacity>
             )}

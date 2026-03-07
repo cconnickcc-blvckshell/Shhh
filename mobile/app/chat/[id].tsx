@@ -240,7 +240,7 @@ export default function ChatScreen() {
         <View style={s.inputWrap}>
           <TextInput style={s.input} value={input} onChangeText={setInput} placeholder={selfDestruct ? 'Self-destructing...' : 'Message...'} placeholderTextColor={colors.textMuted} multiline onSubmitEditing={send} />
         </View>
-        <TouchableOpacity style={[s.sendBtn, !input.trim() && s.sendDisabled]} onPress={send} disabled={!input.trim()}>
+        <TouchableOpacity style={[s.sendBtn, !input.trim() && s.sendDisabled]} onPress={send} disabled={!input.trim()} accessibilityRole="button" accessibilityLabel="Send message">
           <Ionicons name="arrow-up" size={18} color="#fff" />
         </TouchableOpacity>
       </View>

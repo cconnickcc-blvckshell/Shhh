@@ -160,7 +160,7 @@ export default function EditProfileScreen() {
           backIcon="close"
           onBackPress={handleBack}
           rightAction={
-            <TouchableOpacity onPress={save} disabled={saving || !isDirty} style={s.saveBtn}>
+            <TouchableOpacity onPress={save} disabled={saving || !isDirty} style={s.saveBtn} accessibilityRole="button" accessibilityLabel={saving ? 'Saving' : 'Save profile'} accessibilityState={{ disabled: saving || !isDirty }}>
               <Text style={[s.saveText, (saving || !isDirty) && { opacity: 0.4 }]}>{saving ? '...' : 'Save'}</Text>
             </TouchableOpacity>
           }

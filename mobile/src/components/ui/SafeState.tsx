@@ -53,11 +53,11 @@ export function SafeState({ variant, title, message, onRetry, icon }: SafeStateP
   const showRetry = (variant === 'error' || variant === 'offline') && onRetry;
 
   return (
-    <View style={styles.wrap}>
+    <View style={styles.wrap} accessibilityRole="summary" accessibilityLabel={displayTitle || displayMessage}>
       {variant === 'loading' ? (
-        <ActivityIndicator size="large" color={colors.primaryLight} />
+        <ActivityIndicator size="large" color={colors.primaryLight} accessibilityLabel="Loading" />
       ) : (
-        <View style={styles.iconRing}>
+        <View style={styles.iconRing} accessibilityElementsHidden>
           <Ionicons
             name={iconName}
             size={40}
@@ -65,10 +65,10 @@ export function SafeState({ variant, title, message, onRetry, icon }: SafeStateP
           />
         </View>
       )}
-      {displayTitle ? <Text style={styles.title}>{displayTitle}</Text> : null}
+      {displayTitle ? <Text style={styles.title} accessibilityRole="header">{displayTitle}</Text> : null}
       <Text style={styles.message}>{displayMessage}</Text>
       {showRetry && (
-        <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Try again">
           <Text style={styles.retryBtnText}>Try again</Text>
         </TouchableOpacity>
       )}
@@ -88,10 +88,12 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(147,51,234,0.1)',
+    backgroundColor: 'rgba(124,43,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(124,43,255,0.15)',
   },
   title: {
     color: colors.text,

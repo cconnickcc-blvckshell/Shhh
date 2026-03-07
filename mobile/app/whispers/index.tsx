@@ -127,7 +127,7 @@ export default function WhisperInboxScreen() {
             <View style={s.emptyIcon}><Ionicons name="ear-outline" size={36} color={colors.primaryLight} /></View>
             <Text style={s.emptyTitle}>{tab === 'inbox' ? 'No whispers yet' : 'No sent whispers'}</Text>
             <Text style={s.emptySub}>{tab === 'inbox' ? 'Someone nearby might whisper to you. Long-press a profile in Discover to whisper.' : 'Long-press a profile in Discover to send an anonymous whisper.'}</Text>
-            <TouchableOpacity style={s.emptyCta} onPress={() => router.back()} activeOpacity={0.8}>
+            <TouchableOpacity style={s.emptyCta} onPress={() => router.back()} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Go to Discover">
               <Text style={s.emptyCtaText}>Go to Discover</Text>
             </TouchableOpacity>
           </View>

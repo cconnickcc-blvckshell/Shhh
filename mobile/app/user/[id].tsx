@@ -246,6 +246,8 @@ export default function UserDetailScreen() {
         <View style={s.actions}>
           <TouchableOpacity
             style={s.actionCircle}
+            accessibilityRole="button"
+            accessibilityLabel="Not interested or block"
             onPress={() => {
               if (!id) return;
               Alert.alert('Not interested?', `What would you like to do with ${profile.displayName}?`, [
@@ -272,13 +274,13 @@ export default function UserDetailScreen() {
           >
             <Ionicons name="close" size={26} color="rgba(255,255,255,0.4)" />
           </TouchableOpacity>
-          <TouchableOpacity style={s.actionCircleSmall} onPress={() => setShowWhisper(!showWhisper)}>
+          <TouchableOpacity style={s.actionCircleSmall} onPress={() => setShowWhisper(!showWhisper)} accessibilityRole="button" accessibilityLabel="Send whisper">
             <Ionicons name="ear" size={18} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={[s.actionCirclePrimary, liked && { backgroundColor: '#34D399' }]} onPress={handleLike}>
+          <TouchableOpacity style={[s.actionCirclePrimary, liked && { backgroundColor: '#34D399' }]} onPress={handleLike} accessibilityRole="button" accessibilityLabel={liked ? 'Matched' : 'Like'}>
             <Ionicons name={liked ? 'heart' : 'heart-outline'} size={28} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={s.actionCircleSmall} onPress={handleMessage}>
+          <TouchableOpacity style={s.actionCircleSmall} onPress={handleMessage} accessibilityRole="button" accessibilityLabel="Message">
             <Ionicons name="chatbubble" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -299,6 +301,8 @@ export default function UserDetailScreen() {
         {/* Report */}
         <TouchableOpacity
           style={s.reportBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Report this user"
           onPress={() => {
             if (!id) return;
             Alert.alert('Report user', `Report ${profile.displayName}? This helps keep our community safe.`, [

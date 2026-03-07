@@ -56,7 +56,7 @@ export function VenueAdCard({ ad, onDismiss }: Props) {
         </TouchableOpacity>
       </View>
       </TouchableOpacity>
-      <TouchableOpacity style={s.whyLink} onPress={() => setShowWhyModal(true)}>
+      <TouchableOpacity style={s.whyLink} onPress={() => setShowWhyModal(true)} accessibilityRole="button" accessibilityLabel="Why am I seeing this ad?">
         <Text style={s.whyLinkText}>Why am I seeing this?</Text>
       </TouchableOpacity>
       <Modal visible={showWhyModal} transparent animationType="fade">

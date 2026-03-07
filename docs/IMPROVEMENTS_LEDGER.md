@@ -315,7 +315,7 @@
 | GC-7.9 | Couple's joint profile in discovery | 4 | 4 | 3 | P2 | Not started |
 | GC-N.1 | Reveal L3 / vault-level reveal | 3 | 4 | 4 | P2 | Not started |
 | GC-N.2 | Vibes / soft reputation after event | 3 | 3 | 3 | P3 | Not started |
-| GC-N.5 | "Ad why am I seeing this?" explainer | 5 | 3 | 1 | P2 | Not started |
+| GC-N.5 | "Ad why am I seeing this?" explainer | 5 | 3 | 1 | P2 | ✅ Done (VenueAdCard) |
 
 ---
 
@@ -627,7 +627,7 @@
 - **A.10** Growth mechanics (invite flows, viral loops)
 - **B.5** Admin: 3D Globe, Marble Drop, Admin Control, Tier Funnel, Retention Cohorts
 - **C.7** Full animation application across modals
-- **B.6** Empty state illustrations, Accessibility (labels, contrast)
+- ~~**B.6** Empty state illustrations, Accessibility~~ Partial (Wave 11: accessibility labels on key buttons, SafeState, CTAs)
 - ~~**GC-7.8** "No" as first-class (pass with reason)~~ ✅ Wave 9
 
 **Strategic / larger:**

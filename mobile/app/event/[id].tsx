@@ -211,6 +211,9 @@ export default function EventDetailScreen() {
           onPress={handleRsvp}
           disabled={rsvpLoading}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={attending ? "You're going" : "I'm going"}
+          accessibilityState={{ disabled: rsvpLoading }}
         >
           {rsvpLoading ? (
             <ActivityIndicator color={attending ? '#fff' : colors.primaryLight} size="small" />

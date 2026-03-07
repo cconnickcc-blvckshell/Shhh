@@ -488,7 +488,7 @@ export default function DiscoverScreen() {
         ListEmptyComponent={
           <View style={s.emptyWrap}>
             <SafeState variant="empty" title="No one nearby" message="Pull down to refresh" icon="compass-outline" />
-            <TouchableOpacity style={s.emptyCta} onPress={() => router.push('/(tabs)/events')} activeOpacity={0.8}>
+            <TouchableOpacity style={s.emptyCta} onPress={() => router.push('/(tabs)/events')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Create an event">
               <Text style={s.emptyCtaText}>Start something → Create an event</Text>
             </TouchableOpacity>
           </View>
