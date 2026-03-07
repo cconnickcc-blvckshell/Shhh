@@ -1452,6 +1452,8 @@ The mobile app uses **expo-router** (file-based routing). All screens are in `mo
 | `useUnreadBadge` | `src/context/UnreadBadgeContext.tsx` | Unread message count for tab badge; calls `setBadgeCountAsync` for app icon badge. |
 | `useInAppToast` | `src/context/InAppToastContext.tsx` | Programmatic toast (e.g. success on save). `show({ title, body })` — no View button when no conversationId/whisperId. |
 
+**useSocket** also returns `connected`, `reconnecting` for state transparency (Wave 2). Chat shows "Reconnecting…" banner when `reconnecting`.
+
 ### 6.3 State Management (Zustand)
 
 Single store: `useAuthStore` in `src/stores/auth.ts`.

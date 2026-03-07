@@ -1,7 +1,8 @@
 /**
  * Maps API error messages to user-friendly copy.
+ * Human tone: "We couldn't send that" not "Error: invalid request".
  * Backend returns { error: { message: string } }; we parse message for known patterns.
- * @see docs/E2E_CAPABILITY_AUDIT_REPORT.md §4.2, MASTER_IMPLEMENTATION_CHECKLIST 2.1
+ * @see docs/E2E_CAPABILITY_AUDIT_REPORT.md §4.2, IMPROVEMENTS_LEDGER C.13
  */
 
 const PATTERNS: Array<{ pattern: RegExp | string; message: string }> = [
@@ -12,8 +13,12 @@ const PATTERNS: Array<{ pattern: RegExp | string; message: string }> = [
   { pattern: /session.*token|sessionToken|otp.*verify/i, message: 'Please verify your phone number first, then try again.' },
   { pattern: /venue access|owner or staff/i, message: 'You don\'t have permission to manage this venue.' },
   { pattern: /authentication required|invalid.*token|expired/i, message: 'Your session expired. Please sign in again.' },
-  { pattern: /network|fetch|failed to fetch/i, message: 'Connection error. Check your internet and try again.' },
+  { pattern: /network|fetch|failed to fetch|connection refused|econnrefused|econnreset/i, message: 'Connection error. Check your internet and try again.' },
   { pattern: /blocked|block/i, message: 'This action isn\'t available.' },
+  { pattern: /timeout|timed out/i, message: 'Request timed out. Tap to try again.' },
+  { pattern: /invalid request|bad request|400/i, message: 'Something went wrong. Please try again.' },
+  { pattern: /not found|404/i, message: 'This item is no longer available.' },
+  { pattern: /server error|500|internal/i, message: 'We\'re having a moment. Please try again in a bit.' },
 ];
 
 export function mapApiError(err: unknown): string {

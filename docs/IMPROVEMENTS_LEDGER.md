@@ -345,9 +345,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 5 | 5 | 2 | P1 | Partial (typing, presence exist) |
+| 5 | 5 | 2 | P1 | Partial |
 
-**Notes:** Reconnect banner, upload progress, retry states. Reusable state machine, not per-screen labels.
+**Notes:** Wave 2: Reconnect banner in Chat; useSocket exposes connected/reconnecting. Reusable state machine, not per-screen labels.
 
 ---
 
@@ -364,9 +364,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 4 | 5 | 3 | P1 | Not started |
+| 4 | 5 | 3 | P1 | Partial |
 
-**Notes:** No offline queue or retry UI; idempotency makes retries safe. See A.3 for idempotency pattern.
+**Notes:** Wave 2: Chat failed message → "Tap to retry"; retry flow with _retrying state. No offline queue yet; idempotency makes retries safe. See A.3.
 
 ---
 
@@ -486,9 +486,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 5 | 4 | 2 | P2 | Partial (mapApiError exists) |
+| 5 | 4 | 2 | P2 | Partial |
 
-**Notes:** Centralize error-to-copy mapping; consistent tone.
+**Notes:** Wave 2: mapApiError expanded (timeout, 404, 500, network); human tone. OfflineBanner copy improved.
 
 ---
 

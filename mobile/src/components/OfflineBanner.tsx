@@ -24,7 +24,7 @@ export function OfflineBanner() {
   return (
     <View style={styles.banner}>
       <Ionicons name="cloud-offline-outline" size={18} color="#fff" />
-      <Text style={styles.text}>You're offline. Some features may not work.</Text>
+      <Text style={styles.text}>You're offline. Check your connection and try again.</Text>
     </View>
   );
 }

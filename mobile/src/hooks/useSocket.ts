@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Platform } from 'react-native';
 import { useAuthStore } from '../stores/auth';
@@ -14,6 +14,8 @@ type MessageHandler = (data: any) => void;
 
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
   const token = useAuthStore(s => s.token);
 
   useEffect(() => {
@@ -27,12 +29,15 @@ export function useSocket() {
       reconnectionDelay: 1000,
     });
 
-    socket.on('connect', () => { /* connected */ });
-    socket.on('disconnect', () => { /* disconnected */ });
+    socket.on('connect', () => { setConnected(true); setReconnecting(false); });
+    socket.on('disconnect', (reason) => {
+      setConnected(false);
+      setReconnecting(reason !== 'io client disconnect');
+    });
 
     socketRef.current = socket;
 
-    return () => { socket.disconnect(); socketRef.current = null; };
+    return () => { socket.disconnect(); socketRef.current = null; setConnected(false); setReconnecting(false); };
   }, [token]);
 
   const joinConversation = useCallback((conversationId: string) => {
@@ -83,6 +88,8 @@ export function useSocket() {
 
   return {
     socket: socketRef.current,
+    connected,
+    reconnecting,
     joinConversation, leaveConversation,
     sendTyping, stopTyping,
     onNewMessage, onNotification, onTyping, onAlbumShared, onVenueDistress,

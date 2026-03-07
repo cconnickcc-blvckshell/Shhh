@@ -10,7 +10,7 @@ import { useUnreadBadge } from '../../src/context/UnreadBadgeContext';
 import { colors, spacing, fontSize, borderRadius, shadows } from '../../src/constants/theme';
 import { mapApiError } from '../../src/utils/errorMapper';
 
-interface Message { _id: string; senderId: string; content: string; contentType: string; createdAt: string; expiresAt?: string; }
+interface Message { _id: string; senderId: string; content: string; contentType: string; createdAt: string; expiresAt?: string; _failed?: boolean; _retrying?: boolean; _error?: string; }
 
 export default function ChatScreen() {
   const { id: convId } = useLocalSearchParams<{ id: string }>();
@@ -133,31 +133,55 @@ export default function ChatScreen() {
       const res = await messagingApi.sendMessage(convId, content, 'text', selfDestruct ? 30 : undefined);
       setMsgs(p => p.map(m => m._id === tempId ? res.data : m));
     } catch (err: any) {
-      setMsgs(p => p.filter(m => m._id !== tempId));
-      setInput(content);
-      Alert.alert('', mapApiError(err));
+      setMsgs(p => p.map(m => m._id === tempId ? { ...optimistic, _failed: true, _error: mapApiError(err) } : m));
+    }
+  };
+
+  const retryFailed = async (tempId: string) => {
+    const failed = msgs.find(m => m._id === tempId && m._failed);
+    if (!failed || !convId) return;
+    setMsgs(p => p.map(m => m._id === tempId ? { ...m, _retrying: true, _error: undefined } : m));
+    try {
+      const res = await messagingApi.sendMessage(convId, failed.content, 'text', failed.expiresAt ? 30 : undefined);
+      setMsgs(p => p.map(m => m._id === tempId ? res.data : m));
+    } catch (err: any) {
+      setMsgs(p => p.map(m => m._id === tempId ? { ...m, _retrying: false, _failed: true, _error: mapApiError(err) } : m));
     }
   };
 
   const renderMsg = ({ item }: { item: Message }) => {
     const mine = item.senderId === userId;
-    const isSending = (item._id as string).startsWith('temp-');
+    const isSending = (item._id as string).startsWith('temp-') && !item._failed;
+    const isFailed = item._failed;
+    const isRetrying = item._retrying;
     const createdAt = (item as any).createdAt ?? (item as any).created_at;
     return (
-      <View style={[s.row, mine && s.rowMine]}>
-        <View style={[s.bubble, mine ? s.mine : s.theirs, isSending && s.bubbleSending]}>
-          {item.expiresAt && (
+      <TouchableOpacity
+        style={[s.row, mine && s.rowMine]}
+        onPress={isFailed && !isRetrying ? () => retryFailed(item._id) : undefined}
+        activeOpacity={isFailed && !isRetrying ? 0.7 : 1}
+        disabled={!isFailed || isRetrying}
+      >
+        <View style={[s.bubble, mine ? s.mine : s.theirs, isSending && s.bubbleSending, isFailed && s.bubbleFailed]}>
+          {item.expiresAt && !isFailed && (
             <View style={s.sdLabel}><Ionicons name="timer" size={10} color={colors.host} /><Text style={s.sdText}>Self-destructing</Text></View>
           )}
           <Text style={s.msgText}>{item.content}</Text>
-          <View style={s.timeRow}>
-            {isSending && <View style={s.sendingDot} />}
-            <Text style={[s.time, !mine && { color: colors.textMuted }]}>
-              {createdAt ? new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending…'}
-            </Text>
-          </View>
+          {isFailed ? (
+            <View style={s.timeRow}>
+              {isRetrying ? <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" /> : <Ionicons name="refresh" size={12} color="rgba(255,255,255,0.8)" />}
+              <Text style={[s.time, s.retryText]}>{isRetrying ? 'Retrying…' : 'Tap to try again'}</Text>
+            </View>
+          ) : (
+            <View style={s.timeRow}>
+              {isSending && <View style={s.sendingDot} />}
+              <Text style={[s.time, !mine && { color: colors.textMuted }]}>
+                {createdAt ? new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending…'}
+              </Text>
+            </View>
+          )}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -194,6 +218,12 @@ export default function ChatScreen() {
 
   return (
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
+      {socket.reconnecting && (
+        <View style={s.reconnectBanner}>
+          <ActivityIndicator size="small" color="#fff" />
+          <Text style={s.reconnectText}>Reconnecting…</Text>
+        </View>
+      )}
       <FlatList
         ref={listRef}
         data={msgs}
@@ -237,8 +267,10 @@ const s = StyleSheet.create({
   mine: { backgroundColor: colors.primary, borderBottomRightRadius: 6 },
   theirs: { backgroundColor: colors.surfaceElevated, borderBottomLeftRadius: 6, borderWidth: 0.5, borderColor: colors.border },
   bubbleSending: { opacity: 0.85 },
+  bubbleFailed: { borderWidth: 1, borderColor: 'rgba(239,68,68,0.4)', opacity: 0.95 },
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, alignSelf: 'flex-end' },
   sendingDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.6)' },
+  retryText: { color: 'rgba(255,255,255,0.9)', fontWeight: '600' },
   sdLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
   sdText: { color: colors.host, fontSize: fontSize.xxs, fontWeight: '600' },
   msgText: { color: colors.text, fontSize: fontSize.md, lineHeight: 21 },
@@ -250,4 +282,6 @@ const s = StyleSheet.create({
   input: { backgroundColor: colors.surfaceElevated, color: colors.text, paddingHorizontal: 16, paddingVertical: 10, borderRadius: borderRadius.xl, fontSize: fontSize.md, maxHeight: 100, borderWidth: 0.5, borderColor: colors.border },
   sendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadows.glow },
   sendDisabled: { backgroundColor: colors.surfaceLight, shadowOpacity: 0 },
+  reconnectBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 8, backgroundColor: 'rgba(251,191,36,0.2)', borderBottomWidth: 1, borderBottomColor: 'rgba(251,191,36,0.3)' },
+  reconnectText: { color: colors.host, fontSize: 13, fontWeight: '600' },
 });
