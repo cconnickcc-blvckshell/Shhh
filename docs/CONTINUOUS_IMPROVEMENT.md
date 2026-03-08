@@ -71,15 +71,15 @@ The best tutorial is invisible. If someone sees something interesting immediatel
 
 | Action | Status |
 |--------|--------|
-| Discovery-first entry (minimal auth to see feed) | Not started |
-| Defer full profile until first meaningful interaction | Not started |
+| Discovery-first entry (minimal auth to see feed) | Done (Browse first) |
+| Defer full profile until first meaningful interaction | Done (Wave 1: prompt on like/message/whisper) |
 | Defer verification until user hits tier gate | Partial |
 | Progressive disclosure for privacy tools | Partial (Edit Profile) |
 
 ### Tactical Items
-- [ ] Allow "browse-only" mode: see blurred discovery with minimal signup (phone or email)
-- [ ] **Browse-only must show activity indicators** — not empty tiles. Signals like: "3 people nearby now", "2 events tonight", "Someone whispered 5m ago". Humans react strongly to evidence of life; these create curiosity.
-- [ ] Prompt profile completion only when user attempts like/message
+- [x] Allow "browse-only" mode: see blurred discovery with minimal signup (phone or email) — Browse first in onboarding-intent
+- [x] **Browse-only must show activity indicators** — not empty tiles. GET /v1/discover/activity; "X people nearby • X events tonight" bar on Discover (Wave 1)
+- [x] Prompt profile completion only when user attempts like/message/whisper (Wave 1: requireProfileComplete gate)
 - [ ] Move verification prompts to moment of need (e.g. "Verify to message")
 - [ ] Onboarding: show discovery preview before any form
 

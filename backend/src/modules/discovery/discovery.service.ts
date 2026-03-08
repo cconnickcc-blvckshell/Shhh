@@ -52,6 +52,38 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 }
 
 export class DiscoveryService {
+  /** Wave 1: Lightweight activity counts for density signals. Real counts only (no fake density). */
+  async getActivityCounts(userId: string, lat: number, lng: number, radiusKm: number = 50): Promise<{ nearbyCount: number; eventsTonightCount: number }> {
+    const radiusMeters = Math.min(radiusKm, config.geo.maxDiscoveryRadiusKm) * 1000;
+    const today = new Date().toISOString().slice(0, 10);
+    const [nearby, events] = await Promise.all([
+      query(
+        `SELECT COUNT(*)::int as cnt FROM user_profiles them
+         JOIN users u ON them.user_id = u.id
+         JOIN locations l ON them.user_id = l.user_id
+         CROSS JOIN user_profiles me
+         WHERE me.user_id = $1 AND u.is_active = true AND u.deleted_at IS NULL AND them.user_id != $1
+           AND ST_DWithin(l.geom_point::geography, ST_SetSRID(ST_MakePoint($3, $2), 4326)::geography, $4)
+           AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker_id = $1 AND b.blocked_id = them.user_id) OR (b.blocker_id = them.user_id AND b.blocked_id = $1))
+           AND (me.seeking_genders IS NULL OR them.gender = ANY(me.seeking_genders))
+           AND (them.discovery_visible_to = 'all' OR (them.discovery_visible_to = 'social_and_curious' AND me.primary_intent IN ('social', 'curious')) OR (them.discovery_visible_to = 'same_intent' AND them.primary_intent IS NOT DISTINCT FROM me.primary_intent))`,
+        [userId, lat, lng, radiusMeters]
+      ),
+      query(
+        `SELECT COUNT(*)::int as cnt FROM events e
+         LEFT JOIN venues v ON e.venue_id = v.id
+         WHERE e.status IN ('upcoming', 'active') AND e.starts_at > NOW() AND e.ends_at > NOW()
+           AND (e.starts_at AT TIME ZONE 'UTC')::date = $1::date
+           AND (v.id IS NULL OR ST_DWithin(ST_SetSRID(ST_MakePoint(v.lng, v.lat), 4326)::geography, ST_SetSRID(ST_MakePoint($3, $2), 4326)::geography, $4))`,
+        [today, lat, lng, radiusMeters]
+      ),
+    ]);
+    return {
+      nearbyCount: nearby.rows[0]?.cnt ?? 0,
+      eventsTonightCount: events.rows[0]?.cnt ?? 0,
+    };
+  }
+
   async updateLocation(userId: string, lat: number, lng: number, isPrecise: boolean) {
     const prev = await query(
       `SELECT ST_Y(geom_point::geometry)::double precision as lat, ST_X(geom_point::geometry)::double precision as lng, updated_at

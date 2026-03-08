@@ -232,6 +232,7 @@ export default function DiscoverScreen() {
   const [discoverAd, setDiscoverAd] = useState<any>(null);
   const [nearbyStories, setNearbyStories] = useState<any[]>([]);
   const [crossingPaths, setCrossingPaths] = useState<Array<{ venueId: string; otherUserId: string; count: number; venueName: string | null }>>([]);
+  const [activityCounts, setActivityCounts] = useState<{ nearbyCount: number; eventsTonightCount: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -248,6 +249,7 @@ export default function DiscoverScreen() {
       adsApi.getFeed(lat, lng).then((r) => setDiscoverAd(r.data)).catch(() => setDiscoverAd(null));
       storiesApi.nearby(lat, lng, radiusKm).then((r) => setNearbyStories(r.data || [])).catch(() => setNearbyStories([]));
       discoverApi.crossingPaths(2).then((r) => setCrossingPaths(r.data || [])).catch(() => setCrossingPaths([]));
+      discoverApi.getActivity(lat, lng, radiusKm).then((r) => setActivityCounts(r.data)).catch(() => setActivityCounts(null));
       return list.length;
     } catch (err: any) {
       setLoadError(mapApiError(err));
@@ -292,11 +294,6 @@ export default function DiscoverScreen() {
     return [...users].sort((a, b) => a.distance - b.distance);
   }, [users, sortMode]);
 
-  const handleLongPress = (item: NearbyUser) => {
-    Vibration.vibrate(10);
-    setWhisperTarget(item.userId);
-  };
-
   const sendWhisper = async () => {
     if (!whisperTarget || !whisperText.trim()) return;
     try {
@@ -307,23 +304,49 @@ export default function DiscoverScreen() {
     } catch (err: any) { Alert.alert('', mapApiError(err)); }
   };
 
-  const handleSwipeRight = useCallback(async (item: NearbyUser) => {
-    Vibration.vibrate(15);
-    try {
-      const res = await usersApi.like(item.userId);
-      setUsers((prev) => prev.filter((u) => u.userId !== item.userId));
-      if (res.data.matched) {
-        Vibration.vibrate([0, 80, 40, 80]);
-        Alert.alert("It's a Match! 💜", `You and ${item.displayName} are interested in each other`);
-      }
-    } catch {}
-  }, []);
+  const isProfileComplete = profile?.displayName && !['New User', 'User'].includes(profile.displayName);
+
+  const requireProfileComplete = useCallback((action: () => void) => {
+    if (!isProfileComplete) {
+      Alert.alert(
+        'Complete your profile',
+        'Add your name and photo to connect with others.',
+        [
+          { text: 'Later', style: 'cancel' },
+          { text: 'Complete profile', onPress: () => router.push('/profile/edit') },
+        ]
+      );
+      return;
+    }
+    action();
+  }, [isProfileComplete]);
+
+  const handleSwipeRight = useCallback((item: NearbyUser) => {
+    requireProfileComplete(async () => {
+      Vibration.vibrate(15);
+      try {
+        const res = await usersApi.like(item.userId);
+        setUsers((prev) => prev.filter((u) => u.userId !== item.userId));
+        if (res.data.matched) {
+          Vibration.vibrate([0, 80, 40, 80]);
+          Alert.alert("It's a Match! 💜", `You and ${item.displayName} are interested in each other`);
+        }
+      } catch {}
+    });
+  }, [requireProfileComplete]);
 
   const handleSwipeLeft = useCallback((item: NearbyUser) => {
     Vibration.vibrate(10);
     usersApi.pass(item.userId).catch(() => {});
     setUsers((prev) => prev.filter((u) => u.userId !== item.userId));
   }, []);
+
+  const handleLongPress = useCallback((item: NearbyUser) => {
+    requireProfileComplete(() => {
+      Vibration.vibrate(10);
+      setWhisperTarget(item.userId);
+    });
+  }, [requireProfileComplete]);
 
   const renderTile = ({ item }: { item: NearbyUser }) => (
     <DiscoverTile
@@ -396,6 +419,20 @@ export default function DiscoverScreen() {
         <Text style={s.heroTagline}>{'Where consent meets curiosity.'}</Text>
       </View>
 
+      {/* Wave 1: Activity indicators — real counts only, always visible when loaded */}
+      {!loading && (
+        <View style={s.activityBar}>
+          <Ionicons name="people" size={14} color={colors.primaryLight} />
+          <Text style={s.activityText}>
+            {activityCounts ? `${activityCounts.nearbyCount} ${activityCounts.nearbyCount === 1 ? 'person' : 'people'} nearby` : `${users.length} ${users.length === 1 ? 'person' : 'people'} nearby`}
+          </Text>
+          <Text style={s.activityDot}>•</Text>
+          <Ionicons name="calendar" size={14} color={colors.primaryLight} />
+          <Text style={s.activityText}>
+            {activityCounts ? `${activityCounts.eventsTonightCount} ${activityCounts.eventsTonightCount === 1 ? 'event' : 'events'} tonight` : '—'}
+          </Text>
+        </View>
+      )}
       {/* Consolidated filter bar */}
       <View style={s.filterBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterScroll}>
@@ -457,12 +494,6 @@ export default function DiscoverScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
-      )}
-      {users.length > 0 && (
-        <View style={s.socialProofBar}>
-          <Ionicons name="people" size={14} color={colors.primaryLight} />
-          <Text style={s.socialProofText}>{users.length} {users.length === 1 ? 'person' : 'people'} nearby right now</Text>
         </View>
       )}
       {atDiscoveryCap && users.length > 0 && (
@@ -552,8 +583,9 @@ const s = StyleSheet.create({
   whisperSend: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   whisperClose: { padding: 4 },
   emptyWrap: { flex: 1, paddingVertical: 80 },
-  socialProofBar: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.md, paddingVertical: 8, backgroundColor: 'rgba(124,43,255,0.06)', borderBottomWidth: 0.5, borderBottomColor: 'rgba(124,43,255,0.1)' },
-  socialProofText: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
+  activityBar: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.lg, paddingVertical: 10, backgroundColor: 'rgba(124,43,255,0.06)', borderBottomWidth: 0.5, borderBottomColor: 'rgba(124,43,255,0.1)' },
+  activityText: { color: colors.primaryLight, fontSize: 12, fontWeight: '600' },
+  activityDot: { color: 'rgba(255,255,255,0.3)', fontSize: 10, marginHorizontal: 2 },
   emptyCta: { marginTop: spacing.lg, paddingVertical: 14, paddingHorizontal: 24, backgroundColor: 'rgba(124,43,255,0.15)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(179,92,255,0.3)' },
   emptyCtaText: { color: colors.primaryLight, fontSize: 14, fontWeight: '700' },
   capBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: spacing.md, paddingVertical: 10, backgroundColor: 'rgba(251,191,36,0.12)', borderBottomWidth: 0.5, borderBottomColor: 'rgba(251,191,36,0.2)' },

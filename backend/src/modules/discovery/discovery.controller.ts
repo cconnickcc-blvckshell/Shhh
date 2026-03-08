@@ -9,6 +9,20 @@ const subscriptionService = new SubscriptionService();
 const usersService = new UsersService();
 
 export class DiscoveryController {
+  /** Wave 1: Activity counts for density signals. Real counts only. */
+  async getActivity(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { lat, lng, radius } = req.query;
+      const latNum = parseFloat(lat as string);
+      const lngNum = parseFloat(lng as string);
+      const radiusKm = radius ? parseFloat(radius as string) : 50;
+      const counts = await discoveryService.getActivityCounts(req.user!.userId, latNum, lngNum, radiusKm);
+      res.json({ data: counts });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async discover(req: Request, res: Response, next: NextFunction) {
     try {
       const { lat, lng, radius, gender, experienceLevel, minTier, primaryIntent: queryIntent, inMyGroups: inMyGroupsQ, venueId, eventId } = req.query;

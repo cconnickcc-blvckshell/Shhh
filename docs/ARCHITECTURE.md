@@ -1,6 +1,6 @@
 # Shhh — Architecture Document
 
-> Last updated: March 2026 (Waves 9–15, P0: conversion funnel, activity feed, GPS velocity check; A.12 alerts+Grafana; A.2/C.4 sync endpoint + useAppForegroundSync)  
+> Last updated: March 2026 (Wave 1: activity indicators, deferred profile gates; Waves 9–15, P0)  
 > **When changing the system:** Update this doc’s §2 (file tree), §4 (API ledger), §6 (schema) when adding modules, routes, or tables.  
 > **Implementation status:** See **docs/AUDIT_AND_STATUS.md** and **docs/ROADMAP.md**.
 
@@ -488,6 +488,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 ### Discovery
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
+| GET | `/v1/discover/activity?lat=&lng=&radius=` | Yes | 0 | Activity counts (nearbyCount, eventsTonightCount). Wave 1 density signals. |
 | GET | `/v1/discover?lat=&lng=&...&inMyGroups=true` | Yes | 0 | Find nearby users. Optional inMyGroups (only users who share a group with me); primaryIntent, experienceLevel; discovery_visible_to. Free tier capped at 30; premium or venue/event context uses higher cap. |
 | GET | `/v1/discover/crossing-paths?minCount=` | Yes | 0 | Pairs (otherUserId, venueId, venueName, count) where both have crossing_paths_visible and overlapping check-ins >= minCount (default 2). |
 | POST | `/v1/discover/location` | Yes | 0 | Update user location |

@@ -214,6 +214,12 @@ export const usersApi = {
 };
 
 export const discoverApi = {
+  /** Wave 1: Activity counts for density signals. Real counts only. */
+  getActivity: (lat: number, lng: number, radiusKm?: number) => {
+    let url = `/v1/discover/activity?lat=${lat}&lng=${lng}`;
+    if (radiusKm != null) url += `&radius=${radiusKm}`;
+    return api<{ data: { nearbyCount: number; eventsTonightCount: number } }>(url);
+  },
   nearby: (lat: number, lng: number, radius?: number, primaryIntent?: string) => {
     let url = `/v1/discover?lat=${lat}&lng=${lng}`;
     if (radius != null) url += `&radius=${radius}`;

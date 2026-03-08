@@ -10,6 +10,7 @@ import { PremiumDarkBackground } from '../../src/components/Backgrounds';
 import { PageShell } from '../../src/components/layout';
 import { SubPageHeader } from '../../src/components/SubPageHeader';
 import { useDiscoverFiltersStore } from '../../src/stores/discoverFilters';
+import { useAuthStore } from '../../src/stores/auth';
 import { colors, spacing, fontSize, borderRadius, layout } from '../../src/constants/theme';
 import { useBreakpoint } from '../../src/hooks/useBreakpoint';
 import { useCanSeeUnblurred } from '../../src/hooks/useCanSeeUnblurred';
@@ -30,6 +31,23 @@ const INTENT_ICONS: Record<string, string> = {
 export default function UserDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const canSeeUnblurred = useCanSeeUnblurred(id ?? null);
+  const myProfile = useAuthStore((s) => s.profile);
+  const isProfileComplete = myProfile?.displayName && !['New User', 'User'].includes(myProfile.displayName);
+
+  const requireProfileComplete = (action: () => void) => {
+    if (!isProfileComplete) {
+      Alert.alert(
+        'Complete your profile',
+        'Add your name and photo to connect with others.',
+        [
+          { text: 'Later', style: 'cancel' },
+          { text: 'Complete profile', onPress: () => router.push('/profile/edit') },
+        ]
+      );
+      return;
+    }
+    action();
+  };
   const [profile, setProfile] = useState<any>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,48 +98,54 @@ export default function UserDetailScreen() {
 
   const handleLike = async () => {
     if (!id) return;
-    Vibration.vibrate(15);
-    setLiked(true);
-    try {
-      const res = await usersApi.like(id);
-      if (res.data.matched) {
-        Vibration.vibrate([0, 80, 40, 80]);
-        Alert.alert('It\'s a Match! 💜', `You and ${profile.displayName} are interested in each other`);
+    requireProfileComplete(async () => {
+      Vibration.vibrate(15);
+      setLiked(true);
+      try {
+        const res = await usersApi.like(id);
+        if (res.data.matched) {
+          Vibration.vibrate([0, 80, 40, 80]);
+          Alert.alert('It\'s a Match! 💜', `You and ${profile.displayName} are interested in each other`);
+        }
+      } catch (err: any) {
+        setLiked(false);
+        Alert.alert('', mapApiError(err));
       }
-    } catch (err: any) {
-      setLiked(false);
-      Alert.alert('', mapApiError(err));
-    }
+    });
   };
 
   const handleMessage = async () => {
     if (!id) return;
-    try {
-      const conv = await messagingApi.createConversation([id], filterContext);
-      router.push(`/chat/${conv.data.id}`);
-    } catch (err: unknown) {
-      const apiErr = err as ApiError;
-      if (apiErr.code === 'INITIATION_CAP_REACHED' && apiErr.cap != null && apiErr.used != null) {
-        setConnectionWindowModal({
-          cap: apiErr.cap,
-          used: apiErr.used,
-          tierOptions: apiErr.tierOptions ?? ['discreet', 'phantom', 'elite'],
-        });
-      } else {
-        Alert.alert('', mapApiError(err));
+    requireProfileComplete(async () => {
+      try {
+        const conv = await messagingApi.createConversation([id], filterContext);
+        router.push(`/chat/${conv.data.id}`);
+      } catch (err: unknown) {
+        const apiErr = err as ApiError;
+        if (apiErr.code === 'INITIATION_CAP_REACHED' && apiErr.cap != null && apiErr.used != null) {
+          setConnectionWindowModal({
+            cap: apiErr.cap,
+            used: apiErr.used,
+            tierOptions: apiErr.tierOptions ?? ['discreet', 'phantom', 'elite'],
+          });
+        } else {
+          Alert.alert('', mapApiError(err));
+        }
       }
-    }
+    });
   };
 
   const sendWhisper = async () => {
     if (!id || !whisperText.trim()) return;
-    try {
-      await api('/v1/whispers', { method: 'POST', body: JSON.stringify({ toUserId: id, message: whisperText.trim() }) });
-      Vibration.vibrate([0, 50, 30, 50]);
-      setWhisperText('');
-      setShowWhisper(false);
-      Alert.alert('Whispered', 'Your anonymous message was sent');
-    } catch (err: any) { Alert.alert('', mapApiError(err)); }
+    requireProfileComplete(async () => {
+      try {
+        await api('/v1/whispers', { method: 'POST', body: JSON.stringify({ toUserId: id, message: whisperText.trim() }) });
+        Vibration.vibrate([0, 50, 30, 50]);
+        setWhisperText('');
+        setShowWhisper(false);
+        Alert.alert('Whispered', 'Your anonymous message was sent');
+      } catch (err: any) { Alert.alert('', mapApiError(err)); }
+    });
   };
 
   const presence = profile.presenceState ? PRESENCE_LABELS[profile.presenceState] : null;

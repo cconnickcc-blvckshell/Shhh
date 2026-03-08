@@ -31,9 +31,11 @@ All audit reports are in `docs/archive/`. Use this index to find the right one:
 
 ## Quick Status
 
-- **Backend:** 86 tests, auth (phone + email + OAuth), discovery, messaging, presence, safety, admin, media, visibility (block checks), verification (Tier 2 ID), cookie auth; GET /conversations/sync; POST /conversations/:id/read; Trust Score Distribution; conversion funnel; activity feed; GPS velocity check; push throttle (30s)
+- **Backend:** 87 tests, auth (phone + email + OAuth), discovery, messaging, presence, safety, admin, media, visibility (block checks), verification (Tier 2 ID), cookie auth; GET /conversations/sync; POST /conversations/:id/read; Trust Score Distribution; conversion funnel; activity feed; GPS velocity check; push throttle (30s); GET /discover/activity (Wave 1)
 - **Admin dashboard:** Map, Kanban, sparkline, Tier Funnel, Conversion Funnel, Trust Score Distribution, Live Activity Feed, status bar, manual refresh; no auto-polling
 - **Mobile:** Me section upgraded; push notifications, badges, deep linking; email/password auth; unread sync (refetch, mark-read, app foreground sync via GET /sync); useAppForegroundSync; onboarding "Browse first"; swipe-to-ignore whispers
 - **Production:** Render (backend), Vercel (admin + web); Supabase/Upstash/Atlas
 
 **See:** `docs/ROADMAP.md` for planned work; `docs/CONTINUOUS_IMPROVEMENT.md` for strategic improvement (sequence, perception, loops, lifestyle focus §7); `docs/OPS_GUIDE.md` for deployment and runbook; `docs/FUNCTIONAL_ASSESSMENT.md` for Waves 9–15 verification checklist.
+
+**Wave 1 (March 2026):** Activity indicators (GET /v1/discover/activity, "X people nearby • X events tonight" bar); deferred profile gates (prompt on like/message/whisper when displayName is "New User"/"User"); Browse first already in onboarding-intent.

@@ -52,6 +52,18 @@ describe('Discovery API', () => {
     expect(res.body.count).toBeGreaterThanOrEqual(1);
   });
 
+  it('GET /v1/discover/activity returns activity counts (Wave 1)', async () => {
+    const res = await request
+      .get('/v1/discover/activity')
+      .set('Authorization', `Bearer ${token1}`)
+      .query({ lat: '40.7128', lng: '-74.006', radius: '50' });
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({
+      nearbyCount: expect.any(Number),
+      eventsTonightCount: expect.any(Number),
+    });
+  });
+
   it('validates discovery query parameters', async () => {
     const res = await request
       .get('/v1/discover')

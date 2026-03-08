@@ -29,6 +29,12 @@ const updateLocationSchema = z.object({
   isPrecise: z.boolean().optional(),
 });
 
+const activityQuerySchema = z.object({
+  lat: z.string().refine((v) => !isNaN(parseFloat(v)), 'Must be a number'),
+  lng: z.string().refine((v) => !isNaN(parseFloat(v)), 'Must be a number'),
+  radius: z.string().optional(),
+});
+router.get('/activity', authenticate, validate(activityQuerySchema, 'query'), controller.getActivity);
 router.get('/crossing-paths', authenticate, controller.getCrossingPaths);
 router.get('/', authenticate, discoveryRateLimit, validate(discoverQuerySchema, 'query'), controller.discover);
 router.post('/location', authenticate, validate(updateLocationSchema), controller.updateLocation);
