@@ -106,6 +106,7 @@ router.get('/admin-bypass-status', (_req, res) => {
   });
 });
 router.post('/admin-bypass', authRateLimiter, controller.adminBypass);
+router.post('/admin-logout', authRateLimiter, controller.adminLogout);
 router.post('/email/register', authRateLimiter, validate(emailRegisterSchema), controller.registerEmail);
 router.post('/email/login', authRateLimiter, validate(emailLoginSchema), controller.loginEmail);
 router.post('/register', authRateLimiter, validate(registerSchema), controller.register);

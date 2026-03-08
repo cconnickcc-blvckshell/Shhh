@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { config } from './config';
 import { metricsMiddleware, metricsHandler, metricsAuth } from './middleware/metrics';
 import compression from 'compression';
@@ -59,6 +60,7 @@ export function createApp() {
   app.post('/v1/billing/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
 
   app.use(express.json({ limit: '10mb' }));
+  app.use(cookieParser());
   app.use(metricsMiddleware);
   app.use(globalRateLimiter);
 

@@ -1,4 +1,7 @@
 import { query } from '../../config/database';
+import { VerificationService } from '../verification/verification.service';
+
+const verificationService = new VerificationService();
 
 export class ModerationService {
   async getQueue(type?: string, status: string = 'pending', limit: number = 50) {
@@ -138,6 +141,14 @@ export class ModerationService {
             [ownerId, JSON.stringify({ venue_id: targetId, admin_id: adminId })]
           );
         }
+      }
+    }
+
+    if ((type === 'verification_photo' || type === 'verification_id') && targetType === 'verification') {
+      if (status === 'approved') {
+        await verificationService.approveVerification(targetId, adminId || '');
+      } else {
+        await verificationService.rejectVerification(targetId, adminId || '');
       }
     }
 

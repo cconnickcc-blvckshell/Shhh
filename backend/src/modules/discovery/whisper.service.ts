@@ -1,7 +1,9 @@
 import { query } from '../../config/database';
 import { emitToUser } from '../../websocket';
 import { PushService } from '../auth/push.service';
+import { VisibilityPolicyService } from '../visibility/visibility-policy.service';
 
+const visibilityPolicy = new VisibilityPolicyService();
 const WHISPER_TTL_HOURS = 4;
 const MAX_PENDING_WHISPERS = 3;
 const MAX_WHISPERS_PER_DAY = 20;
@@ -20,11 +22,7 @@ export class WhisperService {
       throw Object.assign(new Error('Cannot whisper to yourself'), { statusCode: 400 });
     }
 
-    const blocked = await query(
-      `SELECT 1 FROM blocks WHERE (blocker_id = $1 AND blocked_id = $2) OR (blocker_id = $2 AND blocked_id = $1)`,
-      [fromUserId, toUserId]
-    );
-    if (blocked.rows.length > 0) {
+    if (!(await visibilityPolicy.canInitiateTo(fromUserId, toUserId))) {
       throw Object.assign(new Error('Cannot send whisper'), { statusCode: 403 });
     }
 

@@ -36,13 +36,30 @@ export class VerificationService {
     return { verificationId: result.rows[0].id, poseChallenge: pose };
   }
 
-  async submitIdVerification(userId: string, documentHash: string) {
+  async submitIdVerification(userId: string, documentHash: string, idDocumentUrl?: string) {
     const existing = await query(
       `SELECT id FROM verifications WHERE user_id = $1 AND type = 'id' AND status = 'pending'`,
       [userId]
     );
     if (existing.rows.length > 0) {
       throw Object.assign(new Error('ID verification already pending'), { statusCode: 409 });
+    }
+
+    const hasUrlCol = await query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'verifications' AND column_name = 'id_document_url'`
+    );
+    if (hasUrlCol.rows.length > 0 && idDocumentUrl) {
+      const result = await query(
+        `INSERT INTO verifications (user_id, type, status, id_document_hash, id_document_url)
+         VALUES ($1, 'id', 'pending', $2, $3) RETURNING id, created_at`,
+        [userId, documentHash, idDocumentUrl]
+      );
+      await query(
+        `INSERT INTO moderation_queue (type, target_id, target_type, priority)
+         VALUES ('verification_id', $1, 'verification', 2)`,
+        [result.rows[0].id]
+      );
+      return { verificationId: result.rows[0].id };
     }
 
     const result = await query(

@@ -13,7 +13,7 @@ export class VerificationController {
 
   async submitId(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await svc.submitIdVerification(req.user!.userId, req.body.documentHash);
+      const result = await svc.submitIdVerification(req.user!.userId, req.body.documentHash, req.body.idDocumentUrl);
       res.status(201).json({ data: result });
     } catch (err) { next(err); }
   }

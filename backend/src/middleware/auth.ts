@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+// Response used by setAdminAuthCookie
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { query } from '../config/database';
@@ -19,13 +20,21 @@ declare global {
   }
 }
 
+const ADMIN_COOKIE_NAME = 'shhh_admin_token';
+
 export function authenticate(req: Request, _res: Response, next: NextFunction) {
+  let token: string | undefined;
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    return next(createError(401, 'Missing or invalid authorization header'));
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  } else if (req.cookies?.[ADMIN_COOKIE_NAME]) {
+    token = req.cookies[ADMIN_COOKIE_NAME];
   }
 
-  const token = authHeader.slice(7);
+  if (!token) {
+    return next(createError(401, 'Missing or invalid authorization'));
+  }
+
   try {
     const payload = jwt.verify(token, config.jwt.secret) as AuthPayload;
     req.user = payload;
@@ -33,6 +42,24 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
   } catch {
     next(createError(401, 'Invalid or expired token'));
   }
+}
+
+/** B.8: Set httpOnly cookie for admin dashboard (when ADMIN_HTTPONLY_COOKIE=true). */
+export function setAdminAuthCookie(res: Response, accessToken: string) {
+  if (process.env.ADMIN_HTTPONLY_COOKIE !== 'true') return;
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie(ADMIN_COOKIE_NAME, accessToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 15 * 60 * 1000,
+    path: '/',
+  });
+}
+
+/** Clear admin auth cookie (for logout). */
+export function clearAdminAuthCookie(res: Response) {
+  res.clearCookie(ADMIN_COOKIE_NAME, { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' });
 }
 
 export function requireTier(minTier: number) {

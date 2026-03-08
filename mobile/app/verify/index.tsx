@@ -57,6 +57,25 @@ export default function VerificationScreen() {
     }
   };
 
+  const submitIdVerification = async (useCamera: boolean) => {
+    const result = useCamera
+      ? await takePhotoAndUpload('photos')
+      : await pickAndUpload('photos');
+    if (!result?.url) return;
+    const idDocumentUrl = result.url;
+    const documentHash = `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    try {
+      await api('/v1/verification/id', {
+        method: 'POST',
+        body: JSON.stringify({ documentHash, idDocumentUrl }),
+      });
+      Alert.alert('Submitted', 'Your ID verification has been submitted for review. This usually takes 1–2 business days.');
+      load();
+    } catch (err: any) {
+      Alert.alert('', mapApiError(err));
+    }
+  };
+
   const currentTier = status?.currentTier || 0;
 
   return (
@@ -99,8 +118,13 @@ export default function VerificationScreen() {
                 </TouchableOpacity>
               </View>
             ) : isCurrent && t.tier === 2 ? (
-              <View style={[styles.actionBtn, { opacity: 0.7 }]}>
-                <Text style={styles.actionBtnText}>Coming soon</Text>
+              <View style={styles.actionRow}>
+                <TouchableOpacity style={[styles.actionBtn, uploading && { opacity: 0.6 }]} onPress={() => submitIdVerification(false)} disabled={uploading}>
+                  {uploading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.actionBtnText}>Pick ID</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.actionBtn, uploading && { opacity: 0.6 }]} onPress={() => submitIdVerification(true)} disabled={uploading}>
+                  <Text style={styles.actionBtnText}>Take photo</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               <Ionicons name="lock-closed" size={20} color={colors.textMuted} />

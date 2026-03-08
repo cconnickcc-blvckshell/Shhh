@@ -53,8 +53,8 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
-        <Text style={styles.skipText}>Skip</Text>
+      <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} accessibilityRole="button" accessibilityLabel="Skip intro">
+        <Text style={styles.skipText}>Skip intro</Text>
       </TouchableOpacity>
 
       <FlatList
@@ -84,7 +84,14 @@ export default function OnboardingScreen() {
       <View style={styles.footer}>
         <View style={styles.dots}>
           {SLIDES.map((_, i) => (
-            <View key={i} style={[styles.dot, currentIndex === i && styles.dotActive]} />
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                currentIndex === i && styles.dotActive,
+                i < currentIndex && styles.dotDone,
+              ]}
+            />
           ))}
         </View>
 
@@ -115,6 +122,7 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.surfaceLight },
   dotActive: { width: 24, backgroundColor: colors.primary },
+  dotDone: { backgroundColor: colors.primaryMuted },
   nextBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
     backgroundColor: colors.primary, paddingVertical: 18, borderRadius: borderRadius.lg,

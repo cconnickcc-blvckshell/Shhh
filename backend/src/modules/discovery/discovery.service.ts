@@ -220,6 +220,10 @@ export class DiscoveryService {
        JOIN user_profiles me ON me.user_id = $1 AND me.crossing_paths_visible = true
        JOIN user_profiles them ON them.user_id = vc2.user_id AND them.crossing_paths_visible = true
        LEFT JOIN venues v ON v.id = vc1.venue_id
+       WHERE NOT EXISTS (
+         SELECT 1 FROM blocks b
+         WHERE (b.blocker_id = $1 AND b.blocked_id = vc2.user_id) OR (b.blocker_id = vc2.user_id AND b.blocked_id = $1)
+       )
        GROUP BY vc1.venue_id, vc2.user_id, v.name
        HAVING COUNT(*) >= $2
        ORDER BY COUNT(*) DESC`,

@@ -6,7 +6,9 @@ import { emitNewMessage, emitToUser } from '../../websocket';
 import { InitiationCapService } from './initiation-cap.service';
 import { InitiationCapReachedError } from '../../utils/errors';
 import { PushService } from '../auth/push.service';
+import { VisibilityPolicyService } from '../visibility/visibility-policy.service';
 
+const visibilityPolicy = new VisibilityPolicyService();
 const IDEMPOTENCY_TTL = 300; // 5 min
 const initiationCapService = new InitiationCapService();
 const pushService = new PushService();
@@ -17,6 +19,12 @@ export class MessagingService {
     type: 'direct' | 'group' | 'event' = 'direct',
     filterContext?: Record<string, unknown>
   ) {
+    const initiatorId = participantIds[0];
+    for (const otherId of participantIds) {
+      if (otherId !== initiatorId && !(await visibilityPolicy.canInitiateTo(initiatorId, otherId))) {
+        throw Object.assign(new Error('Cannot start conversation with this user'), { statusCode: 403 });
+      }
+    }
     if (type === 'direct' && participantIds.length === 2) {
       const existing = await query(
         `SELECT c.id FROM conversations c

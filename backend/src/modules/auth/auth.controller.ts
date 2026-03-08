@@ -3,6 +3,7 @@ import { config } from '../../config';
 import { AuthService } from './auth.service';
 import { OTPService } from './otp.service';
 import * as oauthService from './oauth.service';
+import { setAdminAuthCookie, clearAdminAuthCookie } from '../../middleware/auth';
 
 const authService = new AuthService();
 const otpService = new OTPService();
@@ -111,6 +112,7 @@ export class AuthController {
   async adminBypass(_req: Request, res: Response, next: NextFunction) {
     try {
       const result = await authService.adminBypassLogin();
+      setAdminAuthCookie(res, result.accessToken);
       res.json({ data: result });
     } catch (err) {
       next(err);
@@ -127,10 +129,25 @@ export class AuthController {
     }
   }
 
+  async adminLogout(_req: Request, res: Response, next: NextFunction) {
+    try {
+      clearAdminAuthCookie(res);
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async loginEmail(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body;
       const result = await authService.loginWithEmail(email, password);
+      const { query } = await import('../../config/database');
+      const roleRow = await query('SELECT role FROM users WHERE id = $1', [result.userId]);
+      const role = roleRow.rows[0]?.role;
+      if (role && ['admin', 'moderator', 'superadmin'].includes(role)) {
+        setAdminAuthCookie(res, result.accessToken);
+      }
       res.json({ data: result });
     } catch (err) {
       next(err);

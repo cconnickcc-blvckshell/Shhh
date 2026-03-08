@@ -32,6 +32,7 @@ export function clearToken() {
 export async function api<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
@@ -57,6 +58,7 @@ export const adminApi = {
   loginEmail: (email: string, password: string) => api<{ data: { accessToken: string; userId: string } }>('/v1/auth/email/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   /** Dev bypass: one-click login when OTP_DEV_BYPASS=true on backend. No phone/OTP required. */
   bypassLogin: () => api<{ data: { accessToken: string; userId: string } }>('/v1/auth/admin-bypass', { method: 'POST', body: JSON.stringify({}) }),
+  adminLogout: () => api('/v1/auth/admin-logout', { method: 'POST', body: JSON.stringify({}) }),
   getHealth: () => api<{ status: string; version: string; modules: string[] }>('/health'),
 
   // Dashboard

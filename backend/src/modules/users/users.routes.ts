@@ -43,6 +43,12 @@ router.get('/:id/profile', authenticate, async (req, res, next) => {
   try {
     const ownerId = req.params.id as string;
     const viewerId = req.user!.userId;
+    const { VisibilityPolicyService } = await import('../visibility/visibility-policy.service');
+    const vis = new VisibilityPolicyService();
+    if (await vis.isBlocked(viewerId, ownerId)) {
+      res.status(404).json({ error: { message: 'User not found' } });
+      return;
+    }
     const [profile, refs, trust, intents, presence] = await Promise.all([
       query(`
         SELECT up.*, u.verification_tier, u.created_at as joined_at

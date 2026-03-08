@@ -1,4 +1,7 @@
 import { query } from '../../config/database';
+import { VisibilityPolicyService } from '../visibility/visibility-policy.service';
+
+const visibilityPolicy = new VisibilityPolicyService();
 
 export type PrimaryIntent = 'social' | 'curious' | 'lifestyle' | 'couple';
 export type DiscoveryVisibleTo = 'all' | 'social_and_curious' | 'same_intent';
@@ -62,6 +65,7 @@ export class UsersService {
   async canViewFullProfile(ownerId: string, viewerId: string, tier: string): Promise<boolean> {
     if (tier !== 'after_reveal' && tier !== 'after_match') return true;
     if (ownerId === viewerId) return true;
+    if (await visibilityPolicy.isBlocked(ownerId, viewerId)) return false;
     if (tier === 'after_reveal') {
       const rev = await query(
         `SELECT 1 FROM photo_reveals
@@ -150,6 +154,9 @@ export class UsersService {
   }
 
   async likeUser(fromUserId: string, toUserId: string) {
+    if (!(await visibilityPolicy.canInteractWith(fromUserId, toUserId))) {
+      throw Object.assign(new Error('Cannot like this user'), { statusCode: 403 });
+    }
     await query(
       `INSERT INTO user_interactions (from_user_id, to_user_id, type)
        VALUES ($1, $2, 'like')
@@ -167,6 +174,9 @@ export class UsersService {
   }
 
   async passUser(fromUserId: string, toUserId: string, reason?: string) {
+    if (!(await visibilityPolicy.canInteractWith(fromUserId, toUserId))) {
+      throw Object.assign(new Error('Cannot pass this user'), { statusCode: 403 });
+    }
     const validReasons = ['not_my_type', 'too_far', 'just_browsing', 'other'];
     const passReason = reason && validReasons.includes(reason) ? reason : null;
     await query(

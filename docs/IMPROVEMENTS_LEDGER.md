@@ -113,7 +113,7 @@
 | Effort | 3 | 2–3 weeks |
 | Urgency | P1 | Before scale |
 | Dependencies | blocks, discovery_visible_to, personas |
-| Status | Not started |
+| Status | Done (VisibilityPolicyService, block checks everywhere) |
 
 ---
 
@@ -275,7 +275,7 @@
 | User ID display + Copy | 5 | 2 | 1 | P3 | ✅ Done (Wave 7) |
 | Create venue: location picker | 4 | 4 | 2 | P1 | ✅ Done (Wave 4) |
 | Create/Edit event: date/time pickers | 5 | 4 | 2 | P1 | ✅ Done (Wave 4) |
-| Verification: Tier 2 ID flow | 3 | 5 | 4 | P1 | Not started |
+| Verification: Tier 2 ID flow | 3 | 5 | 4 | P1 | Done (mobile Pick/Take ID, id_document_url, moderation) |
 | Empty state illustrations | 4 | 4 | 2 | P2 | Not started |
 | Success toast on save | 5 | 3 | 1 | P2 | ✅ Done (Wave 1) |
 | Markdown in Guides/Norms | 4 | 3 | 2 | P2 | ✅ Done (Wave 8) |
@@ -294,7 +294,7 @@
 | Id | Idea | Feas | Impact | Effort | Urgency | Status |
 |----|------|------|-------|--------|---------|-------|
 | MongoDB purge for deleted users | Deletion worker extends to Mongo | 4 | 5 | 2 | P0 | Done |
-| JWT in httpOnly cookies (web) | Replace localStorage/sessionStorage | 3 | 4 | 2 | P1 | Not started |
+| JWT in httpOnly cookies (web) | Replace localStorage/sessionStorage | 3 | 4 | 2 | P1 | Partial (admin: ADMIN_HTTPONLY_COOKIE, credentials: include) |
 | /metrics authentication | Bearer or IP allowlist | 5 | 3 | 1 | P1 | Done |
 
 ### B.9 Feature Additions (from FEATURE_ADDITIONS_CRITIQUE)
@@ -618,12 +618,12 @@
 - ~~**C.4** Unread counts sync~~ Done (Wave 14 + P0: refetch, mark-read, app foreground sync with GET /sync)
 - ~~**A.1** Notification orchestration~~ Partial (Wave 14: throttle 1 push per 30s per user)
 - ~~**A.2** State synchronization~~ Partial (P0: GET /conversations/sync, useAppForegroundSync, messages refetch)
-- **A.6** Visibility policy engine (single "Can A see B?" authority)
+- ~~**A.6** Visibility policy engine~~ Done (VisibilityPolicyService, block checks: profile, like, pass, messaging, whisper, crossing paths)
 - ~~**A.9** Analytics instrumentation~~ Partial (Wave 15: conversion funnel, activity feed)
-- **B.6** Verification Tier 2 ID flow
-- **C.12** Polished onboarding friction
+- ~~**B.6** Verification Tier 2 ID flow~~ Done (mobile Pick/Take ID, id_document_url, moderation resolve)
+- ~~**C.12** Polished onboarding friction~~ Partial (Wave 14 + P1: Browse first, Skip intro, dotDone, accessibility)
 - ~~**C.15** Edge-case handling~~ Partial (Wave 10: event 404, chat 404)
-- **B.8** JWT in httpOnly cookies (web) — ~~/metrics auth~~ ✅
+- ~~**B.8** JWT in httpOnly cookies (web)~~ Partial (ADMIN_HTTPONLY_COOKIE=true, setAdminAuthCookie, clearAdminAuthCookie, credentials: 'include')
 
 **Medium priority (P2):**
 - ~~**A.5** Feed integrity~~ Partial (Wave 15: velocity check on location update)
