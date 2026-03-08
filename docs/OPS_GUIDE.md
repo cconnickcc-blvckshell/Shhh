@@ -198,6 +198,8 @@ scrape_configs:
     bearer_token: "${METRICS_SECRET}"
 ```
 
-**Grafana:** Import Prometheus as data source; create dashboards for request rate, latency (p50/p95/p99), 5xx rate, WebSocket connections, worker queue depth.
+**Alert rules:** `prometheus/alerts.yml` — HighErrorRate (5xx >5%), HighLatency (p99 >5s), WorkerJobFailures, WebSocketConnectionsZero. Add to Prometheus `rule_files`.
 
-**Alert rules:** High 5xx rate (>5%), p99 latency >5s, worker job failures. Configure Alertmanager or PagerDuty. See `docs/archive/ALERTING.md` for YAML examples.
+**Grafana:** Import Prometheus as data source. Import dashboard from `grafana/dashboards/shhh-overview.json` (Request rate, 5xx rate, p99 latency, WebSocket connections, worker queue depth, job failures).
+
+**Alertmanager:** See `docs/archive/ALERTING.md` for Alertmanager config (PagerDuty, Slack).

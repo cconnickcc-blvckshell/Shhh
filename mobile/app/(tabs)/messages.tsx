@@ -9,6 +9,7 @@ import { SafeState } from '../../src/components/ui';
 import { mapApiError } from '../../src/utils/errorMapper';
 import { useScreenView } from '../../src/hooks/useScreenView';
 import { useUnreadBadge } from '../../src/context/UnreadBadgeContext';
+import { useAppForegroundSync } from '../../src/hooks/useAppForegroundSync';
 
 interface Conversation {
   id: string;
@@ -35,17 +36,11 @@ function timeAgo(d: string | null | undefined): string {
 
 export default function MessagesScreen() {
   useScreenView('messages');
-  const { refetch: refetchBadge } = useUnreadBadge();
+  const { refetch: refetchBadge, setUnreadCount } = useUnreadBadge();
   const [convos, setConvos] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      refetchBadge();
-    }, [refetchBadge])
-  );
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -60,6 +55,26 @@ export default function MessagesScreen() {
       setLoading(false);
     }
   }, [refetchBadge]);
+
+  /** A.2 State sync: single round-trip on app foreground for badge + list */
+  const syncOnForeground = useCallback(async () => {
+    try {
+      const r = await messagingApi.getSync();
+      setConvos(r.data ?? []);
+      setUnreadCount(r.total ?? 0);
+    } catch {
+      refetchBadge();
+    }
+  }, [setUnreadCount, refetchBadge]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchBadge();
+    }, [refetchBadge])
+  );
+
+  useAppForegroundSync(syncOnForeground);
+
   useEffect(() => { load(); }, [load]);
   const onRefresh = async () => { setRefreshing(true); setLoadError(null); await load(); setRefreshing(false); };
 

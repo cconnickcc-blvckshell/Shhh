@@ -203,9 +203,9 @@
 | Effort | 2 | 1–2 weeks; wire existing metrics |
 | Urgency | P0 | Before production |
 | Dependencies | metrics.ts, OPS_GUIDE alerting |
-| Status | Partial |
+| Status | Partial (P0: alerts.yml, Grafana dashboard) |
 
-**Notes:** Wave 3: OPS_GUIDE §6 expanded with Prometheus scrape config, Grafana guidance. Metrics exist; dashboards/Alertmanager deployment-specific.
+**Notes:** Wave 3: OPS_GUIDE §6 expanded. P0: `prometheus/alerts.yml` (HighErrorRate, HighLatency, WorkerJobFailures), `grafana/dashboards/shhh-overview.json`. Metrics exist; Alertmanager config in archive/ALERTING.md.
 
 ---
 
@@ -615,9 +615,9 @@
 ## What Remains (Post–Wave 13)
 
 **High priority (P0–P1):**
-- ~~**C.4** Unread counts sync~~ Partial (Wave 14: refetch on notification, app focus, mark-read when viewing)
+- ~~**C.4** Unread counts sync~~ Done (Wave 14 + P0: refetch, mark-read, app foreground sync with GET /sync)
 - ~~**A.1** Notification orchestration~~ Partial (Wave 14: throttle 1 push per 30s per user)
-- **A.2** State synchronization / reconciliation
+- ~~**A.2** State synchronization~~ Partial (P0: GET /conversations/sync, useAppForegroundSync, messages refetch)
 - **A.6** Visibility policy engine (single "Can A see B?" authority)
 - ~~**A.9** Analytics instrumentation~~ Partial (Wave 15: conversion funnel, activity feed)
 - **B.6** Verification Tier 2 ID flow

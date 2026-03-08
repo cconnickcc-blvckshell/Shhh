@@ -1,6 +1,6 @@
 # Shhh — Architecture Document
 
-> Last updated: March 2026 (Waves 9–15: pass with reason, mark-read, Trust Score Distribution, push throttle, onboarding Browse first, conversion funnel, activity feed, GPS velocity check)  
+> Last updated: March 2026 (Waves 9–15, P0: conversion funnel, activity feed, GPS velocity check; A.12 alerts+Grafana; A.2/C.4 sync endpoint + useAppForegroundSync)  
 > **When changing the system:** Update this doc’s §2 (file tree), §4 (API ledger), §6 (schema) when adding modules, routes, or tables.  
 > **Implementation status:** See **docs/AUDIT_AND_STATUS.md** and **docs/ROADMAP.md**.
 
@@ -519,6 +519,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | GET | `/v1/conversations` | Yes | 0 | List conversations (includes consentState when applicable: requiresMutualConsent, grantedByMe, grantedCount) |
 | POST | `/v1/conversations` | Yes | 1 | Create conversation |
 | POST | `/v1/conversations/:id/read` | Yes | 0 | Mark conversation read (sets unread_count=0; used when viewing chat + new message arrives) |
+| GET | `/v1/conversations/sync` | Yes | 0 | A.2 State sync: single round-trip for badge + list (total, data, serverTime) on app foreground |
 | GET | `/v1/conversations/:id/messages` | Yes | 0 | Get messages |
 | POST | `/v1/conversations/:id/messages` | Yes | 0 | Send message (optional viewOnce, ttlSeconds on attachment for ephemeral/photo reply) |
 | PUT | `/v1/conversations/:id/retention` | Yes | 0 | Set retention (mode, archiveAt?, defaultMessageTtlSeconds?) |

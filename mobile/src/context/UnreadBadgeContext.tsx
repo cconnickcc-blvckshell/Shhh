@@ -6,23 +6,29 @@ import { useAuthStore } from '../stores/auth';
 type UnreadBadgeContextValue = {
   unreadCount: number;
   refetch: () => void;
+  /** A.2 State sync: set count from sync endpoint without extra fetch */
+  setUnreadCount: (n: number) => void;
 };
 
 const UnreadBadgeContext = createContext<UnreadBadgeContextValue | null>(null);
 
 export function UnreadBadgeProvider({ children }: { children: ReactNode }) {
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCountState] = useState(0);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const refetch = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
       const r = await messagingApi.getUnreadTotal();
-      setUnreadCount(r.total ?? 0);
+      setUnreadCountState(r.total ?? 0);
     } catch {
-      setUnreadCount(0);
+      setUnreadCountState(0);
     }
   }, [isAuthenticated]);
+
+  const setUnreadCount = useCallback((n: number) => {
+    setUnreadCountState(n);
+  }, []);
 
   useEffect(() => {
     refetch();
@@ -36,7 +42,7 @@ export function UnreadBadgeProvider({ children }: { children: ReactNode }) {
   }, [unreadCount]);
 
   return (
-    <UnreadBadgeContext.Provider value={{ unreadCount, refetch }}>
+    <UnreadBadgeContext.Provider value={{ unreadCount, refetch, setUnreadCount }}>
       {children}
     </UnreadBadgeContext.Provider>
   );
@@ -44,5 +50,5 @@ export function UnreadBadgeProvider({ children }: { children: ReactNode }) {
 
 export function useUnreadBadge() {
   const ctx = useContext(UnreadBadgeContext);
-  return ctx ?? { unreadCount: 0, refetch: () => {} };
+  return ctx ?? { unreadCount: 0, refetch: () => {}, setUnreadCount: () => {} };
 }

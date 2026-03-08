@@ -1,0 +1,38 @@
+# Shhh — Prometheus alert rules
+# Add to Prometheus rule_files. See docs/OPS_GUIDE.md §6.
+
+groups:
+  - name: shhh-backend
+    rules:
+      # High error rate (5xx)
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+          / sum(rate(http_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx error rate (>5%)"
+          description: "5xx error rate exceeds 5% over 5m window."
+
+      # High latency (p99 > 5s)
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 latency > 5s on {{ $labels.route }}"
+
+      # Worker job failures
+      - alert: WorkerJobFailures
+        expr: increase(worker_job_failures_total[15m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Worker job {{ $labels.job }} failed (moved to DLQ)"

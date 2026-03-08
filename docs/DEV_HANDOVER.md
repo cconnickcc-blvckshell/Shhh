@@ -521,6 +521,7 @@ See [Section 13: Whisper System](#13-whisper-system) for full details.
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
 | GET | `/v1/conversations` | Yes | 0 | List conversations with last message |
+| GET | `/v1/conversations/sync` | Yes | 0 | A.2 State sync: total + data + serverTime (single round-trip on app foreground) |
 | POST | `/v1/conversations` | Yes | 1 | Create conversation (requires tier 1) |
 | GET | `/v1/conversations/:id/messages` | Yes | 0 | Get messages for a conversation |
 | POST | `/v1/conversations/:id/messages` | Yes | 0 | Send message (text, image, location) |

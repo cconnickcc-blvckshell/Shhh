@@ -230,6 +230,7 @@ export const discoverApi = {
 
 export const messagingApi = {
   getUnreadTotal: () => api<{ total: number }>('/v1/conversations/unread-total'),
+  getSync: () => api<{ total: number; data: any[]; serverTime: string }>('/v1/conversations/sync'),
   getConversations: () => api<{ data: any[] }>('/v1/conversations'),
   createConversation: (participantIds: string[], filterContext?: Record<string, unknown>) =>
     api<{ data: { id: string } }>('/v1/conversations', {

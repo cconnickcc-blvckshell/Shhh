@@ -22,6 +22,19 @@ export class MessagingController {
     }
   }
 
+  /** A.2 State sync: single round-trip for badge + list reconciliation on app foreground. */
+  async getSync(req: Request, res: Response, next: NextFunction) {
+    try {
+      const [total, conversations] = await Promise.all([
+        messagingService.getUnreadTotal(req.user!.userId),
+        messagingService.getConversations(req.user!.userId),
+      ]);
+      res.json({ total, data: conversations, serverTime: new Date().toISOString() });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async createConversation(req: Request, res: Response, next: NextFunction) {
     try {
       const { participantIds, type, filterContext } = req.body;
