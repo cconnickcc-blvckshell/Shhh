@@ -158,7 +158,7 @@ npm run lint
 npm run typecheck
 ```
 
-The test suite contains **55 tests** across 7 suites: `auth`, `discovery`, `events` (including Tonight feed), `couples`, `safety`, `admin`, `media`, and the test framework uses **Jest** with **Supertest** for HTTP assertions.
+The test suite contains **87 tests** across 10 suites: `auth`, `discovery`, `events` (including Tonight feed), `couples`, `safety`, `admin`, `media`, `visibility`, `verification`, `messaging`. Uses **Jest** with **Supertest** for HTTP assertions.
 
 ---
 
@@ -422,7 +422,8 @@ The backend has **24 route modules** wired in `app.ts`. Each module follows the 
 
 | Method | Path | Auth | Tier | Description |
 |--------|------|------|------|-------------|
-| GET | `/v1/discover?lat=&lng=&radius=&venueId=&eventId=` | Yes | 0 | Find nearby users. Free tier capped at 30 results; premium or venue/event context uses higher cap. Response: data, count, discoveryCap, radiusUsedKm, computedRadiusKm? (density-aware). |
+| GET | `/v1/discover/activity?lat=&lng=&radius=` | Yes | 0 | Activity counts (nearbyCount, eventsTonightCount). Wave 1 density signals. |
+| GET | `/v1/discover?lat=&lng=&radius=&venueId=&eventId=` | Yes | 0 | Find nearby users. Returns profileVisibilityTier (Wave 2: privacy cues). Free tier capped at 30; premium or venue/event context uses higher cap. Response: data, count, discoveryCap, radiusUsedKm, computedRadiusKm? (density-aware). |
 | POST | `/v1/discover/location` | Yes | 0 | Update user's location |
 
 **Database tables owned:** `locations`

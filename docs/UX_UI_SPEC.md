@@ -262,7 +262,7 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 |-------|-------------|
 | **Intent** | View another user's profile; like, message, whisper, block, report. |
 | **Entry points** | From Discover tile; from Whisper "View Profile" (after reveal). |
-| **Exit paths** | Back → previous. Block → usersApi.block then router.back(). View Profile (whisper) → same screen. |
+| **Exit paths** | Back → previous. Block → confirmation "You won't see each other. They can't contact you." → block → success alert → router.back(). Report → "Thanks. We'll review within 24h." View Profile (whisper) → same screen. |
 | **Data dependencies (API)** | GET `/v1/users/:id/profile`. POST `/v1/users/:id/like`. POST `/v1/conversations` (create). POST `/v1/whispers`. POST `/v1/users/:id/block`. POST `/v1/users/:id/report`. |
 | **Store state** | useAuthStore.userId. Local: profile, whisperText, showWhisper, liked. |
 | **Layout** | ScrollView: hero (ProfilePhoto fill, back, presence badge), **privacy cue badge** ("Only visible to matches" when profileVisibilityTier=after_match; "Visible after reveal" when after_reveal), name/age/shield, meta (gender, showAsRole, showAsRelationship), intents chips, bio, interests, stats (experience, references, rating, host), trust row, action buttons (block, whisper, like, message), whisper box (if open), report link, "Member since". |

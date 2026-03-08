@@ -449,7 +449,7 @@
 |------|--------|--------|---------|--------|
 | 5 | 5 | 2 | P1 | Partial |
 
-**Notes:** Wave 7: "Only visible to matches" / "Visible after reveal" on user profile; "Anonymous" badge on whisper cards. Blur exists.
+**Notes:** Wave 7: "Only visible to matches" / "Visible after reveal" on user profile; "Anonymous" badge on whisper cards. Blur exists. Wave 2: Privacy cues (lock/eye-off) on discovery tiles when profileVisibilityTier is after_match or after_reveal.
 
 ---
 

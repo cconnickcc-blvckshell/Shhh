@@ -1,6 +1,6 @@
-# Shhh — Functional Assessment (Waves 9–15)
+# Shhh — Functional Assessment (Waves 1–2, 9–15)
 
-> **Purpose:** Verification checklist for all improvements added in Waves 9–15.  
+> **Purpose:** Verification checklist for CI waves and Waves 9–15.  
 > **Last updated:** March 2026
 
 ---
@@ -24,7 +24,29 @@ cd admin-dashboard && npm run dev   # Port 5173
 cd mobile && npx expo start --web   # Port 8081
 ```
 
-**Backend tests:** `cd backend && npm test` — 86 tests (visibility, verification, messaging sync, admin cookie auth, discovery block filter).
+**Backend tests:** `cd backend && npm test` — 87 tests (visibility, verification, messaging sync, admin cookie auth, discovery block filter, activity endpoint).
+
+---
+
+## Wave 1: First-Session Value
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Activity bar | Discover → load | "X people nearby • X events tonight" bar visible |
+| Activity API | `GET /v1/discover/activity?lat=&lng=&radius=` | 200, `{ nearbyCount, eventsTonightCount }` |
+| Profile gate | New user (displayName "New User") → swipe right or whisper | Alert "Complete your profile" with "Complete profile" → /profile/edit |
+| Browse first | Onboarding-intent | "Browse first" primary CTA |
+
+---
+
+## Wave 2: Trust Perception
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Block confirmation | User profile → X → Block | Alert "Block this person? You won't see each other. They can't contact you." [Cancel] [Block] |
+| Block success | Block → confirm | Alert "Blocked" with same message; router.back() |
+| Report feedback | User profile → Report this user → Report | Alert "Thanks. We'll review within 24h." |
+| Privacy cues on tiles | Discover (user with after_match or after_reveal) | Lock or eye-off badge on tile |
 
 ---
 

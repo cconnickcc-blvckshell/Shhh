@@ -98,6 +98,6 @@ Prioritized backlog of high-impact ideas. Key themes:
 | Me section | Layout, design system, most sub-pages, bio char count, unsaved warning, success toast, Card sections, User ID+Copy, location picker, date pickers | Tier 2 ID |
 | Admin dashboard | Map, Kanban, sparkline, status bar, shortcuts, design | 3D globe, marble drop, Admin Control |
 | Game-changers | — | Tonight feed, venue themes, discovery cap, etc. |
-| Polish (IMPROVEMENTS_LEDGER) | Waves 1–15: accessibility, pass with reason, swipe-to-ignore, micro-copy, unread sync, onboarding Browse first, push throttle, conversion funnel, activity feed, GPS velocity check | See IMPROVEMENTS_LEDGER "What Remains" |
+| Polish (IMPROVEMENTS_LEDGER) | Waves 1–2: activity indicators, deferred profile gates, block/report feedback, privacy cues on discovery. Waves 1–15: accessibility, pass with reason, swipe-to-ignore, micro-copy, unread sync, onboarding Browse first, push throttle, conversion funnel, activity feed, GPS velocity check | See IMPROVEMENTS_LEDGER "What Remains" |
 
 **Related docs:** `docs/IMPROVEMENTS_LEDGER.md` (full ledger with feasibility/impact/effort), `docs/archive/MASTER_IMPLEMENTATION_CHECKLIST.md`, `docs/archive/E2E_CAPABILITY_AUDIT_REPORT.md`, `docs/archive/CSUITE_MASTER_AUDIT_REPORT.md`
