@@ -40,8 +40,33 @@ export interface NearbyUser {
   primaryIntent?: PrimaryIntent | null;
 }
 
+/** Max implied speed (km/h) for location updates. Reject if exceeded (GPS spoof / error). */
+const MAX_VELOCITY_KMH = 900;
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export class DiscoveryService {
   async updateLocation(userId: string, lat: number, lng: number, isPrecise: boolean) {
+    const prev = await query(
+      `SELECT ST_Y(geom_point::geometry)::double precision as lat, ST_X(geom_point::geometry)::double precision as lng, updated_at
+       FROM locations WHERE user_id = $1`,
+      [userId]
+    );
+    if (prev.rows[0]) {
+      const { lat: oldLat, lng: oldLng, updated_at: prevAt } = prev.rows[0];
+      const distKm = haversineKm(oldLat, oldLng, lat, lng);
+      const hours = (Date.now() - new Date(prevAt).getTime()) / 3600000;
+      if (hours > 0 && distKm / hours > MAX_VELOCITY_KMH) {
+        return; // Implausible velocity; skip update (GPS spoof / error)
+      }
+    }
+
     await query(
       `INSERT INTO locations (user_id, geom_point, is_precise_mode, updated_at)
        VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326), $4, NOW())

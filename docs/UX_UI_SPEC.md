@@ -495,7 +495,7 @@ Admin is React + Vite, react-router-dom. **Routes** under Layout: `/`, `/users`,
 |-------|-------------|
 | **Intent** | Command center overview — KPIs, health. |
 | **API** | `getOverview()` → fallback `getStats()`, `getHealth()`. |
-| **Layout** | **Tier Funnel** card (Signups → Verified → Premium). **Trust Score Distribution** histogram (0-20, 21-40, 41-60, 61-80, 81-100, N/A). Grid of GlassCards: Online Now, Total Users, New (24h), MRR, Paying Users, Ad Revenue, Panic Alerts, Venue Distress, Pending Reports, Pending Mod, Active Events, Active Venues, Whispers (24h). Sparklines for Online, Total, Panic, Reports. Health card: version, modules. |
+| **Layout** | **Tier Funnel** card (Signups → Verified → Premium). **Conversion Funnel** card (Signups → Verified → Liked → Messaged → Whispered → RSVP'd). **Trust Score Distribution** histogram (0-20, 21-40, 41-60, 61-80, 81-100, N/A). **Live Activity** feed (recent audit_logs, scrollable). Grid of GlassCards: Online Now, Total Users, New (24h), MRR, Paying Users, Ad Revenue, Panic Alerts, Venue Distress, Pending Reports, Pending Mod, Active Events, Active Venues, Whispers (24h). Sparklines for Online, Total, Panic, Reports. Health card: version, modules. |
 | **Refresh** | Listens for `command-center-refresh`. |
 | **States** | SkeletonCards, AdminError. |
 

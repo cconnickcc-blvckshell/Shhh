@@ -260,7 +260,7 @@
 | 3D Globe | Online users as lights; heat layers | 3 | 3 | 4 | P3 | Not started |
 | Marble Drop | Signup visualization | 4 | 2 | 2 | P3 | Not started |
 | Admin Control | Feature flags, content, rate limits in DB | 4 | 5 | 3 | P1 | Not started |
-| Live Activity Feed | Scrolling feed of recent actions | 4 | 3 | 2 | P2 | Not started |
+| Live Activity Feed | Scrolling feed of recent actions | 4 | 3 | 2 | P2 | Done (Wave 15) |
 | Tier Funnel | Signup → verified → premium | 5 | 4 | 2 | P2 | Done (Wave 12) |
 | Trust Score Distribution | Histogram, outliers | 5 | 3 | 2 | P2 | Done (Wave 13) |
 | Retention Cohorts | D1/D7 by cohort | 4 | 4 | 3 | P2 | Not started |
@@ -619,14 +619,14 @@
 - ~~**A.1** Notification orchestration~~ Partial (Wave 14: throttle 1 push per 30s per user)
 - **A.2** State synchronization / reconciliation
 - **A.6** Visibility policy engine (single "Can A see B?" authority)
-- **A.9** Analytics instrumentation (conversion funnel, reply rates)
+- ~~**A.9** Analytics instrumentation~~ Partial (Wave 15: conversion funnel, activity feed)
 - **B.6** Verification Tier 2 ID flow
 - **C.12** Polished onboarding friction
 - ~~**C.15** Edge-case handling~~ Partial (Wave 10: event 404, chat 404)
 - **B.8** JWT in httpOnly cookies (web) — ~~/metrics auth~~ ✅
 
 **Medium priority (P2):**
-- **A.5** Feed integrity (velocity checks, GPS plausibility)
+- ~~**A.5** Feed integrity~~ Partial (Wave 15: velocity check on location update)
 - **A.7** Moderation workflow automation
 - **A.10** Growth mechanics (invite flows, viral loops)
 - **B.5** Admin: 3D Globe, Marble Drop, Admin Control, ~~Tier Funnel~~ ✅, ~~Trust Score Distribution~~ ✅, Retention Cohorts

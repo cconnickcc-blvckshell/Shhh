@@ -61,6 +61,8 @@
 - Neon glassmorphism design
 - **Tier Funnel** (Wave 12): Signups → Verified → Premium card on Dashboard
 - **Trust Score Distribution** (Wave 13): Histogram (0-20, 21-40, 41-60, 61-80, 81-100, N/A)
+- **Conversion Funnel** (Wave 15): Signups → Verified → Liked → Messaged → Whispered → RSVP'd
+- **Live Activity Feed** (Wave 15): Scrolling feed of recent audit_logs on Dashboard
 
 ### Planned
 
@@ -69,7 +71,6 @@
 | 3D Globe | Online users as lights; heat layers, time-of-day filter |
 | Marble Drop | Signup visualization — ball drops per signup |
 | Admin Control | Feature flags, content, rate limits — control without code |
-| Live activity feed | Real-time events in command center |
 
 ---
 
@@ -97,6 +98,6 @@ Prioritized backlog of high-impact ideas. Key themes:
 | Me section | Layout, design system, most sub-pages, bio char count, unsaved warning, success toast, Card sections, User ID+Copy, location picker, date pickers | Tier 2 ID |
 | Admin dashboard | Map, Kanban, sparkline, status bar, shortcuts, design | 3D globe, marble drop, Admin Control |
 | Game-changers | — | Tonight feed, venue themes, discovery cap, etc. |
-| Polish (IMPROVEMENTS_LEDGER) | Waves 1–14: accessibility, pass with reason, swipe-to-ignore, micro-copy, unread sync, onboarding Browse first, push throttle | See IMPROVEMENTS_LEDGER "What Remains" |
+| Polish (IMPROVEMENTS_LEDGER) | Waves 1–15: accessibility, pass with reason, swipe-to-ignore, micro-copy, unread sync, onboarding Browse first, push throttle, conversion funnel, activity feed, GPS velocity check | See IMPROVEMENTS_LEDGER "What Remains" |
 
 **Related docs:** `docs/IMPROVEMENTS_LEDGER.md` (full ledger with feasibility/impact/effort), `docs/archive/MASTER_IMPLEMENTATION_CHECKLIST.md`, `docs/archive/E2E_CAPABILITY_AUDIT_REPORT.md`, `docs/archive/CSUITE_MASTER_AUDIT_REPORT.md`

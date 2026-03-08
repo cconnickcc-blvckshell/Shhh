@@ -328,6 +328,50 @@ export class AdminExtendedService {
     };
   }
 
+  /** Conversion funnel: signup → verified → first action counts. */
+  async getConversionFunnel() {
+    const [signups, verified, liked, messaged, whispered, rsvpd] = await Promise.all([
+      query(`SELECT COUNT(*)::int as cnt FROM users WHERE deleted_at IS NULL`),
+      query(`SELECT COUNT(*)::int as cnt FROM users WHERE deleted_at IS NULL AND verification_tier >= 1`),
+      query(`SELECT COUNT(DISTINCT from_user_id)::int as cnt FROM user_interactions WHERE type = 'like'`),
+      query(`
+        SELECT COUNT(DISTINCT cp.user_id)::int as cnt
+        FROM conversation_participants cp
+        JOIN conversations c ON cp.conversation_id = c.id
+        WHERE c.last_message_at IS NOT NULL
+      `),
+      query(`SELECT COUNT(DISTINCT from_user_id)::int as cnt FROM whispers`),
+      query(`SELECT COUNT(DISTINCT user_id)::int as cnt FROM event_rsvps`),
+    ]);
+    return {
+      signups: signups.rows[0]?.cnt ?? 0,
+      verified: verified.rows[0]?.cnt ?? 0,
+      hasLiked: liked.rows[0]?.cnt ?? 0,
+      hasMessaged: messaged.rows[0]?.cnt ?? 0,
+      hasWhispered: whispered.rows[0]?.cnt ?? 0,
+      hasRsvpd: rsvpd.rows[0]?.cnt ?? 0,
+    };
+  }
+
+  /** Live activity feed: recent audit logs + reports for dashboard. */
+  async getActivityFeed(limit: number = 30) {
+    const logs = await query(
+      `SELECT al.id, al.user_id, al.action, al.created_at, al.metadata_json, p.display_name
+       FROM audit_logs al
+       LEFT JOIN user_profiles p ON al.user_id = p.user_id
+       ORDER BY al.created_at DESC LIMIT $1`,
+      [limit]
+    );
+    return logs.rows.map((r: Record<string, unknown>) => ({
+      id: r.id,
+      userId: r.user_id,
+      action: r.action,
+      displayName: r.display_name || 'Unknown',
+      createdAt: r.created_at,
+      metadata: r.metadata_json || {},
+    }));
+  }
+
   /** Trust score distribution for admin dashboard histogram. */
   async getTrustScoreDistribution() {
     const result = await query(`

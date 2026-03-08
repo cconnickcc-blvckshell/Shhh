@@ -1,6 +1,6 @@
 # Shhh — Architecture Document
 
-> Last updated: March 2026 (Waves 9–14: pass with reason, mark-read, Trust Score Distribution, push throttle, onboarding Browse first)  
+> Last updated: March 2026 (Waves 9–15: pass with reason, mark-read, Trust Score Distribution, push throttle, onboarding Browse first, conversion funnel, activity feed, GPS velocity check)  
 > **When changing the system:** Update this doc’s §2 (file tree), §4 (API ledger), §6 (schema) when adding modules, routes, or tables.  
 > **Implementation status:** See **docs/AUDIT_AND_STATUS.md** and **docs/ROADMAP.md**.
 
@@ -724,9 +724,11 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | GET | `/v1/admin/presence/geo` | Yes | moderator | User locations for map |
 | GET | `/v1/admin/stats/cities` | Yes | moderator | City aggregates (hot/dead) |
 | GET | `/v1/admin/stats/trust-scores` | Yes | moderator | Trust score distribution (0-20, 21-40, 41-60, 61-80, 81-100, N/A) |
+| GET | `/v1/admin/analytics/funnel` | Yes | moderator | Conversion funnel (signups, verified, hasLiked, hasMessaged, hasWhispered, hasRsvpd) |
+| GET | `/v1/admin/activity-feed` | Yes | moderator | Live activity feed (recent audit_logs) |
 | POST | `/v1/admin/moderation/:id/resolve` | Yes | moderator | Approve/reject mod queue item |
 
-**Dashboard:** Tier Funnel (Signups → Verified → Premium), Trust Score Distribution histogram. Push throttle: max 1 push per user per 30s (Redis) to prevent notification spam.
+**Dashboard:** Tier Funnel (Signups → Verified → Premium), Conversion Funnel (detailed), Trust Score Distribution histogram, Live Activity Feed. Push throttle: max 1 push per user per 30s (Redis) to prevent notification spam.
 
 ### Documentation
 | Method | Path | Description |

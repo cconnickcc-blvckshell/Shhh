@@ -110,6 +110,17 @@ router.get('/stats/trust-scores', async (_req: Request, res: Response, next: Nex
   try { res.json({ data: await svc.getTrustScoreDistribution() }); } catch (err) { next(err); }
 });
 
+router.get('/analytics/funnel', async (_req: Request, res: Response, next: NextFunction) => {
+  try { res.json({ data: await svc.getConversionFunnel() }); } catch (err) { next(err); }
+});
+
+router.get('/activity-feed', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 30;
+    res.json({ data: await svc.getActivityFeed(limit) });
+  } catch (err) { next(err); }
+});
+
 // Settings
 router.get('/settings/ads', async (_req: Request, res: Response, next: NextFunction) => {
   try { res.json({ data: await svc.getAdControls() }); } catch (err) { next(err); }

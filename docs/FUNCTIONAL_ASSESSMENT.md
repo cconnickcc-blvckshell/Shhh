@@ -1,6 +1,6 @@
-# Shhh — Functional Assessment (Waves 9–14)
+# Shhh — Functional Assessment (Waves 9–15)
 
-> **Purpose:** Verification checklist for all improvements added in Waves 9–14.  
+> **Purpose:** Verification checklist for all improvements added in Waves 9–15.  
 > **Last updated:** March 2026
 
 ---
@@ -24,7 +24,7 @@ cd admin-dashboard && npm run dev   # Port 5173
 cd mobile && npx expo start --web   # Port 8081
 ```
 
-**Backend tests:** `cd backend && npm test` — 65 tests (includes Trust Score Distribution).
+**Backend tests:** `cd backend && npm test` — 67 tests (includes Trust Score Distribution, conversion funnel, activity feed).
 
 ---
 
@@ -101,24 +101,37 @@ cd mobile && npx expo start --web   # Port 8081
 
 ---
 
+## Wave 15: Analytics, Activity Feed, Feed Integrity
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Conversion Funnel | Admin Dashboard → load | Card shows Signups, Verified, Liked, Messaged, Whispered, RSVP'd counts |
+| Live Activity Feed | Admin Dashboard → load | Scrollable list of recent audit_logs (user.registered, user.login, etc.) |
+| GPS velocity check | POST /v1/discover/location twice with implausible jump (e.g. NYC → Tokyo in 1 min) | Second update silently skipped (no DB change) |
+
+**API:** `GET /v1/admin/analytics/funnel` — 200, `{ signups, verified, hasLiked, hasMessaged, hasWhispered, hasRsvpd }`.  
+**API:** `GET /v1/admin/activity-feed?limit=20` — 200, array of `{ id, action, displayName, createdAt }`.
+
+---
+
 ## Automated Test Results
 
 | Suite | Tests | Status |
 |-------|-------|--------|
 | auth | 12 | ✅ Pass |
-| admin | 9 | ✅ Pass (includes trust-scores) |
+| admin | 11 | ✅ Pass (includes trust-scores, funnel, activity-feed) |
 | discovery | 4 | ✅ Pass |
 | events | 14 | ✅ Pass |
 | couples | 4 | ✅ Pass |
 | media | 16 | ✅ Pass |
 | safety | 5 | ✅ Pass |
-| **Total** | **65** | **✅ All pass** |
+| **Total** | **67** | **✅ All pass** |
 
 ---
 
 ## Manual Test Checklist
 
-- [ ] Admin: Login (bypass if OTP_DEV_BYPASS=true), Dashboard shows Tier Funnel + Trust Score Distribution
+- [ ] Admin: Login (bypass if OTP_DEV_BYPASS=true), Dashboard shows Tier Funnel + Conversion Funnel + Trust Score Distribution + Live Activity Feed
 - [ ] Mobile: Onboarding-intent shows "Browse first" as primary
 - [ ] Mobile: Create event → "Show advanced options" toggles visibility section
 - [ ] Mobile: Edit profile → "Show advanced options" toggles Discovery & Hosting

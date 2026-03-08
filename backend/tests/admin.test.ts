@@ -88,6 +88,27 @@ describe('Admin API', () => {
     expect(res.body.data).toHaveProperty('no_score');
   });
 
+  it('GET /v1/admin/analytics/funnel returns conversion funnel', async () => {
+    const res = await request
+      .get('/v1/admin/analytics/funnel')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveProperty('signups');
+    expect(res.body.data).toHaveProperty('verified');
+    expect(res.body.data).toHaveProperty('hasLiked');
+    expect(res.body.data).toHaveProperty('hasMessaged');
+    expect(res.body.data).toHaveProperty('hasWhispered');
+    expect(res.body.data).toHaveProperty('hasRsvpd');
+  });
+
+  it('GET /v1/admin/activity-feed returns recent activity', async () => {
+    const res = await request
+      .get('/v1/admin/activity-feed?limit=10')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toBeInstanceOf(Array);
+  });
+
   it('GET /v1/venues/:id/analytics/density returns density intelligence (tier 2)', async () => {
     const tier2 = await createTestUser('DensityTester', 2);
     const res = await request

@@ -8,9 +8,35 @@ import { theme } from '../theme';
 
 const MAX_HISTORY = 24;
 
+function formatAction(action: string): string {
+  const map: Record<string, string> = {
+    'user.registered': 'signed up',
+    'user.login': 'logged in',
+    'user.logout': 'logged out',
+    'safety.panic_triggered': 'triggered panic',
+    'safety.venue_distress': 'venue distress',
+    'admin.user_banned': 'was banned',
+    'compliance.data_export': 'exported data',
+    'compliance.deletion_requested': 'requested deletion',
+  };
+  return map[action] || action.replace(/\./g, ' ');
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = (now.getTime() - d.getTime()) / 60000;
+  if (diff < 1) return 'now';
+  if (diff < 60) return `${Math.floor(diff)}m ago`;
+  if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+  return d.toLocaleDateString();
+}
+
 export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [trustScores, setTrustScores] = useState<{ bucket_0_20: number; bucket_21_40: number; bucket_41_60: number; bucket_61_80: number; bucket_81_100: number; no_score: number } | null>(null);
+  const [funnel, setFunnel] = useState<{ signups: number; verified: number; hasLiked: number; hasMessaged: number; hasWhispered: number; hasRsvpd: number } | null>(null);
+  const [activityFeed, setActivityFeed] = useState<Array<{ id: string; action: string; displayName: string; createdAt: string }>>([]);
   const [health, setHealth] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,6 +73,8 @@ export default function Dashboard() {
       });
     adminApi.getHealth().then(setHealth).catch(() => {});
     adminApi.getTrustScoreDistribution().then(r => setTrustScores(r.data)).catch(() => {});
+    adminApi.getConversionFunnel().then(r => setFunnel(r.data)).catch(() => {});
+    adminApi.getActivityFeed(20).then(r => setActivityFeed(r.data || [])).catch(() => {});
   };
 
   useEffect(() => {
@@ -205,6 +233,73 @@ export default function Dashboard() {
                 </div>
               );
             })}
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Conversion Funnel (detailed) */}
+      {funnel && (
+        <GlassCard accent={theme.colors.info} style={{ marginBottom: theme.space[6], padding: theme.space[4] }}>
+          <div style={{
+            color: theme.colors.textMuted,
+            fontSize: theme.fontSize.xs,
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            fontWeight: theme.fontWeight.semibold,
+            marginBottom: theme.space[3],
+          }}>
+            Conversion Funnel
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: theme.space[2] }}>
+            {[
+              { k: 'Signups', v: funnel.signups },
+              { k: 'Verified', v: funnel.verified },
+              { k: 'Liked', v: funnel.hasLiked },
+              { k: 'Messaged', v: funnel.hasMessaged },
+              { k: 'Whispered', v: funnel.hasWhispered },
+              { k: 'RSVP\'d', v: funnel.hasRsvpd },
+            ].map(({ k, v }) => (
+              <div key={k} style={{
+                background: 'rgba(124,43,255,0.12)',
+                padding: `${theme.space[2]} ${theme.space[3]}`,
+                borderRadius: theme.radius.md,
+                minWidth: 80,
+              }}>
+                <div style={{ color: theme.colors.textMuted, fontSize: 10 }}>{k}</div>
+                <div style={{ fontFamily: theme.font.display, fontWeight: 700, color: theme.colors.text }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Live Activity Feed */}
+      {activityFeed.length > 0 && (
+        <GlassCard accent={theme.colors.primary} style={{ marginBottom: theme.space[6], padding: theme.space[4], maxHeight: 240, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{
+            color: theme.colors.textMuted,
+            fontSize: theme.fontSize.xs,
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            fontWeight: theme.fontWeight.semibold,
+            marginBottom: theme.space[3],
+          }}>
+            Live Activity
+          </div>
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            {activityFeed.map((item) => (
+              <div key={item.id} style={{
+                padding: `${theme.space[2]} 0`,
+                borderBottom: `1px solid ${theme.colors.primaryMuted}`,
+                fontSize: theme.fontSize.sm,
+              }}>
+                <span style={{ color: theme.colors.text }}>{item.displayName}</span>
+                <span style={{ color: theme.colors.textMuted }}> — {formatAction(item.action)}</span>
+                <span style={{ color: theme.colors.textMuted, fontSize: 10, marginLeft: 8 }}>
+                  {formatTime(item.createdAt)}
+                </span>
+              </div>
+            ))}
           </div>
         </GlassCard>
       )}
