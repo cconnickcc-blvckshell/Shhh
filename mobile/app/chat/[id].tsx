@@ -61,16 +61,31 @@ export default function ChatScreen() {
 
   function handleBlock() {
     if (!otherUserId) return;
-    Alert.alert('Block', 'Block this user? You will no longer see each other or receive messages.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Block', style: 'destructive', onPress: () => { usersApi.block(otherUserId); router.back(); } },
-    ]);
+    Alert.alert(
+      'Block this person?',
+      "You won't see each other. They can't contact you.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await usersApi.block(otherUserId);
+              Alert.alert('Blocked', "You won't see each other. They can't contact you.", [{ text: 'OK', onPress: () => router.back() }]);
+            } catch (err: any) {
+              Alert.alert('', mapApiError(err));
+            }
+          },
+        },
+      ]
+    );
   }
 
   function handleReport() {
     if (!otherUserId) return;
     usersApi.report(otherUserId, 'inappropriate').then(() => {
-      Alert.alert('Reported', 'Thank you. We take reports seriously and will review.');
+      Alert.alert('Thanks', "We'll review within 24h.");
       router.back();
     }).catch((e: Error) => Alert.alert('', mapApiError(e)));
   }

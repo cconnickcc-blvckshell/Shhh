@@ -250,7 +250,7 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 | **Components** | Inline bubbles (mine/theirs), self-destruct label, time. **Optimistic send:** temp message with "Sending…" until API response. **Failed messages:** "Tap to try again" with retry icon; bubble border highlight. |
 | **Interactions** | Type and send (optimistic UI); tap failed message to retry; toggle timer for self-destruct (30s); camera button NOT IMPLEMENTED — no action. |
 | **States** | **Loading**: loading state. **Empty**: no messages. **Error**: error UI. **Offline**: not implemented. **Reconnecting**: banner at top. **Failed message**: tap to retry. |
-| **Edge cases** | **WebSocket:** useSocket joinConversation, onNewMessage, leaveConversation wired; real-time messages and typing supported. useScreenshotDetection reports screenshots. |
+| **Edge cases** | **WebSocket:** useSocket joinConversation, onNewMessage, leaveConversation wired; real-time messages and typing supported. useScreenshotDetection reports screenshots. **Block/Report:** Same copy as user profile (Wave 2). |
 | **Analytics events** | NOT IMPLEMENTED. |
 | **Accessibility** | Messages not announced as sender + content; input has no label. |
 

@@ -50,6 +50,20 @@ cd mobile && npx expo start --web   # Port 8081
 
 ---
 
+## Wave 3: Messaging Reliability
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Unread sync | GET /v1/conversations/sync | Returns total, data, serverTime |
+| App foreground sync | Background app → foreground | Messages list refetches via useAppForegroundSync |
+| Mark read when viewing | In chat → receive new message | POST /conversations/:id/read, badge updates |
+| Retry failed message | Send message (offline/fail) → "Tap to try again" | Retry flow, _retrying state |
+| Chat block/report | Chat → ⋮ → Block or Report | Same copy as user profile (Wave 2) |
+
+**Note:** Unread reconciliation, retry UI, state sync implemented in P0/Wave 14. Wave 3 aligns chat block/report copy with Wave 2.
+
+---
+
 ## Wave 9: Pass with Reason
 
 | Test | Steps | Expected |
