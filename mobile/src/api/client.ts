@@ -236,6 +236,7 @@ export const messagingApi = {
       method: 'POST',
       body: JSON.stringify({ participantIds, ...(filterContext && Object.keys(filterContext).length > 0 && { filterContext }) }),
     }),
+  markRead: (convId: string) => api(`/v1/conversations/${convId}/read`, { method: 'POST' }),
   getMessages: (convId: string) => api<{ data: any[] }>(`/v1/conversations/${convId}/messages`),
   sendMessage: (convId: string, content: string, contentType?: string, ttlSeconds?: number) =>
     api<{ data: any }>(`/v1/conversations/${convId}/messages`, {

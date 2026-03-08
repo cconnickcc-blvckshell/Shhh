@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Platform, AppState, AppStateStatus } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { useSocket } from '../hooks/useSocket';
 import { useAuthStore } from '../stores/auth';
+import { useUnreadBadge } from './UnreadBadgeContext';
 import { colors, spacing, fontSize, borderRadius } from '../constants/theme';
 
 type ToastData = { title: string; body: string; conversationId?: string; whisperId?: string };
@@ -17,6 +18,7 @@ export function InAppToastProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { onNotification } = useSocket();
+  const { refetch: refetchBadge } = useUnreadBadge();
 
   const hide = useCallback(() => {
     Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
@@ -39,21 +41,29 @@ export function InAppToastProvider({ children }: { children: ReactNode }) {
 
       if (type === 'new_message' && conversationId) {
         const inChat = pathname?.startsWith('/chat/');
-        const currentConvId = pathname?.replace('/chat/', '');
+        const currentConvId = pathname?.replace(/^\/chat\//, '').split('/')[0];
         if (inChat && currentConvId === conversationId) return;
-
+        refetchBadge();
         show({ title: 'New message', body: preview, conversationId });
       }
     });
 
     return unsub;
-  }, [isAuthenticated, onNotification, pathname, show]);
+  }, [isAuthenticated, onNotification, pathname, show, refetchBadge]);
 
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(hide, AUTO_DISMISS_MS);
     return () => clearTimeout(t);
   }, [toast, hide]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') refetchBadge();
+    });
+    return () => sub.remove();
+  }, [isAuthenticated, refetchBadge]);
 
   const onView = useCallback(() => {
     if (toast?.conversationId) {

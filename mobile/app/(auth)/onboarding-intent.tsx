@@ -97,19 +97,30 @@ export default function OnboardingIntentScreen() {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.primaryBtn, (!primaryIntent || saving) && styles.primaryBtnDisabled]}
+          style={[styles.browseBtn, saving && styles.primaryBtnDisabled]}
+          onPress={handleSkip}
+          disabled={saving}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Browse first, set up later"
+        >
+          <Ionicons name="compass" size={20} color="#fff" />
+          <Text style={styles.browseBtnText}>Browse first</Text>
+        </TouchableOpacity>
+        <Text style={styles.footerHint}>See who's nearby now. You can set your vibe anytime in Profile.</Text>
+        <TouchableOpacity
+          style={[styles.secondaryBtn, (!primaryIntent || saving) && styles.primaryBtnDisabled]}
           onPress={handleContinue}
           disabled={!primaryIntent || saving}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Set up my vibe and continue"
         >
           {saving ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.primaryLight} />
           ) : (
-            <Text style={styles.primaryBtnText}>Continue</Text>
+            <Text style={styles.secondaryBtnText}>Set up my vibe</Text>
           )}
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip for now</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -149,12 +160,25 @@ const styles = StyleSheet.create({
   visibilityLabelActive: { color: colors.primary },
   visibilitySub: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: 2 },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: 40, gap: spacing.md },
-  primaryBtn: {
-    backgroundColor: colors.primary, paddingVertical: 18, borderRadius: borderRadius.lg,
-    alignItems: 'center', justifyContent: 'center',
-  },
   primaryBtnDisabled: { opacity: 0.5 },
-  primaryBtnText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '700' },
-  skipBtn: { alignItems: 'center', paddingVertical: spacing.sm },
-  skipText: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '600' },
+  browseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingVertical: 18,
+    borderRadius: borderRadius.lg,
+  },
+  browseBtnText: { color: '#fff', fontSize: fontSize.lg, fontWeight: '700' },
+  footerHint: { color: colors.textMuted, fontSize: fontSize.sm, textAlign: 'center', marginTop: -4 },
+  secondaryBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  secondaryBtnText: { color: colors.primaryLight, fontSize: fontSize.md, fontWeight: '600' },
 });

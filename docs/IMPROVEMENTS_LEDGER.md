@@ -34,7 +34,9 @@
 | Effort | 3 | 2–4 weeks; new service or extend push.service |
 | Urgency | P1 | Before scale |
 | Dependencies | Push tokens, WebSocket events already exist |
-| Status | Not started |
+| Status | Partial |
+
+**Wave 14:** Redis throttle — max 1 push per user per 30 seconds for messages. Prevents notification spam.
 
 ---
 
@@ -380,9 +382,11 @@
 
 **Shared invariant:** Unread is not merely UI polish. It is a domain invariant, sync problem, notification problem, and badge problem. Cross-link: **A.2 State Synchronization**.
 
+**Wave 14:** Refetch badge on WebSocket notification (new_message); refetch on AppState active (app foreground); POST /conversations/:id/read when receiving new_message while viewing chat; InAppToast triggers refetch when showing toast.
+
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 3 | 5 | 2 | P0 | Partial (getUnreadTotal, badge exist) |
+| 3 | 5 | 2 | P0 | Partial (Wave 14: refetch on notification, app focus; mark-read when viewing) |
 
 **Notes:** Needs sync protocol; belongs to both polish and core architecture.
 
@@ -478,9 +482,9 @@
 
 | Feas | Impact | Effort | Urgency | Status |
 |------|--------|--------|---------|--------|
-| 4 | 5 | 3 | P1 | Not started |
+| 4 | 5 | 3 | P1 | Partial |
 
-**Notes:** Product decision: allow browse without full profile.
+**Notes:** Wave 14: "Browse first" as primary CTA on onboarding-intent; "Set up my vibe" secondary. Users can go straight to Discover.
 
 ---
 
@@ -611,8 +615,8 @@
 ## What Remains (Post–Wave 13)
 
 **High priority (P0–P1):**
-- **C.4** Unread counts sync protocol (cursor-based reconciliation)
-- **A.1** Notification orchestration (aggregate "3 new messages")
+- ~~**C.4** Unread counts sync~~ Partial (Wave 14: refetch on notification, app focus, mark-read when viewing)
+- ~~**A.1** Notification orchestration~~ Partial (Wave 14: throttle 1 push per 30s per user)
 - **A.2** State synchronization / reconciliation
 - **A.6** Visibility policy engine (single "Can A see B?" authority)
 - **A.9** Analytics instrumentation (conversion funnel, reply rates)

@@ -104,7 +104,11 @@ export default function ChatScreen() {
     joinAndSub();
     const unsubMsg = socket.onNewMessage((data: any) => {
       const msg = data?.message ?? data;
-      if (msg && msg._id) setMsgs(prev => [msg, ...prev]);
+      if (msg && (msg._id || msg.id)) {
+        setMsgs(prev => [{ ...msg, _id: msg._id ?? msg.id }, ...prev]);
+        messagingApi.markRead(convId).catch(() => {});
+        refetchBadge();
+      }
     });
     const unsubReconnect = socket.onReconnect?.(joinAndSub);
     return () => {

@@ -150,6 +150,17 @@ For each screen: Intent, Entry points, Exit paths, Data dependencies (API), Stor
 
 ---
 
+### 3.4b (auth)/onboarding-intent — Vibe & visibility (Wave 14)
+
+| Field | Description |
+|-------|-------------|
+| **Intent** | Set primary vibe and discovery visibility; or skip to browse first. |
+| **Entry points** | After onboarding slides. |
+| **Exit paths** | **Browse first** (primary) → `/(tabs)` immediately. **Set up my vibe** → PUT /v1/users/me (primaryIntent, discoveryVisibleTo) → `/(tabs)`. |
+| **Layout** | "Browse first" primary CTA (compass icon); "Set up my vibe" secondary. Primary vibe chips, discovery visibility options. |
+
+---
+
 ### 3.5 (tabs)/index — Discover (Explore)
 
 | Field | Description |

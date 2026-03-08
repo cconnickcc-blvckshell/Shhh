@@ -291,6 +291,14 @@ export class MessagingService {
     return messages;
   }
 
+  async markConversationRead(conversationId: string, userId: string): Promise<void> {
+    await query(
+      `UPDATE conversation_participants SET unread_count = 0
+       WHERE conversation_id = $1 AND user_id = $2`,
+      [conversationId, userId]
+    );
+  }
+
   async setRetention(
     conversationId: string,
     userId: string,

@@ -31,6 +31,7 @@ router.get('/unread-total', authenticate, requireTier(0), controller.getUnreadTo
 router.get('/', authenticate, requireTier(0), controller.getConversations);
 router.post('/', authenticate, requireTier(1), idempotencyMiddleware('conversations'), validate(createConversationSchema), controller.createConversation);
 router.put('/:id/retention', authenticate, validate(retentionSchema), controller.setRetention);
+router.post('/:id/read', authenticate, controller.markRead);
 router.get('/:id/messages', authenticate, controller.getMessages);
 router.post('/:id/messages', authenticate, validate(sendMessageSchema), controller.sendMessage);
 

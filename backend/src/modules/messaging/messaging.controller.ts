@@ -37,6 +37,15 @@ export class MessagingController {
     }
   }
 
+  async markRead(req: Request, res: Response, next: NextFunction) {
+    try {
+      await messagingService.markConversationRead(req.params.id as string, req.user!.userId);
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getMessages(req: Request, res: Response, next: NextFunction) {
     try {
       const { before, limit } = req.query;

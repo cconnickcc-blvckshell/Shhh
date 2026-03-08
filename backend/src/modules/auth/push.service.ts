@@ -1,5 +1,8 @@
 import { query } from '../../config/database';
+import { getRedis } from '../../config/redis';
 import { logger } from '../../config/logger';
+
+const PUSH_COALESCE_SEC = 30;
 
 export class PushService {
   async registerToken(userId: string, token: string, platform: 'ios' | 'android' | 'web') {
@@ -63,9 +66,15 @@ export class PushService {
     return !!prefs.push_whispers;
   }
 
+  /** Throttle message pushes: max 1 per user per PUSH_COALESCE_SEC to avoid spam. */
   async sendPush(userId: string, title: string, body: string, data?: Record<string, string>) {
     const tokens = await this.getActiveTokens(userId);
     if (tokens.length === 0) return;
+
+    const redis = getRedis();
+    const throttleKey = `push:throttle:${userId}`;
+    const exists = await redis.set(throttleKey, '1', 'EX', PUSH_COALESCE_SEC, 'NX');
+    if (!exists) return;
 
     const expoTokens = tokens.filter(t => t.token.startsWith('ExponentPushToken'));
     if (expoTokens.length === 0) {
@@ -73,13 +82,13 @@ export class PushService {
       return;
     }
 
-    let finalTitle = title;
-    let finalBody = body;
+    let displayTitle = title;
+    let displayBody = body;
     try {
       const useNeutral = await this.getStealthPreference(userId);
       if (useNeutral) {
-        finalTitle = 'Notification';
-        finalBody = 'You have a new notification';
+        displayTitle = 'Notification';
+        displayBody = 'You have a new notification';
       }
     } catch {
       // ignore
@@ -88,8 +97,8 @@ export class PushService {
     try {
       const messages = expoTokens.map(t => ({
         to: t.token,
-        title: finalTitle,
-        body: finalBody,
+        title: displayTitle,
+        body: displayBody,
         data: data || {},
         sound: 'default' as const,
         priority: 'high' as const,
