@@ -146,15 +146,15 @@ People trust systems when they see signals: verified badges, block confirmation,
 | Action | Status |
 |--------|--------|
 | Verified badges prominent on profiles | Partial |
-| Block confirmation with clear feedback | Partial |
-| Report outcome feedback ("We've reviewed your report") | Not started |
+| Block confirmation with clear feedback | Done (Wave 2) |
+| Report outcome feedback ("We've reviewed your report") | Partial (Wave 2: 24h message) |
 | Moderation response visibility | Not started |
 | Safety score or trust indicator (where appropriate) | Partial (Trust Score backend) |
 
 ### Tactical Items
-- [ ] After block: "You won't see each other. They can't contact you."
-- [ ] After report: "Thanks. We'll review within 24h." + follow-up when resolved
-- [ ] Verified badge on every discovery tile and profile
+- [x] After block: "You won't see each other. They can't contact you." (Wave 2)
+- [x] After report: "Thanks. We'll review within 24h." (Wave 2; follow-up when resolved not yet)
+- [x] Verified badge on every discovery tile and profile (already present)
 - [ ] Optional "community guidelines" reminder on first report
 - [ ] Trust badge / score visible to user on own profile (builds confidence)
 
@@ -308,7 +308,7 @@ Shhh aims to **replace the functions this audience currently patches together ac
 - [ ] **Joint couple in discovery** — See delivery contract below
 - [ ] **Album share UI:** Add persona/couple as share targets in album share flow. `share_target_type`, `share_target_id` in API; mobile needs picker.
 - [ ] **Date mode:** Couple-to-couple invite flow. Product spec needed.
-- [ ] **Discretion prominence** — See delivery contract below
+- [x] **Discretion prominence** — Privacy cues (after_match, after_reveal) on discovery tiles; profile hero (Wave 2)
 - [ ] **Singles welcome** in copy — See delivery contract below
 - [ ] **Event types:** Ensure create-event supports: party, club night, takeover, hotel, private. Vibe tags match real lifestyle events.
 - [ ] **Tone audit:** All user-facing copy — direct, playful, non-judgmental. No "dating" or corporate language.
@@ -324,13 +324,13 @@ Shhh aims to **replace the functions this audience currently patches together ac
 | **Rollout** | `feature.couple_discovery_v1` |
 | **Success metric** | CTR discovery tile → profile; whisper rate; message-start rate |
 
-**Discretion prominence**
+**Discretion prominence** — Wave 2 partial
 | Dimension | Spec |
 |-----------|------|
 | **Source of truth** | `user_profiles.blur_photos`, `profile_visibility_tier`; `GET /v1/photos/check/:userId` |
-| **Frontend surfaces** | Discovery tile badge; profile hero badge; first-time blur tooltip |
-| **Analytics** | `privacy_cue_view`, `blur_reveal_initiated` |
-| **Rollout** | `feature.discretion_prominence_v1` |
+| **Frontend surfaces** | Discovery tile badge (after_match, after_reveal); profile hero badge ✓ |
+| **Analytics** | `privacy_cue_view`, `blur_reveal_initiated` (not yet) |
+| **Rollout** | `feature.discretion_prominence_v1` (not yet) |
 
 **Singles welcome in copy**
 | Dimension | Spec |

@@ -35,6 +35,7 @@ interface NearbyUser {
   verificationStatus: string; experienceLevel: string; isHost: boolean;
   gender: string | null; photosJson: string[];
   presenceState: string | null; activeIntents: string[];
+  profileVisibilityTier?: string;
 }
 
 function formatDist(m: number): string { return m < 1000 ? `${Math.abs(m)}m` : `${(Math.abs(m) / 1000).toFixed(1)}km`; }
@@ -183,7 +184,19 @@ function DiscoverTile({
       )}
       {presenceColor && <View style={[presenceDot, { backgroundColor: presenceColor }]} />}
       <View style={bottomInfo}>
-        <Text style={tileName} numberOfLines={1}>{item.displayName}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+          <Text style={tileName} numberOfLines={1}>{item.displayName}</Text>
+          {item.profileVisibilityTier === 'after_match' && (
+            <View style={[shieldBadge, { backgroundColor: 'rgba(179,92,255,0.25)', paddingHorizontal: 4 }]}>
+              <Ionicons name="lock-closed" size={8} color={colors.primaryLight} />
+            </View>
+          )}
+          {item.profileVisibilityTier === 'after_reveal' && (
+            <View style={[shieldBadge, { backgroundColor: 'rgba(179,92,255,0.25)', paddingHorizontal: 4 }]}>
+              <Ionicons name="eye-off" size={8} color={colors.primaryLight} />
+            </View>
+          )}
+        </View>
         <View style={metaRow}>
           <Ionicons name="navigate" size={9} color={presenceColor || 'rgba(255,255,255,0.5)'} />
           <Text style={tileDist}>{formatDist(item.distance)}</Text>

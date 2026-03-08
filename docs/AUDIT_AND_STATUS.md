@@ -39,3 +39,5 @@ All audit reports are in `docs/archive/`. Use this index to find the right one:
 **See:** `docs/ROADMAP.md` for planned work; `docs/CONTINUOUS_IMPROVEMENT.md` for strategic improvement (sequence, perception, loops, lifestyle focus §7); `docs/OPS_GUIDE.md` for deployment and runbook; `docs/FUNCTIONAL_ASSESSMENT.md` for Waves 9–15 verification checklist.
 
 **Wave 1 (March 2026):** Activity indicators (GET /v1/discover/activity, "X people nearby • X events tonight" bar); deferred profile gates (prompt on like/message/whisper when displayName is "New User"/"User"); Browse first already in onboarding-intent.
+
+**Wave 2 (March 2026):** Trust perception — block confirmation ("You won't see each other. They can't contact you."); report feedback ("Thanks. We'll review within 24h."); privacy cues on discovery tiles (profileVisibilityTier after_match/after_reveal badges).

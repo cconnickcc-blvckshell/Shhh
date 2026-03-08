@@ -292,7 +292,31 @@ export default function UserDetailScreen() {
                     );
                   },
                 },
-                { text: 'Block', style: 'destructive', onPress: () => { usersApi.block(id); router.back(); } },
+                {
+                  text: 'Block',
+                  style: 'destructive',
+                  onPress: () => {
+                    Alert.alert(
+                      'Block this person?',
+                      "You won't see each other. They can't contact you.",
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Block',
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              await usersApi.block(id);
+                              Alert.alert('Blocked', "You won't see each other. They can't contact you.", [{ text: 'OK', onPress: () => router.back() }]);
+                            } catch (err: any) {
+                              Alert.alert('', mapApiError(err));
+                            }
+                          },
+                        },
+                      ]
+                    );
+                  },
+                },
               ]);
             }}
           >
@@ -331,7 +355,7 @@ export default function UserDetailScreen() {
             if (!id) return;
             Alert.alert('Report user', `Report ${profile.displayName}? This helps keep our community safe.`, [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Report', style: 'destructive', onPress: () => { usersApi.report(id, 'inappropriate'); Alert.alert('Reported', 'Thank you for keeping the community safe'); } },
+              { text: 'Report', style: 'destructive', onPress: async () => { try { await usersApi.report(id, 'inappropriate'); Alert.alert('Thanks', "We'll review within 24h."); } catch (err: any) { Alert.alert('', mapApiError(err)); } } },
             ]);
           }}
         >

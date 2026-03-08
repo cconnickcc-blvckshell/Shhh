@@ -158,6 +158,7 @@ export class DiscoveryService {
         them.show_as_relationship,
         them.age,
         them.primary_intent,
+        them.profile_visibility_tier,
         CASE WHEN l.is_precise_mode THEN
           ST_Distance(l.geom_point::geography, ST_SetSRID(ST_MakePoint($2, $1), 4326)::geography)
         ELSE
@@ -231,6 +232,7 @@ export class DiscoveryService {
       presenceState: row.presence_state || null,
       activeIntents: row.active_intents || [],
       primaryIntent: row.primary_intent || null,
+      profileVisibilityTier: row.profile_visibility_tier || 'all',
     }));
 
     await redis.set(cacheKey, JSON.stringify(users), 'EX', 30);
