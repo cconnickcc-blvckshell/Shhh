@@ -12,6 +12,7 @@ import { SafeState } from '../../src/components/ui';
 type NotificationPrefs = {
   push_messages?: boolean;
   push_whispers?: boolean;
+  push_likes?: boolean;
   neutral_notifications?: boolean;
 };
 
@@ -21,6 +22,7 @@ export default function NotificationsScreen() {
   const [prefs, setPrefs] = useState<NotificationPrefs>({
     push_messages: true,
     push_whispers: true,
+    push_likes: true,
     neutral_notifications: false,
   });
   const [saving, setSaving] = useState(false);
@@ -45,6 +47,7 @@ export default function NotificationsScreen() {
       setPrefs({
         push_messages: p.push_messages !== false,
         push_whispers: p.push_whispers !== false,
+        push_likes: p.push_likes !== false,
         neutral_notifications: p.neutral_notifications === true,
       });
     }
@@ -126,6 +129,22 @@ export default function NotificationsScreen() {
             disabled={saving}
             trackColor={{ false: colors.surface, true: colors.primary + '80' }}
             thumbColor={prefs.push_whispers !== false ? colors.primaryLight : colors.textMuted}
+          />
+        </View>
+        <View style={s.row}>
+          <View style={s.iconWrap}>
+            <Ionicons name="heart-outline" size={22} color={colors.primaryLight} />
+          </View>
+          <View style={s.rowText}>
+            <Text style={s.rowTitle}>Profile likes</Text>
+            <Text style={s.rowSub}>Get notified when someone likes your profile</Text>
+          </View>
+          <Switch
+            value={prefs.push_likes !== false}
+            onValueChange={(v) => updatePref('push_likes', v)}
+            disabled={saving}
+            trackColor={{ false: colors.surface, true: colors.primary + '80' }}
+            thumbColor={prefs.push_likes !== false ? colors.primaryLight : colors.textMuted}
           />
         </View>
       </View>

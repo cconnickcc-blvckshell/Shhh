@@ -32,6 +32,40 @@ export class EventLifecycleService {
       transitioned++;
     }
 
+    // Wave 4: Event reminders — 1h before for RSVP'd users
+    const hasRemindersTable = await query(
+      `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'event_reminders'`
+    );
+    if (hasRemindersTable.rows.length > 0) {
+      const reminderEvents = await query(
+        `SELECT e.id, e.title FROM events e
+         WHERE e.status IN ('upcoming', 'active') AND e.phase IN ('upcoming', 'discovery')
+           AND e.starts_at > NOW() AND e.starts_at <= NOW() + INTERVAL '1 hour 5 minutes'
+           AND e.starts_at > NOW() + INTERVAL '55 minutes'`
+      );
+      for (const evt of reminderEvents.rows) {
+        const rsvps = await query(
+          `SELECT user_id FROM event_rsvps WHERE event_id = $1 AND status IN ('going', 'checked_in')`,
+          [evt.id]
+        );
+        for (const r of rsvps.rows) {
+          const userId = r.user_id as string;
+          const sent = await query(
+            `SELECT 1 FROM event_reminders WHERE event_id = $1 AND user_id = $2 AND reminder_type = '1h_before'`,
+            [evt.id, userId]
+          );
+          if (sent.rows.length === 0) {
+            await pushSvc.sendPush(userId, 'Event starts in 1 hour', `"${evt.title}" is about to begin`, { eventId: evt.id, action: 'event_reminder' });
+            await query(
+              `INSERT INTO event_reminders (event_id, user_id, reminder_type) VALUES ($1, $2, '1h_before')
+               ON CONFLICT (event_id, user_id, reminder_type) DO NOTHING`,
+              [evt.id, userId]
+            );
+          }
+        }
+      }
+    }
+
     // Live phase: events that have started
     const liveEvents = await query(
       `UPDATE events SET phase = 'live', status = 'active', updated_at = NOW()

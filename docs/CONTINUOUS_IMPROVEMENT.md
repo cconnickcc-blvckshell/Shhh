@@ -549,13 +549,13 @@ These signals change behavior dramatically. Users must feel "people like me are 
 
 ### Sequencing Matrix (Ship Order)
 
-| Wave | Goal | Must ship together | Must not start before |
-|------|------|--------------------|-----------------------|
-| **Wave 1** | First-session value | Browse-only, activity indicators, deferred profile gates | — |
-| **Wave 2** | Trust perception | Privacy cues, visible verification, report feedback | Wave 1 |
-| **Wave 3** | Messaging reliability | Unread reconciliation, retry UI, state sync | Wave 1 |
-| **Wave 4** | Density & triggers | Live counts, re-engagement pushes, event reminders | Analytics events |
-| **Wave 5** | Growth loops | Referral flow, post-event invites, venue amplification | Density signals stable |
+| Wave | Goal | Must ship together | Must not start before | Status |
+|------|------|--------------------|-----------------------|--------|
+| **Wave 1** | First-session value | Browse-only, activity indicators, deferred profile gates | — | ✅ Done |
+| **Wave 2** | Trust perception | Privacy cues, visible verification, report feedback | Wave 1 | ✅ Done |
+| **Wave 3** | Messaging reliability | Unread reconciliation, retry UI, state sync | Wave 1 | ✅ Done |
+| **Wave 4** | Density & triggers | Live counts, re-engagement pushes, event reminders | Analytics events | ✅ Done (March 2026) |
+| **Wave 5** | Growth loops | Referral flow, post-event invites, venue amplification | Density signals stable | — |
 
 Prevents random side-quests. "Cool idea syndrome" sneaks in otherwise.
 

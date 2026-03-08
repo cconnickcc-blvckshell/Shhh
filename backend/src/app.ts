@@ -31,6 +31,7 @@ import e2eeRoutes from './modules/messaging/e2ee.routes';
 import billingRoutes from './modules/billing/billing.routes';
 import { handleStripeWebhook } from './modules/billing/webhook.handler';
 import whisperRoutes from './modules/discovery/whisper.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
 import adRoutes from './modules/ads/ad.routes';
 import venueDashboardRoutes from './modules/venues/venue-dashboard.routes';
 import tonightRoutes from './modules/tonight/tonight.routes';
@@ -121,6 +122,9 @@ export function createApp() {
 
   // Whispers
   app.use('/v1/whispers', whisperRoutes);
+
+  // Analytics (Wave 4 prerequisite)
+  app.use('/v1/analytics', analyticsRoutes);
 
   // Ads
   app.use('/v1/ads', adRoutes);

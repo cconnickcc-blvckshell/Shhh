@@ -31,7 +31,7 @@ All audit reports are in `docs/archive/`. Use this index to find the right one:
 
 ## Quick Status
 
-- **Backend:** 87 tests, auth (phone + email + OAuth), discovery, messaging, presence, safety, admin, media, visibility (block checks), verification (Tier 2 ID), cookie auth; GET /conversations/sync; POST /conversations/:id/read; Trust Score Distribution; conversion funnel; activity feed; GPS velocity check; push throttle (30s); GET /discover/activity (Wave 1)
+- **Backend:** 90 tests, auth (phone + email + OAuth), discovery, messaging, presence, safety, admin, media, visibility (block checks), verification (Tier 2 ID), cookie auth; GET /conversations/sync; POST /conversations/:id/read; Trust Score Distribution; conversion funnel; activity feed; GPS velocity check; push throttle (30s); GET /discover/activity (Wave 1); POST /analytics/events (Wave 4); event reminders (1h before for RSVP'd users); like push (Wave 4)
 - **Admin dashboard:** Map, Kanban, sparkline, Tier Funnel, Conversion Funnel, Trust Score Distribution, Live Activity Feed, status bar, manual refresh; no auto-polling
 - **Mobile:** Me section upgraded; push notifications, badges, deep linking; email/password auth; unread sync (refetch, mark-read, app foreground sync via GET /sync); useAppForegroundSync; onboarding "Browse first"; swipe-to-ignore whispers
 - **Production:** Render (backend), Vercel (admin + web); Supabase/Upstash/Atlas
@@ -43,3 +43,5 @@ All audit reports are in `docs/archive/`. Use this index to find the right one:
 **Wave 2 (March 2026):** Trust perception — block confirmation ("You won't see each other. They can't contact you."); report feedback ("Thanks. We'll review within 24h."); privacy cues on discovery tiles (profileVisibilityTier after_match/after_reveal badges).
 
 **Wave 3 (March 2026):** Messaging reliability — already done (P0/Wave 14: sync endpoint, useAppForegroundSync, retry UI, mark-read). Aligned chat block/report copy with Wave 2.
+
+**Wave 4 (March 2026):** Density & triggers — Analytics events (POST /v1/analytics/events, analytics_events table); event reminders (1h before for RSVP'd users, event_reminders table); like push ("Someone liked your profile"); push_likes preference in notifications; live counts on event tiles (attendee_count already present).

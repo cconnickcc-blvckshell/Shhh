@@ -369,6 +369,12 @@ export const adsApi = {
   dismiss: (id: string) => api(`/v1/ads/${id}/dismiss`, { method: 'POST' }),
 };
 
+/** Wave 4: Product analytics (discovery_tile_impression, whisper_sent, etc.) */
+export const analyticsApi = {
+  track: (eventType: string, payload?: Record<string, unknown>) =>
+    api('/v1/analytics/events', { method: 'POST', body: JSON.stringify({ event_type: eventType, payload }) }),
+};
+
 export const contentApi = {
   getGuides: () => api<{ data: { key: string; title: string | null; bodyMd: string | null; link: string | null; locale: string } }>('/v1/content/guides'),
   getNorms: () => api<{ data: { key: string; title: string | null; bodyMd: string | null; link: string | null; locale: string } }>('/v1/content/norms'),

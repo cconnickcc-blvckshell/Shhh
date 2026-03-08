@@ -158,7 +158,7 @@ npm run lint
 npm run typecheck
 ```
 
-The test suite contains **87 tests** across 10 suites: `auth`, `discovery`, `events` (including Tonight feed), `couples`, `safety`, `admin`, `media`, `visibility`, `verification`, `messaging`. Uses **Jest** with **Supertest** for HTTP assertions.
+The test suite contains **90 tests** across 11 suites: `auth`, `analytics`, `discovery`, `events` (including Tonight feed), `couples`, `safety`, `admin`, `media`, `visibility`, `verification`, `messaging`. Uses **Jest** with **Supertest** for HTTP assertions.
 
 ---
 
@@ -2657,6 +2657,7 @@ Quick reference for how routes are mounted in `app.ts`:
 | `/v1/personas` | `personaRoutes` | `modules/users/persona.routes.ts` |
 | `/v1/intents` | `intentRoutes` | `modules/users/intent.routes.ts` |
 | `/v1/whispers` | `whisperRoutes` | `modules/discovery/whisper.routes.ts` |
+| `/v1/analytics` | `analyticsRoutes` | `modules/analytics/analytics.routes.ts` |
 | `/v1/ads` | `adRoutes` | `modules/ads/ad.routes.ts` |
 | `/v1/venues` | `venueIdentityRoutes` | `modules/venues/venue-identity.routes.ts` |
 | `/v1/venues` | `venueDashboardRoutes` | `modules/venues/venue-dashboard.routes.ts` |

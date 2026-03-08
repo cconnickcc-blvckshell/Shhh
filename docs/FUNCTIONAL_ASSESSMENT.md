@@ -1,4 +1,4 @@
-# Shhh — Functional Assessment (Waves 1–2, 9–15)
+# Shhh — Functional Assessment (Waves 1–4, 9–15)
 
 > **Purpose:** Verification checklist for CI waves and Waves 9–15.  
 > **Last updated:** March 2026
@@ -24,7 +24,7 @@ cd admin-dashboard && npm run dev   # Port 5173
 cd mobile && npx expo start --web   # Port 8081
 ```
 
-**Backend tests:** `cd backend && npm test` — 87 tests (visibility, verification, messaging sync, admin cookie auth, discovery block filter, activity endpoint).
+**Backend tests:** `cd backend && npm test` — 90 tests (visibility, verification, messaging sync, admin cookie auth, discovery block filter, activity endpoint, analytics).
 
 ---
 
@@ -61,6 +61,18 @@ cd mobile && npx expo start --web   # Port 8081
 | Chat block/report | Chat → ⋮ → Block or Report | Same copy as user profile (Wave 2) |
 
 **Note:** Unread reconciliation, retry UI, state sync implemented in P0/Wave 14. Wave 3 aligns chat block/report copy with Wave 2.
+
+---
+
+## Wave 4: Density & Triggers
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Analytics API | `POST /v1/analytics/events` with `{ event_type: "discovery_tile_impression", payload: {} }` | 204 |
+| Event reminder | User RSVP'd "going" → event starts in ~1h → lifecycle worker runs | Push "Event starts in 1 hour: [title]" (event_reminders table prevents duplicate) |
+| Like push | User A likes User B (non-mutual) | User B receives push "Someone liked your profile" (if push_likes enabled) |
+| Push likes pref | Me → Notifications | "Profile likes" toggle; default on |
+| Live counts | Events tab | Event tiles show "X going" (attendee_count) |
 
 ---
 

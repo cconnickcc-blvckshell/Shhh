@@ -40,6 +40,7 @@ export class PushService {
   async getNotificationPrefs(userId: string): Promise<{
     push_messages?: boolean;
     push_whispers?: boolean;
+    push_likes?: boolean;
     neutral_notifications?: boolean;
   }> {
     const r = await query(
@@ -50,8 +51,15 @@ export class PushService {
     return {
       push_messages: prefs.push_messages !== false,
       push_whispers: prefs.push_whispers !== false,
+      push_likes: prefs.push_likes !== false,
       neutral_notifications: prefs.neutral_notifications === true,
     };
+  }
+
+  /** Whether to send push when someone likes your profile (Wave 4). */
+  async shouldPushLikes(userId: string): Promise<boolean> {
+    const prefs = await this.getNotificationPrefs(userId);
+    return !!prefs.push_likes;
   }
 
   /** Whether to send push for new messages. */

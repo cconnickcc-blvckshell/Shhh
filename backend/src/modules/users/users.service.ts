@@ -1,7 +1,9 @@
 import { query } from '../../config/database';
 import { VisibilityPolicyService } from '../visibility/visibility-policy.service';
+import { PushService } from '../auth/push.service';
 
 const visibilityPolicy = new VisibilityPolicyService();
+const pushService = new PushService();
 
 export type PrimaryIntent = 'social' | 'curious' | 'lifestyle' | 'couple';
 export type DiscoveryVisibleTo = 'all' | 'social_and_curious' | 'same_intent';
@@ -170,7 +172,18 @@ export class UsersService {
       [toUserId, fromUserId]
     );
 
-    return { matched: match.rows.length > 0 };
+    const matched = match.rows.length > 0;
+
+    // Wave 4: Push when someone likes you (non-mutual)
+    if (!matched) {
+      pushService.shouldPushLikes(toUserId).then((ok) => {
+        if (ok) {
+          pushService.sendPush(toUserId, 'Someone liked your profile', 'Open the app to see who', { type: 'like' });
+        }
+      }).catch(() => {});
+    }
+
+    return { matched };
   }
 
   async passUser(fromUserId: string, toUserId: string, reason?: string) {
