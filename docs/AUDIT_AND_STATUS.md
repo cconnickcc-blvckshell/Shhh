@@ -36,4 +36,4 @@ All audit reports are in `docs/archive/`. Use this index to find the right one:
 - **Mobile:** Me section upgraded; push notifications, badges, deep linking; email/password auth; unread sync (refetch, mark-read, app foreground sync via GET /sync); useAppForegroundSync; onboarding "Browse first"; swipe-to-ignore whispers
 - **Production:** Render (backend), Vercel (admin + web); Supabase/Upstash/Atlas
 
-**See:** `docs/ROADMAP.md` for planned work; `docs/CONTINUOUS_IMPROVEMENT.md` for strategic improvement (sequence, perception, loops); `docs/OPS_GUIDE.md` for deployment and runbook; `docs/FUNCTIONAL_ASSESSMENT.md` for Waves 9–15 verification checklist.
+**See:** `docs/ROADMAP.md` for planned work; `docs/CONTINUOUS_IMPROVEMENT.md` for strategic improvement (sequence, perception, loops, lifestyle focus §7); `docs/OPS_GUIDE.md` for deployment and runbook; `docs/FUNCTIONAL_ASSESSMENT.md` for Waves 9–15 verification checklist.

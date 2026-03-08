@@ -3,7 +3,7 @@
 > **Purpose:** Single ledger for planned implementations, ideas, and enhancements. All entries scored for feasibility, impact, and effort.  
 > **Last updated:** March 2026  
 > **Source:** GPT operational review, GPT polish review, archived docs (GAME_CHANGER_ROADMAP, ADMIN_DASHBOARD_FUTURE_PLAN, ME_SECTION_IMPROVEMENTS, FEATURE_ADDITIONS_CRITIQUE, ARCHITECTURE_SCALE_RISK_DEEP_DIVE, CSUITE_MASTER_AUDIT, etc.)  
-> **Strategic companion:** `docs/CONTINUOUS_IMPROVEMENT.md` — sequence, perception, loops for addictive product.
+> **Strategic companion:** `docs/CONTINUOUS_IMPROVEMENT.md` — sequence, perception, loops for addictive product; §7 Lifestyle Audience & Product Focus (swingers, couples, implementation inventory).
 
 ---
 
