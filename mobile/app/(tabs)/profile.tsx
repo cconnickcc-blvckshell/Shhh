@@ -126,6 +126,8 @@ export default function ProfileScreen() {
         <MenuItem icon="create-outline" label="Edit Profile" onPress={() => router.push('/profile/edit')} />
         <View style={styles.div} />
         <MenuItem icon="notifications-outline" label="Notifications" onPress={() => router.push('/profile/notifications')} />
+        <View style={styles.div} />
+        <MenuItem icon="person-add-outline" label="Invite Friends" onPress={() => router.push('/profile/invite')} accent />
         {profile?.isHost && (
           <>
             <View style={styles.div} />

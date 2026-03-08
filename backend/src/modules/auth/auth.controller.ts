@@ -11,7 +11,7 @@ const otpService = new OTPService();
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { phone, displayName, sessionToken } = req.body;
+      const { phone, displayName, sessionToken, referralCode } = req.body;
       let verifiedPhone = phone;
 
       if (config.nodeEnv === 'test' && !sessionToken) {
@@ -25,7 +25,7 @@ export class AuthController {
         throw Object.assign(new Error('OTP verification required. Please verify your phone first.'), { statusCode: 401 });
       }
 
-      const result = await authService.registerWithPhone(verifiedPhone, displayName);
+      const result = await authService.registerWithPhone(verifiedPhone, displayName, referralCode);
       if (sessionToken) await otpService.consumeOTPSession(sessionToken);
       res.status(201).json({ data: result });
     } catch (err) {
@@ -69,9 +69,9 @@ export class AuthController {
 
   async oauthApple(req: Request, res: Response, next: NextFunction) {
     try {
-      const { idToken, displayName } = req.body;
+      const { idToken, displayName, referralCode } = req.body;
       const oauthUser = await oauthService.verifyAppleIdToken(idToken);
-      const result = await authService.loginOrRegisterWithOAuth(oauthUser, displayName);
+      const result = await authService.loginOrRegisterWithOAuth(oauthUser, displayName, referralCode);
       res.json({ data: result });
     } catch (err) {
       next(err);
@@ -80,9 +80,9 @@ export class AuthController {
 
   async oauthGoogle(req: Request, res: Response, next: NextFunction) {
     try {
-      const { idToken, displayName } = req.body;
+      const { idToken, displayName, referralCode } = req.body;
       const oauthUser = await oauthService.verifyGoogleIdToken(idToken);
-      const result = await authService.loginOrRegisterWithOAuth(oauthUser, displayName);
+      const result = await authService.loginOrRegisterWithOAuth(oauthUser, displayName, referralCode);
       res.json({ data: result });
     } catch (err) {
       next(err);
@@ -91,9 +91,9 @@ export class AuthController {
 
   async oauthSnap(req: Request, res: Response, next: NextFunction) {
     try {
-      const { authCode, displayName } = req.body;
+      const { authCode, displayName, referralCode } = req.body;
       const oauthUser = await oauthService.verifySnapAuthCode(authCode);
-      const result = await authService.loginOrRegisterWithOAuth(oauthUser, displayName);
+      const result = await authService.loginOrRegisterWithOAuth(oauthUser, displayName, referralCode);
       res.json({ data: result });
     } catch (err) {
       next(err);
@@ -121,8 +121,8 @@ export class AuthController {
 
   async registerEmail(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password, displayName } = req.body;
-      const result = await authService.registerWithEmail(email, password, displayName);
+      const { email, password, displayName, referralCode } = req.body;
+      const result = await authService.registerWithEmail(email, password, displayName, referralCode);
       res.status(201).json({ data: result });
     } catch (err) {
       next(err);

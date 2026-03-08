@@ -1,4 +1,4 @@
-# Shhh — Functional Assessment (Waves 1–4, 9–15)
+# Shhh — Functional Assessment (Waves 1–5, 9–15)
 
 > **Purpose:** Verification checklist for CI waves and Waves 9–15.  
 > **Last updated:** March 2026
@@ -24,7 +24,7 @@ cd admin-dashboard && npm run dev   # Port 5173
 cd mobile && npx expo start --web   # Port 8081
 ```
 
-**Backend tests:** `cd backend && npm test` — 90 tests (visibility, verification, messaging sync, admin cookie auth, discovery block filter, activity endpoint, analytics).
+**Backend tests:** `cd backend && npm test` — 93 tests (visibility, verification, messaging sync, admin cookie auth, discovery block filter, activity endpoint, analytics, referrals).
 
 ---
 
@@ -73,6 +73,18 @@ cd mobile && npx expo start --web   # Port 8081
 | Like push | User A likes User B (non-mutual) | User B receives push "Someone liked your profile" (if push_likes enabled) |
 | Push likes pref | Me → Notifications | "Profile likes" toggle; default on |
 | Live counts | Events tab | Event tiles show "X going" (attendee_count) |
+
+---
+
+## Wave 5: Growth Loops
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Referral API | `GET /v1/referrals/me` | 200, `{ code, referredCount }` |
+| Invite screen | Me → Invite Friends | Code, copy, share; referred count |
+| Register with code | Register → enter invite code → complete signup | Referral recorded in referrals table |
+| Post-event invite | Event ends → lifecycle runs | Push "Invite someone who'd love this" to attendees |
+| Venue amplification | Venue dashboard | "Invite & grow" card with code, copy & share |
 
 ---
 

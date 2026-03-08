@@ -163,35 +163,35 @@ export async function api<T = any>(path: string, options: RequestInit = {}, _ski
 }
 
 export const authApi = {
-  registerEmail: (email: string, password: string, displayName: string) =>
+  registerEmail: (email: string, password: string, displayName: string, referralCode?: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/email/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password, displayName }),
+      body: JSON.stringify({ email, password, displayName, ...(referralCode && { referralCode }) }),
     }),
   loginEmail: (email: string, password: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/email/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
-  register: (phone: string, displayName: string, sessionToken?: string) =>
+  register: (phone: string, displayName: string, sessionToken?: string, referralCode?: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/register', {
-      method: 'POST', body: JSON.stringify({ phone, displayName, ...(sessionToken && { sessionToken }) }),
+      method: 'POST', body: JSON.stringify({ phone, displayName, ...(sessionToken && { sessionToken }), ...(referralCode && { referralCode }) }),
     }),
   login: (phone: string, sessionToken?: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/login', {
       method: 'POST', body: JSON.stringify({ phone, ...(sessionToken && { sessionToken }) }),
     }),
-  oauthApple: (idToken: string, displayName?: string) =>
+  oauthApple: (idToken: string, displayName?: string, referralCode?: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/oauth/apple', {
-      method: 'POST', body: JSON.stringify({ idToken, ...(displayName && { displayName }) }),
+      method: 'POST', body: JSON.stringify({ idToken, ...(displayName && { displayName }), ...(referralCode && { referralCode }) }),
     }),
-  oauthGoogle: (idToken: string, displayName?: string) =>
+  oauthGoogle: (idToken: string, displayName?: string, referralCode?: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/oauth/google', {
-      method: 'POST', body: JSON.stringify({ idToken, ...(displayName && { displayName }) }),
+      method: 'POST', body: JSON.stringify({ idToken, ...(displayName && { displayName }), ...(referralCode && { referralCode }) }),
     }),
-  oauthSnap: (authCode: string, displayName?: string) =>
+  oauthSnap: (authCode: string, displayName?: string, referralCode?: string) =>
     api<{ data: { userId: string; accessToken: string; refreshToken: string } }>('/v1/auth/oauth/snap', {
-      method: 'POST', body: JSON.stringify({ authCode, ...(displayName && { displayName }) }),
+      method: 'POST', body: JSON.stringify({ authCode, ...(displayName && { displayName }), ...(referralCode && { referralCode }) }),
     }),
   refresh: (refreshToken: string) =>
     api<{ data: { accessToken: string; refreshToken: string } }>('/v1/auth/refresh', {
@@ -373,6 +373,11 @@ export const adsApi = {
 export const analyticsApi = {
   track: (eventType: string, payload?: Record<string, unknown>) =>
     api('/v1/analytics/events', { method: 'POST', body: JSON.stringify({ event_type: eventType, payload }) }),
+};
+
+/** Wave 5: Referral flow */
+export const referralsApi = {
+  getMe: () => api<{ data: { code: string; referredCount: number } }>('/v1/referrals/me'),
 };
 
 export const contentApi = {

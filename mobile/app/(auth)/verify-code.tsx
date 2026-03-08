@@ -9,7 +9,7 @@ import { PremiumDarkBackground } from '../../src/components/Backgrounds';
 const CODE_LENGTH = 6;
 
 export default function VerifyCodeScreen() {
-  const { phone, mode, displayName, devCode } = useLocalSearchParams<{ phone: string; mode: string; displayName?: string; devCode?: string }>();
+  const { phone, mode, displayName, devCode, ref: referralCode } = useLocalSearchParams<{ phone: string; mode: string; displayName?: string; devCode?: string; ref?: string }>();
   const [digits, setDigits] = useState<string[]>(() => {
     const code = (devCode as string)?.replace(/\D/g, '').slice(0, CODE_LENGTH);
     if (code?.length === CODE_LENGTH) return code.split('');
@@ -71,7 +71,7 @@ export default function VerifyCodeScreen() {
     setError('');
     try {
       if (mode === 'register' && displayName) {
-        await verifyAndRegister(phone!, code, displayName);
+        await verifyAndRegister(phone!, code, displayName, referralCode as string | undefined);
       } else {
         await verifyAndLogin(phone!, code);
       }

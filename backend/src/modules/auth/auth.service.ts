@@ -6,13 +6,16 @@ import { query } from '../../config/database';
 import { AuthPayload } from '../../middleware/auth';
 import { hashPhone, hashGeneric, hashEmail } from '../../utils/hash';
 import type { OAuthUser } from './oauth.service';
+import { ReferralService } from '../referrals/referral.service';
+
+const referralService = new ReferralService();
 
 function hashValue(value: string): string {
   return hashGeneric(value);
 }
 
 export class AuthService {
-  async registerWithPhone(phone: string, displayName: string) {
+  async registerWithPhone(phone: string, displayName: string, referralCode?: string) {
     const phoneHash = hashPhone(phone);
 
     const existing = await query('SELECT id FROM users WHERE phone_hash = $1', [phoneHash]);
@@ -35,6 +38,12 @@ export class AuthService {
       `INSERT INTO audit_logs (user_id, action, gdpr_category) VALUES ($1, 'user.registered', 'account')`,
       [userId]
     );
+
+    if (referralCode) {
+      referralService.resolveCode(referralCode).then((referrerId) => {
+        if (referrerId) referralService.recordReferral(referrerId, userId);
+      }).catch(() => {});
+    }
 
     const tokens = await this.generateTokens(userId, 0);
     return { userId, ...tokens };
@@ -62,7 +71,7 @@ export class AuthService {
     return { userId: user.id, ...tokens };
   }
 
-  async registerWithEmail(email: string, password: string, displayName: string) {
+  async registerWithEmail(email: string, password: string, displayName: string, referralCode?: string) {
     const emailHash = hashEmail(email);
     const existing = await query('SELECT id FROM users WHERE email_hash = $1', [emailHash]);
     if (existing.rows.length > 0) {
@@ -85,6 +94,12 @@ export class AuthService {
       `INSERT INTO audit_logs (user_id, action, gdpr_category) VALUES ($1, 'user.registered', 'account')`,
       [userId]
     );
+
+    if (referralCode) {
+      referralService.resolveCode(referralCode).then((referrerId) => {
+        if (referrerId) referralService.recordReferral(referrerId, userId);
+      }).catch(() => {});
+    }
 
     const tokens = await this.generateTokens(userId, 0);
     return { userId, ...tokens };
@@ -140,7 +155,7 @@ export class AuthService {
     return this.generateTokens(userId, tier);
   }
 
-  async loginOrRegisterWithOAuth(oauthUser: OAuthUser, displayName?: string) {
+  async loginOrRegisterWithOAuth(oauthUser: OAuthUser, displayName?: string, referralCode?: string) {
     const { provider, providerUserId, email, displayName: oauthDisplayName } = oauthUser;
     const name = displayName ?? oauthDisplayName ?? 'User';
 
@@ -183,6 +198,12 @@ export class AuthService {
       `INSERT INTO audit_logs (user_id, action, gdpr_category) VALUES ($1, 'user.registered', 'account')`,
       [userId]
     );
+
+    if (referralCode) {
+      referralService.resolveCode(referralCode).then((referrerId) => {
+        if (referrerId) referralService.recordReferral(referrerId, userId);
+      }).catch(() => {});
+    }
 
     const tokens = await this.generateTokens(userId, 0);
     return { userId, ...tokens };

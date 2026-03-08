@@ -16,6 +16,7 @@ const registerSchema = z.object({
   phone: z.string().min(10).max(15),
   displayName: z.string().min(2).max(50),
   sessionToken: z.string().uuid().optional(), // Required in prod; optional in test for backward compat
+  referralCode: z.string().max(12).optional(), // Wave 5: ref from invite link
 });
 
 const loginSchema = z.object({
@@ -30,16 +31,19 @@ const refreshSchema = z.object({
 const oauthAppleSchema = z.object({
   idToken: z.string().min(1),
   displayName: z.string().min(2).max(50).optional(),
+  referralCode: z.string().max(12).optional(), // Wave 5
 });
 
 const oauthGoogleSchema = z.object({
   idToken: z.string().min(1),
   displayName: z.string().min(2).max(50).optional(),
+  referralCode: z.string().max(12).optional(), // Wave 5
 });
 
 const oauthSnapSchema = z.object({
   authCode: z.string().min(1),
   displayName: z.string().min(2).max(50).optional(),
+  referralCode: z.string().max(12).optional(), // Wave 5
 });
 
 const sendCodeSchema = z.object({
@@ -55,6 +59,7 @@ const emailRegisterSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(8).max(128),
   displayName: z.string().min(2).max(50),
+  referralCode: z.string().max(12).optional(), // Wave 5
 });
 
 const emailLoginSchema = z.object({

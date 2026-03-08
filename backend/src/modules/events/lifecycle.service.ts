@@ -118,6 +118,13 @@ export class EventLifecycleService {
               [evt.id, userId]
             );
           }
+          if (!sentTypes.has('invite_friend')) {
+            await pushSvc.sendPush(userId, 'Invite someone who\'d love this', `Share Shhh with friends who\'d enjoy "${evt.title}"`, { eventId: evt.id, action: 'invite_friend' });
+            await query(
+              `INSERT INTO event_post_prompts (event_id, user_id, prompt_type) VALUES ($1, $2, 'invite_friend') ON CONFLICT DO NOTHING`,
+              [evt.id, userId]
+            );
+          }
         } else {
           await pushSvc.sendPush(userId, 'How was the event?', `Leave a reference for people you met at "${evt.title}"`, { eventId: evt.id, action: 'reference_prompt' });
         }

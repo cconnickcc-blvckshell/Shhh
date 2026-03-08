@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Alert, Share } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { venuesApi } from '../../../src/api/client';
+import { venuesApi, referralsApi } from '../../../src/api/client';
 import { useSocket } from '../../../src/hooks/useSocket';
 import { colors, spacing, fontSize, borderRadius } from '../../../src/constants/theme';
 import { PremiumDarkBackground } from '../../../src/components/Backgrounds';
@@ -27,14 +28,16 @@ export default function VenueDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [distressAlerts, setDistressAlerts] = useState<Array<{ userId: string; venueId: string }>>([]);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
   const socket = useSocket();
 
   const loadVenue = () => id ? venuesApi.get(id).then((r) => setVenue(r.data)).catch(() => setVenue(null)) : Promise.resolve();
   const loadDashboard = () => id ? venuesApi.getDashboard(id).then(setData).catch(() => setData(null)) : Promise.resolve();
+  const loadReferral = () => referralsApi.getMe().then((r) => setReferralCode(r.data.code)).catch(() => {});
 
   const load = () => {
     if (!id) return Promise.resolve();
-    return Promise.all([loadVenue(), loadDashboard()]);
+    return Promise.all([loadVenue(), loadDashboard(), loadReferral()]);
   };
 
   useEffect(() => {
@@ -212,6 +215,31 @@ export default function VenueDashboardScreen() {
               <Text style={dashStyles.listItemMeta}>Impressions: {a.impression_count ?? 0} · Taps: {a.tap_count ?? 0}</Text>
             </View>
           ))}
+        </View>
+      )}
+
+      {referralCode && (
+        <View style={dashStyles.section}>
+          <Text style={dashStyles.sectionTitle}>Invite & grow (Wave 5)</Text>
+          <View style={dashStyles.listItem}>
+            <Text style={dashStyles.listItemTitle}>Share your venue</Text>
+            <Text style={dashStyles.listItemMeta}>Your invite code: {referralCode} — share with guests to grow your community</Text>
+            <TouchableOpacity
+              style={[dashStyles.actionBtn, { marginTop: 12 }]}
+              onPress={async () => {
+                await Clipboard.setStringAsync(referralCode);
+                try {
+                  await Share.share({
+                    message: `Join me at ${venue?.name || 'this venue'} on Shhh — use code ${referralCode} when you sign up.`,
+                    title: 'Invite to Shhh',
+                  });
+                } catch {}
+              }}
+            >
+              <Ionicons name="share-social-outline" size={18} color={colors.primaryLight} />
+              <Text style={dashStyles.actionLabel}>Copy & share</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 

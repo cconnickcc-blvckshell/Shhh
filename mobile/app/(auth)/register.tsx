@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import { useIdTokenAuthRequest } from 'expo-auth-session/providers/google';
@@ -17,12 +17,18 @@ const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 const SNAP_CLIENT_ID = process.env.EXPO_PUBLIC_SNAP_CLIENT_ID;
 
 export default function RegisterScreen() {
+  const params = useLocalSearchParams<{ ref?: string }>();
   const [phone, setPhone] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [authStep, setAuthStep] = useState<'choose' | 'phone' | 'email'>('choose');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { sendOTP, register: registerDirect, registerEmail, oauthGoogle, oauthSnap, isLoading, error, clearError } = useAuthStore();
+
+  useEffect(() => {
+    if (params.ref) setReferralCode(String(params.ref).toUpperCase().trim());
+  }, [params.ref]);
   const { signInWithApple } = useOAuth();
   const canSubmit = phone.length >= 10 && displayName.length >= 2;
 
@@ -53,9 +59,10 @@ export default function RegisterScreen() {
       return;
     }
     clearError();
+    const ref = referralCode.trim() || undefined;
     try {
       if (method === 'apple') {
-        await signInWithApple();
+        await signInWithApple(ref);
       } else if (method === 'google') {
         if (!GOOGLE_CLIENT_ID || !googleRequest) {
           Alert.alert('Not configured', 'Google Sign-In needs EXPO_PUBLIC_GOOGLE_CLIENT_ID.');
@@ -63,7 +70,7 @@ export default function RegisterScreen() {
         }
         const result = await googlePrompt();
         if (result?.type === 'success' && result.params.id_token) {
-          await oauthGoogle(result.params.id_token);
+          await oauthGoogle(result.params.id_token, undefined, ref);
         } else if (result?.type !== 'cancel') {
           throw new Error('Google sign-in failed');
         }
@@ -74,7 +81,7 @@ export default function RegisterScreen() {
         }
         const result = await snapPrompt();
         if (result?.type === 'success' && result.params.code) {
-          await oauthSnap(result.params.code);
+          await oauthSnap(result.params.code, undefined, ref);
         } else if (result?.type !== 'cancel') {
           throw new Error('Snapchat sign-in failed');
         }
@@ -89,14 +96,15 @@ export default function RegisterScreen() {
     clearError();
     try {
       const result = await sendOTP(phone);
+      const ref = referralCode.trim() || undefined;
       if (result.devCode) {
-        router.replace({ pathname: '/(auth)/verify-code', params: { phone, mode: 'register', displayName, devCode: result.devCode } });
+        router.replace({ pathname: '/(auth)/verify-code', params: { phone, mode: 'register', displayName, devCode: result.devCode, ...(ref && { ref }) } });
         setTimeout(() => Alert.alert('Dev Mode', `Your OTP code is: ${result.devCode}\n\nEnter it below to continue.`, [{ text: 'OK' }]), 300);
       } else {
-        router.replace({ pathname: '/(auth)/verify-code', params: { phone, mode: 'register', displayName } });
+        router.replace({ pathname: '/(auth)/verify-code', params: { phone, mode: 'register', displayName, ...(ref && { ref }) } });
       }
     } catch {
-      try { await registerDirect(phone, displayName); } catch {}
+      try { await registerDirect(phone, displayName, referralCode.trim() || undefined); } catch {}
     }
   };
 
@@ -105,7 +113,7 @@ export default function RegisterScreen() {
     clearError();
     try {
       const displayName = (email.split('@')[0] || 'User').slice(0, 50);
-      await registerEmail(email.trim().toLowerCase(), password, displayName.length >= 2 ? displayName : 'User');
+      await registerEmail(email.trim().toLowerCase(), password, displayName.length >= 2 ? displayName : 'User', referralCode.trim() || undefined);
     } catch {}
   };
 
@@ -134,6 +142,11 @@ export default function RegisterScreen() {
                 <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
                 <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={colors.textMuted} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" />
               </View>
+              <Text style={styles.label}>INVITE CODE (optional)</Text>
+              <View style={[styles.inputWrap, referralCode.length > 0 && styles.inputFocused]}>
+                <Ionicons name="person-add-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
+                <TextInput style={styles.input} placeholder="e.g. ABC12345" placeholderTextColor={colors.textMuted} value={referralCode} onChangeText={(t) => setReferralCode(t.toUpperCase())} autoCapitalize="characters" autoCorrect={false} />
+              </View>
               {error && <View style={styles.errorBox}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
               <TouchableOpacity style={[styles.button, (!email.trim() || password.length < 8) && styles.buttonDisabled]} onPress={handleEmailSignUp} disabled={isLoading || !email.trim() || password.length < 8} activeOpacity={0.8}>
                 {isLoading ? <ActivityIndicator color="#fff" size="small" /> : <><Text style={styles.buttonText}>Create account</Text><Ionicons name="arrow-forward" size={18} color="#fff" /></>}
@@ -158,6 +171,13 @@ export default function RegisterScreen() {
               <View style={styles.iconFrame}><AppIconImage size={56} /></View>
               <Text style={styles.title}>Join Shhh</Text>
               <Text style={styles.subtitle}>Create your secret identity</Text>
+            </View>
+            <View style={[styles.formCard, { marginBottom: spacing.md }]}>
+              <Text style={styles.label}>INVITE CODE (optional)</Text>
+              <View style={[styles.inputWrap, referralCode.length > 0 && styles.inputFocused]}>
+                <Ionicons name="person-add-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
+                <TextInput style={styles.input} placeholder="e.g. ABC12345" placeholderTextColor={colors.textMuted} value={referralCode} onChangeText={(t) => setReferralCode(t.toUpperCase())} autoCapitalize="characters" autoCorrect={false} />
+              </View>
             </View>
             <AuthOptions onSelect={handleAuthSelect} isLoading={isLoading} />
             {error && <View style={styles.errorBox}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}
@@ -195,6 +215,12 @@ export default function RegisterScreen() {
             <View style={[styles.inputWrap, phone.length > 0 && styles.inputFocused]}>
               <Ionicons name="call-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
               <TextInput style={styles.input} placeholder="+1 (555) 000-0000" placeholderTextColor={colors.textMuted} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            </View>
+
+            <Text style={styles.label}>INVITE CODE (optional)</Text>
+            <View style={[styles.inputWrap, referralCode.length > 0 && styles.inputFocused]}>
+              <Ionicons name="person-add-outline" size={18} color={colors.textMuted} style={{ marginRight: 10 }} />
+              <TextInput style={styles.input} placeholder="e.g. ABC12345" placeholderTextColor={colors.textMuted} value={referralCode} onChangeText={(t) => setReferralCode(t.toUpperCase())} autoCapitalize="characters" autoCorrect={false} />
             </View>
 
             {error && <View style={styles.errorBox}><Ionicons name="alert-circle" size={14} color={colors.danger} /><Text style={styles.errorText}>{error}</Text></View>}

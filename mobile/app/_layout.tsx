@@ -76,6 +76,7 @@ export default function RootLayout() {
         <Stack.Screen name="event/[id]" />
         <Stack.Screen name="profile/status" />
         <Stack.Screen name="profile/notifications" />
+        <Stack.Screen name="profile/invite" />
         <Stack.Screen name="venue/[id]" />
         <Stack.Screen name="whispers/index" />
         <Stack.Screen name="subscription/index" />

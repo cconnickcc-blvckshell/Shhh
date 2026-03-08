@@ -13,14 +13,14 @@ interface AuthState {
 
   sendOTP: (phone: string) => Promise<{ devCode?: string }>;
   verifyAndLogin: (phone: string, code: string) => Promise<void>;
-  verifyAndRegister: (phone: string, code: string, displayName: string) => Promise<void>;
+  verifyAndRegister: (phone: string, code: string, displayName: string, referralCode?: string) => Promise<void>;
   login: (phone: string) => Promise<void>;
-  register: (phone: string, displayName: string) => Promise<void>;
-  registerEmail: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (phone: string, displayName: string, referralCode?: string) => Promise<void>;
+  registerEmail: (email: string, password: string, displayName: string, referralCode?: string) => Promise<void>;
   loginEmail: (email: string, password: string) => Promise<void>;
-  oauthApple: (idToken: string, displayName?: string) => Promise<void>;
-  oauthGoogle: (idToken: string, displayName?: string) => Promise<void>;
-  oauthSnap: (authCode: string, displayName?: string) => Promise<void>;
+  oauthApple: (idToken: string, displayName?: string, referralCode?: string) => Promise<void>;
+  oauthGoogle: (idToken: string, displayName?: string, referralCode?: string) => Promise<void>;
+  oauthSnap: (authCode: string, displayName?: string, referralCode?: string) => Promise<void>;
   logout: () => Promise<void>;
   loadProfile: () => Promise<void>;
   setTokens: (token: string, refreshToken: string, userId: string) => void;
@@ -91,14 +91,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  verifyAndRegister: async (phone, code, displayName) => {
+  verifyAndRegister: async (phone, code, displayName, referralCode) => {
     set({ isLoading: true, error: null });
     try {
       const verifyRes = await api<{ data: { verified: boolean; sessionToken?: string } }>('/v1/auth/phone/verify', {
         method: 'POST', body: JSON.stringify({ phone, code }),
       });
       const sessionToken = verifyRes.data?.sessionToken;
-      const res = await authApi.register(phone, displayName, sessionToken);
+      const res = await authApi.register(phone, displayName, sessionToken, referralCode);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(auth)/onboarding');
@@ -122,10 +122,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  register: async (phone, displayName) => {
+  register: async (phone, displayName, referralCode) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await authApi.register(phone, displayName);
+      const res = await authApi.register(phone, displayName, undefined, referralCode);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(tabs)');
@@ -135,10 +135,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  registerEmail: async (email, password, displayName) => {
+  registerEmail: async (email, password, displayName, referralCode) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await authApi.registerEmail(email, password, displayName);
+      const res = await authApi.registerEmail(email, password, displayName, referralCode);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(auth)/onboarding');
@@ -161,10 +161,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  oauthApple: async (idToken, displayName) => {
+  oauthApple: async (idToken, displayName, referralCode) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await authApi.oauthApple(idToken, displayName);
+      const res = await authApi.oauthApple(idToken, displayName, referralCode);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(tabs)');
@@ -174,10 +174,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  oauthGoogle: async (idToken, displayName) => {
+  oauthGoogle: async (idToken, displayName, referralCode) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await authApi.oauthGoogle(idToken, displayName);
+      const res = await authApi.oauthGoogle(idToken, displayName, referralCode);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(tabs)');
@@ -187,10 +187,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  oauthSnap: async (authCode, displayName) => {
+  oauthSnap: async (authCode, displayName, referralCode) => {
     set({ isLoading: true, error: null });
     try {
-      const res = await authApi.oauthSnap(authCode, displayName);
+      const res = await authApi.oauthSnap(authCode, displayName, referralCode);
       get().setTokens(res.data.accessToken, res.data.refreshToken, res.data.userId);
       await get().loadProfile();
       router.replace('/(tabs)');

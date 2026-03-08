@@ -555,7 +555,7 @@ These signals change behavior dramatically. Users must feel "people like me are 
 | **Wave 2** | Trust perception | Privacy cues, visible verification, report feedback | Wave 1 | ✅ Done |
 | **Wave 3** | Messaging reliability | Unread reconciliation, retry UI, state sync | Wave 1 | ✅ Done |
 | **Wave 4** | Density & triggers | Live counts, re-engagement pushes, event reminders | Analytics events | ✅ Done (March 2026) |
-| **Wave 5** | Growth loops | Referral flow, post-event invites, venue amplification | Density signals stable | — |
+| **Wave 5** | Growth loops | Referral flow, post-event invites, venue amplification | Density signals stable | ✅ Done (March 2026) |
 
 Prevents random side-quests. "Cool idea syndrome" sneaks in otherwise.
 
