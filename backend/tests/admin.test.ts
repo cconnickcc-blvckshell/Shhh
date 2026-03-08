@@ -129,4 +129,24 @@ describe('Admin API', () => {
       .set('Authorization', `Bearer ${user.accessToken}`);
     expect(res.status).toBe(403);
   });
+
+  it('B.8: auth via httpOnly cookie when ADMIN_HTTPONLY_COOKIE=true', async () => {
+    const bypass = await request.post('/v1/auth/admin-bypass').send({});
+    expect(bypass.status).toBe(200);
+    const token = bypass.body.data?.accessToken;
+    expect(token).toBeTruthy();
+
+    const setCookie = bypass.headers['set-cookie'];
+    expect(setCookie).toBeDefined();
+    expect(Array.isArray(setCookie) ? setCookie.length : 0).toBeGreaterThan(0);
+
+    const cookieHeader = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+    const cookieValue = cookieHeader.split(';')[0];
+
+    const res = await request
+      .get('/v1/admin/stats')
+      .set('Cookie', cookieValue);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveProperty('moderation');
+  });
 });

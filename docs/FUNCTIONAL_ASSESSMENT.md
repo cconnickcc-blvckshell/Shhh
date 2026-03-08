@@ -24,7 +24,7 @@ cd admin-dashboard && npm run dev   # Port 5173
 cd mobile && npx expo start --web   # Port 8081
 ```
 
-**Backend tests:** `cd backend && npm test` — 67 tests (includes Trust Score Distribution, conversion funnel, activity feed).
+**Backend tests:** `cd backend && npm test` — 86 tests (visibility, verification, messaging sync, admin cookie auth, discovery block filter).
 
 ---
 
@@ -114,18 +114,39 @@ cd mobile && npx expo start --web   # Port 8081
 
 ---
 
+## P0–P1: Visibility, Tier 2 ID, Onboarding, httpOnly Cookies
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| **A.6 Block → profile** | User A blocks B → A views B profile | 404 "User not found" |
+| **A.6 Block → like/pass** | A blocks B → A likes or passes B | 403 |
+| **A.6 Block → conversation** | A blocks B → A creates conversation with B | 403 |
+| **A.6 Block → whisper** | A blocks B → A sends whisper to B | 403 |
+| **A.6 Block → discovery** | A blocks B → A fetches discover | B does not appear in results |
+| **B.6 Tier 2 ID** | Profile → Verify → Tier 2 current → Pick ID or Take photo | Upload, submit, "Submitted for review" |
+| **B.6 Moderation resolve** | Admin → Moderation → verification_id item → Approve | User promoted to tier 2 |
+| **C.12 Onboarding** | Onboarding slides | "Skip intro" label; dotDone for completed slides |
+| **B.8 Cookie auth** | Admin login with ADMIN_HTTPONLY_COOKIE=true → request without Bearer | 200 (cookie sent automatically with credentials: include) |
+
+**Automated:** visibility.test.ts (8), verification.test.ts (7), discovery block test, admin cookie test.
+
+---
+
 ## Automated Test Results
 
 | Suite | Tests | Status |
 |-------|-------|--------|
 | auth | 12 | ✅ Pass |
-| admin | 11 | ✅ Pass (includes trust-scores, funnel, activity-feed) |
-| discovery | 4 | ✅ Pass |
+| admin | 12 | ✅ Pass (trust-scores, funnel, activity-feed, cookie auth) |
+| discovery | 5 | ✅ Pass (block filter) |
 | events | 14 | ✅ Pass |
 | couples | 4 | ✅ Pass |
 | media | 16 | ✅ Pass |
 | safety | 5 | ✅ Pass |
-| **Total** | **67** | **✅ All pass** |
+| messaging | 2 | ✅ Pass |
+| visibility | 8 | ✅ Pass |
+| verification | 7 | ✅ Pass |
+| **Total** | **86** | **✅ All pass** |
 
 ---
 
@@ -133,12 +154,17 @@ cd mobile && npx expo start --web   # Port 8081
 
 - [ ] Admin: Login (bypass if OTP_DEV_BYPASS=true), Dashboard shows Tier Funnel + Conversion Funnel + Trust Score Distribution + Live Activity Feed
 - [ ] Mobile: Onboarding-intent shows "Browse first" as primary
+- [ ] Mobile: Onboarding slides show "Skip intro", dotDone for completed
 - [ ] Mobile: Create event → "Show advanced options" toggles visibility section
 - [ ] Mobile: Edit profile → "Show advanced options" toggles Discovery & Hosting
 - [ ] Mobile: User profile X → Not interested → reason chips
+- [ ] Mobile: Block user → profile 404, like/pass 403, whisper 403
+- [ ] Mobile: Verify → Tier 2 → Pick ID / Take photo → submit for review
+- [ ] Admin: Moderation → verification_id → Approve → user tier 2
 - [ ] Mobile: Whispers inbox → swipe left on pending (native) → Ignore
 - [ ] Mobile: Chat → receive message → badge updates; leave chat → badge refetches
 - [ ] Mobile: Event 404 → Alert "Event unavailable"
+- [ ] Admin: With ADMIN_HTTPONLY_COOKIE=true, login then refresh; cookie auth works without Bearer
 
 ---
 

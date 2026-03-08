@@ -59,4 +59,19 @@ describe('Discovery API', () => {
       .query({ lat: 'invalid', lng: '-74.006' });
     expect(res.status).toBe(400);
   });
+
+  it('A.6: blocked users do not appear in discovery', async () => {
+    const blocker = await createTestUser('BlockDisc1', 1);
+    const blocked = await createTestUser('BlockDisc2', 1);
+    await request.post('/v1/discover/location').set('Authorization', `Bearer ${blocker.accessToken}`).send({ lat: 40.71, lng: -74.0 });
+    await request.post('/v1/discover/location').set('Authorization', `Bearer ${blocked.accessToken}`).send({ lat: 40.711, lng: -74.001 });
+    await request.post(`/v1/users/${blocked.userId}/block`).set('Authorization', `Bearer ${blocker.accessToken}`).send({});
+    const res = await request
+      .get('/v1/discover')
+      .set('Authorization', `Bearer ${blocker.accessToken}`)
+      .query({ lat: '40.71', lng: '-74.0', radius: '5' });
+    expect(res.status).toBe(200);
+    const ids = (res.body.data || []).map((u: { userId: string }) => u.userId);
+    expect(ids).not.toContain(blocked.userId);
+  });
 });
