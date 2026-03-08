@@ -1,0 +1,136 @@
+# Shhh — Functional Assessment (Waves 9–14)
+
+> **Purpose:** Verification checklist for all improvements added in Waves 9–14.  
+> **Last updated:** March 2026
+
+---
+
+## Test Environment Setup
+
+```bash
+# 1. Start infrastructure
+sudo docker compose up -d
+
+# 2. Run migrations
+cd backend && npm run migrate
+
+# 3. Start backend
+cd backend && npm run dev   # Port 3000 (or 3001/3002 if in use)
+
+# 4. Start admin dashboard
+cd admin-dashboard && npm run dev   # Port 5173
+
+# 5. Start mobile (web)
+cd mobile && npx expo start --web   # Port 8081
+```
+
+**Backend tests:** `cd backend && npm test` — 65 tests (includes Trust Score Distribution).
+
+---
+
+## Wave 9: Pass with Reason
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Pass flow | User profile → tap X (close) → "Not interested" or "Block" | Alert with two options |
+| Reason selection | "Not interested" → "Not my type" / "Too far" / "Just browsing" / "Other" / "Skip" | Second alert with reason chips |
+| API | `POST /v1/users/:id/pass` with `{ "reason": "not_my_type" }` | 200, stored in `user_interactions.pass_reason` |
+| ConnectionWindowModal | Trigger connection limit modal | Slides up (animationType="slide") |
+
+**Verification:** `SELECT pass_reason FROM user_interactions WHERE type='pass' LIMIT 5;`
+
+---
+
+## Wave 10: Edge-Case Handling
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Event 404 | Navigate to `/event/invalid-uuid` or deleted event | Alert "Event unavailable" + "Go back" |
+| Chat 404 | Navigate to `/chat/invalid-uuid` | "This conversation is no longer available" (mapApiError) |
+
+---
+
+## Wave 11: Accessibility & Empty State Polish
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| SafeState | Empty/error/loading screen | accessibilityRole="summary", labels on retry |
+| Discover empty CTA | Empty Discover → "Create an event" | accessibilityLabel present |
+| User profile actions | Like, Message, Whisper, Report | accessibilityRole="button", accessibilityLabel |
+| VenueAdCard | "Why am I seeing this?" link | accessibilityLabel="Why am I seeing this ad?" |
+| Me screen | Logout, MenuItem, User ID copy | accessibilityLabel present |
+| Edit Profile Save | Save button | accessibilityState disabled when !isDirty |
+| Event RSVP | RSVP button | accessibilityState disabled when loading |
+
+**Verification:** Enable TalkBack (Android) or VoiceOver (iOS) and navigate; all interactive elements should announce.
+
+---
+
+## Wave 12: Tier Funnel & Progressive Disclosure
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Admin Tier Funnel | Dashboard → top section | "Tier Funnel" card: Signups, Verified, Premium |
+| Create Event | Profile → Create event → "Show advanced options" | Toggle reveals Visibility, tier min, radius, location revealed |
+| Edit Profile | Profile → Edit → "Show advanced options" | Toggle reveals Discovery & Privacy, Hosting; Primary vibe in About |
+
+---
+
+## Wave 13: Trust Score, Swipe, Micro-Copy
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Admin Trust Score | Dashboard → Trust Score Distribution | Histogram: 0-20, 21-40, 41-60, 61-80, 81-100, N/A |
+| API | `GET /v1/admin/stats/trust-scores` (admin token) | 200, `{ bucket_0_20, bucket_21_40, ... }` |
+| Whispers swipe | Whispers inbox → pending whisper → swipe left (native) | Red "Ignore" action revealed; tap to ignore |
+| Micro-copy | Trigger 403, 401, whisper expired, profile not found | Human-friendly messages from mapApiError |
+
+---
+
+## Wave 14: Unread Sync, Onboarding, Push Throttle
+
+| Test | Steps | Expected |
+|------|-------|----------|
+| Unread on notification | Receive new message (WebSocket) while not in chat | Badge refetches, count updates |
+| Unread on app focus | Background app → receive message → foreground | Badge refetches |
+| Mark-read when viewing | In chat → receive new message | POST /read called, badge correct |
+| Onboarding Browse first | Login → onboarding → onboarding-intent | "Browse first" primary CTA; "Set up my vibe" secondary |
+| Push throttle | Send 3 messages to user within 30s | Max 1 push sent (Redis `push:throttle:{userId}`) |
+
+**API:** `POST /v1/conversations/:id/read` — 204, sets unread_count=0.
+
+---
+
+## Automated Test Results
+
+| Suite | Tests | Status |
+|-------|-------|--------|
+| auth | 12 | ✅ Pass |
+| admin | 9 | ✅ Pass (includes trust-scores) |
+| discovery | 4 | ✅ Pass |
+| events | 14 | ✅ Pass |
+| couples | 4 | ✅ Pass |
+| media | 16 | ✅ Pass |
+| safety | 5 | ✅ Pass |
+| **Total** | **65** | **✅ All pass** |
+
+---
+
+## Manual Test Checklist
+
+- [ ] Admin: Login (bypass if OTP_DEV_BYPASS=true), Dashboard shows Tier Funnel + Trust Score Distribution
+- [ ] Mobile: Onboarding-intent shows "Browse first" as primary
+- [ ] Mobile: Create event → "Show advanced options" toggles visibility section
+- [ ] Mobile: Edit profile → "Show advanced options" toggles Discovery & Hosting
+- [ ] Mobile: User profile X → Not interested → reason chips
+- [ ] Mobile: Whispers inbox → swipe left on pending (native) → Ignore
+- [ ] Mobile: Chat → receive message → badge updates; leave chat → badge refetches
+- [ ] Mobile: Event 404 → Alert "Event unavailable"
+
+---
+
+## Known Limitations
+
+- **Swipe to Ignore:** Native only (Platform.OS !== 'web'); web keeps tap Ignore
+- **Push throttle:** Requires Redis; 30s window per user
+- **Admin bypass:** Requires `OTP_DEV_BYPASS=true` in backend env for one-click login

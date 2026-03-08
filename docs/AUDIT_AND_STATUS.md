@@ -31,9 +31,9 @@ All audit reports are in `docs/archive/`. Use this index to find the right one:
 
 ## Quick Status
 
-- **Backend:** 64 tests, auth (phone + email + OAuth), discovery, messaging, presence, safety, admin, media
-- **Admin dashboard:** Map, Kanban, sparkline, status bar, manual refresh; no auto-polling
-- **Mobile:** Me section upgraded; push notifications, badges, deep linking; email/password auth
+- **Backend:** 64 tests, auth (phone + email + OAuth), discovery, messaging, presence, safety, admin, media; POST /conversations/:id/read; Trust Score Distribution; push throttle (30s)
+- **Admin dashboard:** Map, Kanban, sparkline, Tier Funnel, Trust Score Distribution, status bar, manual refresh; no auto-polling
+- **Mobile:** Me section upgraded; push notifications, badges, deep linking; email/password auth; unread sync (refetch on notification, app focus, mark-read when viewing); onboarding "Browse first"; swipe-to-ignore whispers
 - **Production:** Render (backend), Vercel (admin + web); Supabase/Upstash/Atlas
 
-**See:** `docs/ROADMAP.md` for planned work; `docs/OPS_GUIDE.md` for deployment and runbook.
+**See:** `docs/ROADMAP.md` for planned work; `docs/OPS_GUIDE.md` for deployment and runbook; `docs/FUNCTIONAL_ASSESSMENT.md` for Waves 9–14 verification checklist.

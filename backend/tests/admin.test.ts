@@ -78,6 +78,16 @@ describe('Admin API', () => {
     expect(res.body.data).toBeInstanceOf(Array);
   });
 
+  it('GET /v1/admin/stats/trust-scores returns distribution', async () => {
+    const res = await request
+      .get('/v1/admin/stats/trust-scores')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveProperty('bucket_0_20');
+    expect(res.body.data).toHaveProperty('bucket_81_100');
+    expect(res.body.data).toHaveProperty('no_score');
+  });
+
   it('GET /v1/venues/:id/analytics/density returns density intelligence (tier 2)', async () => {
     const tier2 = await createTestUser('DensityTester', 2);
     const res = await request

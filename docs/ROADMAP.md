@@ -60,6 +60,7 @@
 - Skeleton loaders
 - Neon glassmorphism design
 - **Tier Funnel** (Wave 12): Signups → Verified → Premium card on Dashboard
+- **Trust Score Distribution** (Wave 13): Histogram (0-20, 21-40, 41-60, 61-80, 81-100, N/A)
 
 ### Planned
 
@@ -96,6 +97,6 @@ Prioritized backlog of high-impact ideas. Key themes:
 | Me section | Layout, design system, most sub-pages, bio char count, unsaved warning, success toast, Card sections, User ID+Copy, location picker, date pickers | Tier 2 ID |
 | Admin dashboard | Map, Kanban, sparkline, status bar, shortcuts, design | 3D globe, marble drop, Admin Control |
 | Game-changers | — | Tonight feed, venue themes, discovery cap, etc. |
-| Polish (IMPROVEMENTS_LEDGER) | Wave 1–11: + accessibility labels, SafeState polish, GC-N.5 ad explainer | See IMPROVEMENTS_LEDGER "What Remains" |
+| Polish (IMPROVEMENTS_LEDGER) | Waves 1–14: accessibility, pass with reason, swipe-to-ignore, micro-copy, unread sync, onboarding Browse first, push throttle | See IMPROVEMENTS_LEDGER "What Remains" |
 
 **Related docs:** `docs/IMPROVEMENTS_LEDGER.md` (full ledger with feasibility/impact/effort), `docs/archive/MASTER_IMPLEMENTATION_CHECKLIST.md`, `docs/archive/E2E_CAPABILITY_AUDIT_REPORT.md`, `docs/archive/CSUITE_MASTER_AUDIT_REPORT.md`

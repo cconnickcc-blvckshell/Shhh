@@ -2,7 +2,7 @@
 
 > **Purpose:** Single reference for deployment, runbook, testing, and alerting.  
 > **Audience:** DevOps, on-call engineers, developers.  
-> **Last updated:** March 2026
+> **Last updated:** March 2026. Push throttle: max 1 push per user per 30s (Redis `push:throttle:{userId}`).
 
 ---
 
@@ -122,7 +122,10 @@ No automated rollback. Restore from backup to revert.
 ```bash
 redis-cli CONFIG GET maxmemory-policy   # Prefer noeviction
 redis-cli KEYS "otp:*"                 # Dev: clear OTP
+redis-cli KEYS "push:throttle:*"       # Push throttle keys (30s TTL)
 ```
+
+**Push throttle:** Message pushes are throttled to max 1 per user per 30 seconds (`push:throttle:{userId}`). Prevents notification spam when multiple messages arrive quickly.
 
 ### 3.5 Security Incidents
 

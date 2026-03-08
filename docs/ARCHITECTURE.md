@@ -1,6 +1,6 @@
 # Shhh — Architecture Document
 
-> Last updated: March 2026 (aligned with current codebase; API ledger §4 Auth OAuth, Presence/Personas/Intents/Preferences/Ads; migration 028)  
+> Last updated: March 2026 (Waves 9–14: pass with reason, mark-read, Trust Score Distribution, push throttle, onboarding Browse first)  
 > **When changing the system:** Update this doc’s §2 (file tree), §4 (API ledger), §6 (schema) when adding modules, routes, or tables.  
 > **Implementation status:** See **docs/AUDIT_AND_STATUS.md** and **docs/ROADMAP.md**.
 
@@ -72,7 +72,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 │   │   │   └── CommandCenterContext.tsx  # Status data, refresh, keyboard shortcuts
 │   │   ├── pages/
 │   │   │   ├── Login.tsx             # Admin login (phone+OTP, email+password, dev bypass)
-│   │   │   ├── Dashboard.tsx         # Stats overview + sparklines
+│   │   │   ├── Dashboard.tsx         # Tier Funnel, Trust Score Distribution, stats + sparklines
 │   │   │   ├── Users.tsx            # User management
 │   │   │   ├── Revenue.tsx          # Revenue + sparkline + 30d bar chart
 │   │   │   ├── Venues.tsx           # Venue list
@@ -518,6 +518,7 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | GET | `/v1/conversations/unread-total` | Yes | 0 | Total unread message count (tab badge, app icon badge) |
 | GET | `/v1/conversations` | Yes | 0 | List conversations (includes consentState when applicable: requiresMutualConsent, grantedByMe, grantedCount) |
 | POST | `/v1/conversations` | Yes | 1 | Create conversation |
+| POST | `/v1/conversations/:id/read` | Yes | 0 | Mark conversation read (sets unread_count=0; used when viewing chat + new message arrives) |
 | GET | `/v1/conversations/:id/messages` | Yes | 0 | Get messages |
 | POST | `/v1/conversations/:id/messages` | Yes | 0 | Send message (optional viewOnce, ttlSeconds on attachment for ephemeral/photo reply) |
 | PUT | `/v1/conversations/:id/retention` | Yes | 0 | Set retention (mode, archiveAt?, defaultMessageTtlSeconds?) |
@@ -722,7 +723,10 @@ Shhh is a privacy-native, proximity-driven geosocial platform for adults. The ba
 | PUT | `/v1/admin/settings/ads/:id` | Yes | admin | Update ad control |
 | GET | `/v1/admin/presence/geo` | Yes | moderator | User locations for map |
 | GET | `/v1/admin/stats/cities` | Yes | moderator | City aggregates (hot/dead) |
+| GET | `/v1/admin/stats/trust-scores` | Yes | moderator | Trust score distribution (0-20, 21-40, 41-60, 61-80, 81-100, N/A) |
 | POST | `/v1/admin/moderation/:id/resolve` | Yes | moderator | Approve/reject mod queue item |
+
+**Dashboard:** Tier Funnel (Signups → Verified → Premium), Trust Score Distribution histogram. Push throttle: max 1 push per user per 30s (Redis) to prevent notification spam.
 
 ### Documentation
 | Method | Path | Description |
